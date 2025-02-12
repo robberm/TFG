@@ -12,7 +12,7 @@
 	<artifactId>tfgapp</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>tfgapp</name>
-	<description>Demo project for Spring Boot</description>
+	<description>TFG project</description>
 	<url/>
 	<licenses>
 		<license/>
