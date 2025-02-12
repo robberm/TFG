@@ -1,0 +1,13 @@
+package net.tfg.tfgapp;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class TfgappApplicationTests {
+
+	@Test
+	void contextLoads() {
+	}
+
+}
