@@ -30,10 +30,10 @@ public class Objectives {
     /**NOTA: Si se utiliza GenerationType.AUTO, Hibernate "defaulteará" para la estructura de PostgresSQL**/
     @Column(unique = true)
     private String titulo;
-    @Column(unique = true)
+    @Column(unique = false)
     private String description;
     @Enumerated(EnumType.STRING)
-    @Column(unique = true)
+    @Column(unique = false)
     private Prioridad priority;
 
     public Objectives(int id, String titulo, String description, Prioridad priority) {
