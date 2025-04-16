@@ -12,7 +12,7 @@ import java.util.List;
 
 @RequestMapping("/objectives")
 @RestController
-public class APIrest {
+public class ObjectiveController {
 
     @Autowired
     private ObjService objService;
