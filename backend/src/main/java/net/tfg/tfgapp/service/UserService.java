@@ -1,12 +1,16 @@
 package net.tfg.tfgapp.service;
 
+import net.tfg.tfgapp.DTOs.LoginRequest;
 import net.tfg.tfgapp.domains.Objectives;
 import net.tfg.tfgapp.domains.User;
+import net.tfg.tfgapp.mappers.LoginMapper;
 import net.tfg.tfgapp.repos.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.View;
 
 import java.util.List;
+import java.util.logging.Logger;
 
 
 @Service
@@ -14,10 +18,15 @@ public class UserService {
 
     @Autowired
     private UserRepo uRepo;
-
+    @Autowired
+    private LoginMapper userMapper;
+    private static final Logger LOG = Logger.getLogger(UserService.class.getName());
+    @Autowired
+    private View error;
 
 
     public <S extends User> S save(S entity) {
+        checkCredRestrictions(entity);
         return uRepo.save(entity);
     }
 
@@ -25,4 +34,46 @@ public class UserService {
     public List<User> findAll() {
         return uRepo.findAll();
     }
+
+    public boolean authenticateUser(LoginRequest newUserL){
+     boolean found = false;
+     User newUser = userMapper.toUser(newUserL);
+
+        try{
+            checkCredRestrictions(newUser);
+            //Recorrer lista buscando match
+            User userfound = uRepo.findByUsername(newUserL.getUsername());
+            if (userfound != null && userfound.getPassword().equals(newUser.getPassword())){
+                found = true;
+            }
+            /*List<User> users = findAll();
+            for(User user : users){
+                if (newUser.getUsername().matches(user.getUsername()) && newUser.getPassword().matches(user.getPassword())){
+                    found = true;
+                    break;
+                }
+            }*/
+        }catch (Exception e){
+            LOG.warning("Error al autenticar usuario");
+        }
+      return found;
+
+    }
+
+    private boolean checkCredRestrictions(User newUser){
+        try{
+            if (newUser == null){
+                throw new IllegalArgumentException("El usuario mapeado es null");
+            }
+            if (!newUser.getPassword().matches("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{10,}$")) {
+                throw new IllegalArgumentException("La contraseña debe tener al menos 10 caracteres, incluir letras, números y un símbolo.");
+            }
+
+        }catch(Exception e){
+            LOG.warning("Error al validar datos de usuario");
+        }
+
+        return true;
+    }
+
 }

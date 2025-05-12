@@ -1,0 +1,81 @@
+import React, { useState, useRef } from "react";
+import './App.css';
+
+
+const Login = () => {
+  // Definir estado para username y password
+  const [loginUsername, setLoginUsername] = useState("");  // Estado para el nombre de usuario
+  const [loginPw, setLoginPw] = useState("");  // Estado para la contraseña
+  const [error, setError] = useState(null);  // Estado para el mensaje de error
+
+  // Usamos useRef para el campo de contraseña
+  const passwordInputRef = useRef(null);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    try {
+      const response = await fetch("http://localhost:8080/users/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username: loginUsername, password: loginPw }),
+      });
+
+      if (response.ok) {
+        // Redirige a la home
+        console.log("perfe");
+        window.location.href = "/home";
+      } else {
+        setError("Credenciales incorrectas");
+      }
+    } catch (err) {
+      console.log(err);
+      setError("Error de conexión");
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      if (e.target.name === "username") {
+        passwordInputRef.current.focus(); // Foco en la contraseña
+      } else {
+        handleLogin(e);  // Si es la contraseña, realiza el login
+      }
+    }
+  };
+
+  const colorLogInTexto = {
+    color: "#FFFFFF" 
+  };
+
+  return (
+    <div className="login-form">
+      <h2 style={colorLogInTexto}>Log-in</h2>
+      <form onSubmit={handleLogin}>
+        <input
+          name="username"
+          type="text"
+          placeholder="Username"
+          value={loginUsername}
+          onChange={(e) => setLoginUsername(e.target.value)}  // Actualiza el estado
+          onKeyDown={handleKeyDown}  // Manejo de la tecla Enter
+        />
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          value={loginPw}
+          onChange={(e) => setLoginPw(e.target.value)}  // Actualiza el estado
+          onKeyDown={handleKeyDown}  // Manejo de la tecla Enter
+          ref={passwordInputRef}  // Referencia para el campo de contraseña
+        />
+        {error && <div className="error">{error}</div>}  {/* Muestra el error si existe */}
+        <button type="submit">Log-in</button>
+      </form>
+    </div>
+  );
+};
+
+export default Login;

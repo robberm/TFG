@@ -1,6 +1,7 @@
 package net.tfg.tfgapp.controller;
 
 
+import net.tfg.tfgapp.DTOs.LoginRequest;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.service.ObjService;
 import net.tfg.tfgapp.service.UserService;
@@ -26,11 +27,22 @@ public class UserController {
         List<User> users = userService.findAll();
         return ResponseEntity.ok(users);
     }
-    @PostMapping
+    @PostMapping("/register")
     public ResponseEntity<?> registerUser (@RequestBody User newuser){
+
         User usercreated = userService.save(newuser);
         return new ResponseEntity<>(usercreated, HttpStatus.CREATED);
 
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> loginUser (@RequestBody LoginRequest newuser){
+        boolean authenticated = userService.authenticateUser(newuser);
+        if (authenticated){
+        return ResponseEntity.ok("Log-in correcto!");
+        }else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario o contraseña invalida. Repita de nuevo.");
+        }
     }
 
 }
