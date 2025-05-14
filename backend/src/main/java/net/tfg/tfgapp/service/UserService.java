@@ -26,8 +26,9 @@ public class UserService {
 
 
     public <S extends User> S save(S entity) {
-        checkCredRestrictions(entity);
-        return uRepo.save(entity);
+       if(checkCredRestrictions(entity)) {return uRepo.save(entity);}
+       else {return null;}
+
     }
 
 
@@ -70,10 +71,13 @@ public class UserService {
             }
 
         }catch(Exception e){
+            System.out.println("falso");
             LOG.warning("Error al validar datos de usuario");
-        }
+            return false;
 
+        }
         return true;
+
     }
 
 }

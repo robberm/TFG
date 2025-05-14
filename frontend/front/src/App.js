@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import './App.css';
 import Login from './Login'; 
 import Register from './Register';
-
+import Home from './Home'; 
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 /* */
 const CONFIG_ANIMACION = {
@@ -18,13 +19,14 @@ const CONFIG_ANIMACION = {
 };
 
 function App() {
-  // Mantén todo dentro del mismo componente `App`
+  
   const [showForm, setShowForm] = useState(null);
   const [config, setConfig] = useState(CONFIG_ANIMACION);
   const [etapaAnimacion, setEtapaAnimacion] = useState(0);
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPw, setLoginPw] = useState("");
   const [error, setError] = useState(null);
+  const[showButtons,setShowButtons] = useState(true);
 
   // Control de la animación. Avanza las etapas del switch que ira invocando diferentes IFs en el UseEffect que se invoca cada vez que se actualiza etapaAnimacion
   useEffect(() => {
@@ -51,7 +53,7 @@ function App() {
     }
   }, [etapaAnimacion, config]);
 
-  // Obtener clases para la animación
+  
   const obtenerClasesAnimacion = () => {
     switch (etapaAnimacion) {
       case 0:
@@ -67,7 +69,7 @@ function App() {
     }
   };
 
-  // Estilos dinámicos
+  //Estilos para el texto animado :)
   const estiloContenedor = {
     backgroundColor: config.colorFondo,
   };
@@ -98,24 +100,51 @@ function App() {
     }
   };
 
+    const handleFormSelection = (form) => {
+    setShowForm(form); 
+    setShowButtons(false);// Cambiar entre "login" o "register"
+  };
+
+   const goBack = () => {
+    setShowForm(null);
+    setShowButtons(true) // Volver a la pantalla inicial
+  };
    //NOTAS:
    /* Utilizamos span para encapsular la palabra y su estilo*/
 
-  return (
-    <div className="contenedor-app" style={estiloContenedor}>
-      <div className={obtenerClasesAnimacion()} style={estiloTexto}>
-        
-        Welcome to <span className="nombre-app" style={estiloNombreApp}>{config.nombreApp}</span> 
-      </div>
-      <div className="form-selection">
-        <button onClick={() => setShowForm('login')}>Log-in</button>
-        <button onClick={() => setShowForm('register')}>Register</button>
-      </div>
+   return (
+    <Router>
+      {/* Rutas definidas dentro del Router */}
+      <Routes>
+        <Route path="/" element={<Home />} /> 
+        <Route path="/login" element={<Login />} />  
+        <Route path="/register" element={<Register />} /> 
+      </Routes>
 
-      {/* Renderiza el formulario correspondiente */}
-       {showForm === 'login' && <Login username={loginUsername} setUsername={setLoginUsername} password={loginPw} setPassword={setLoginPw} callLogin={callLogin} />}
-      {showForm === 'register' && <Register username={loginUsername} setUsername={setLoginUsername} password={loginPw} setPassword={setLoginPw} />}
-    </div>
+      {/* Contenido principal */}
+      <div className="contenedor-app">
+        <div className={obtenerClasesAnimacion()} style={estiloTexto}>
+          Welcome to <span className="nombre-app" style={estiloNombreApp}>{config.nombreApp}</span> 
+        </div>
+
+        {/* Mostrar los botones de selección Login/Register */}
+        {showButtons && (
+          <div className="form-selection">
+            <button onClick={() => handleFormSelection('login')}>Log-in</button>
+            <button onClick={() => handleFormSelection('register')}>Register</button>
+          </div>
+        )}
+
+        {/* Renderiza el formulario de login o registro */}
+        {showForm === 'login' && <Login />}
+        {showForm === 'register' && <Register />}
+
+        {/* Botón de "Volver" para regresar */}
+        {showForm && (
+          <button onClick={goBack}>Volver</button>
+        )}
+      </div>
+    </Router>
   );
 }
 
