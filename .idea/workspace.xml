@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="8e3d8a2b-ceb7-4aef-8e0b-8be38d98238e" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/backend/src/main/java/net/tfg/tfgapp/security/JwtUtil.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/jarRepositories.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/net/tfg/tfgapp/controller/UserController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/net/tfg/tfgapp/controller/UserController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/net/tfg/tfgapp/TfgappApplicationTests.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/test/java/net/tfg/tfgapp/TfgappApplicationTests.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/net/tfg/tfgapp/registerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/test/java/net/tfg/tfgapp/registerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/front/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/front/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/front/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/front/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/front/public/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/front/public/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/front/src/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/front/src/App.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/front/src/Home.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/front/src/Home.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/front/src/Login.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/front/src/Login.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/front/src/Register.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/front/src/Register.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/front/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/front/src/index.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/front/src/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/front/src/index.js" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "robberm"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/robberm/TFG.git",
+    "accountId": "b7faf270-7d17-4957-b4a9-8e6c7022dc8b"
+  }
+}]]></component>
+  <component name="ProjectCodeStyleSettingsMigration">
+    <option name="version" value="2" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "customColor": "",
+  "associatedIndex": 8
+}]]></component>
+  <component name="ProjectId" id="2y0BGqyYfJaF6uaywG3q2HPPMiX" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-125ca727e0f0-intellij.indexing.shared.core-IU-243.24978.46" />
+        <option value="bundled-js-predefined-d6986cc7102b-76f8388c3a79-JavaScript-IU-243.24978.46" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="8e3d8a2b-ceb7-4aef-8e0b-8be38d98238e" name="Changes" comment="" />
+      <created>1748961519659</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1748961519659</updated>
+      <workItem from="1748961521137" duration="349000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

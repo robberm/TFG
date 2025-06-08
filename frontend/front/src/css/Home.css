@@ -1,0 +1,255 @@
+/* Título PERSONAL en la parte superior */
+.personalHeader {
+  padding: 0 0 20px 0; /* Espaciado: arriba, derecha, abajo, izquierda */
+  background-color: var(--bg-page);
+  
+}
+
+.personalHeader h1 {
+  margin: 0 0 30px 0; /* Solo margen inferior */
+  font-size: 42px; 
+  color: #37352f;
+  letter-spacing: 1px;
+  font-family: Caoli;
+}
+
+/* Uso flexbox para dividir sidebar y el main content */
+.homeFrame {
+  display: flex; /* Flexbox permite que sidebar y contenido estén lado a lado */
+  height: 100vh; /* Altura q ocupa */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #fafafa; /* Color de fondo claro como Notion */
+}
+
+/* SIDEBAR - Menú lateral */
+.sideBar {
+  width: 260px; /* Ancho fijo del sidebar */
+  background-color: #f7f6f3; /* Color beige claro como Notion */
+  border-right: 1px solid #e9e5e0; /* Borde sutil */
+  padding: 20px 0; /* Espaciado vertical */
+  box-sizing: border-box; /* Incluye padding en el ancho total */
+  position: relative; /* Para posicionamiento interno */
+}
+
+/* Header del menú */
+.menuHeader {
+  padding: 0 20px 16px 20px; /* Espaciado interno */
+  border-bottom: 1px solid #e9e5e0; /* Línea separadora */
+  margin-bottom: 16px;
+}
+
+.menuHeader h3 {
+  margin: 0; /* Quita márgenes por defecto */
+  font-size: 14px;
+  font-weight: 600;
+  color: #37352f; /* Color oscuro para texto */
+  text-transform: uppercase; /* Texto en mayúsculas */
+  letter-spacing: 0.5px; /* Espaciado entre letras */
+}
+
+/* Contenedor de items del menú */
+.menuItems {
+  padding: 0 12px;
+   
+  /* Espaciado horizontal */
+}
+
+/* Items individuales del menú */
+.sideBar a {
+  display: flex; /* Flexbox para alinear bullet y texto */
+  align-items: center; /* Centra verticalmente */
+  padding: 8px 16px; /* Espaciado interno */
+  margin: 2px 0; /* Espaciado entre items */
+  text-decoration: none; /* Quita subrayado de enlaces */
+  color: #37352f; /* Color del texto */
+  border-radius: 6px; /* Bordes redondeados */
+  font-size: 14px;
+  transition: background-color 0.2s ease; /* Transición suave para hover */
+}
+
+.sideBar a:hover {
+  background-color: #e9e5e0; /* Color de fondo al pasar el mouse */
+}
+
+.sideBar a.active {
+  background-color: #2383e2; /* Color azul para item activo */
+  color: white; /* Texto blanco para contraste */
+}
+
+/* Iconos del menú */
+.menuIcon {
+  margin-right: 12px; /* Espacio entre icono y texto */
+  font-size: 14px; /* Tamaño del icono */
+  width: 16px; /* Ancho fijo para alineación */
+}
+
+/* Icono del botón filtrar */
+.filterIcon {
+  margin-right: 8px; /* Espacio entre icono y texto */
+  font-size: 12px; /* Tamaño del icono */
+}
+
+/* CONTENIDO PRINCIPAL */
+.mainContent {
+  flex: 1; /* Ocupa todo el espacio restante */
+  padding: 40px 60px; /* Espaciado interno generoso */
+  background-color: white; /* Fondo blanco para el contenido */
+  overflow-y: auto; /* Permite scroll si el contenido es muy largo */
+}
+
+/* Header del dashboard */
+.dashboardHeader {
+  margin-bottom: 40px; /* Espacio debajo del header */
+}
+
+.dashboardHeader h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: #37352f;
+}
+
+/* SECCIÓN DEL GRÁFICO */
+.chartSection {
+  display: flex; /* Flexbox para centrar el gráfico */
+  flex-direction: column;
+  align-items: center; /* Centra horizontalmente */
+  margin-bottom: 50px;
+  padding: 30px;
+  background-color: var(--bg-page); /* Fondo gris claro */
+  border-radius: 12px; /* Bordes redondeados */
+  border: 1px solid #e9e5e0; /* Borde sutil */
+}
+
+/* Contenedor del gráfico circular */
+.chartContainer {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+/* Gráfico circular creado con CSS */
+.pieChart {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%; /* Hace el círculo */
+  position: relative;
+  overflow: hidden;
+  background: conic-gradient(
+    #2383e2 0deg 72deg,     /* Azul - primer segmento */
+    #e91e63 72deg 144deg,   /* Rosa - segundo segmento */
+    #4caf50 144deg 216deg,  /* Verde - tercer segmento */
+    #ff9800 216deg 288deg,  /* Naranja - cuarto segmento */
+    #9c27b0 288deg 360deg   /* Morado - quinto segmento */
+  );
+}
+
+/* Círculo blanco en el centro para hacer efecto donut */
+.pieChart::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  background-color: white;
+  border-radius: 50%;
+}
+
+.chartLabel {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+  font-style: italic;
+}
+
+/* SECCIÓN TO-DO */
+.todoSection {
+  max-width: 100%;
+}
+
+/* Header de la sección to-do */
+.todoHeader {
+  display: flex; /* Flexbox para alinear título y botón */
+  justify-content: space-between; /* Separa título y botón */
+  align-items: center; /* Centra verticalmente */
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #37352f; /* Línea gruesa debajo */
+}
+
+.todoHeader h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #37352f;
+}
+
+/* Botón de filtrar */
+.filterButton {
+  padding: 8px 16px;
+  background-color: transparent; /* Fondo transparente */
+  border: 1px solid #ccc; /* Borde gris */
+  border-radius: 6px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer; /* Cursor de mano al pasar por encima */
+  transition: all 0.2s ease; /* Transición suave */
+}
+
+.filterButton:hover {
+  background-color: #f0f0f0; /* Fondo gris claro al hover */
+  border-color: #999; /* Borde más oscuro al hover */
+}
+
+/* TABLA DE TAREAS */
+.todoTable {
+  border: 2px solid #37352f; /* Borde grueso alrededor de la tabla */
+  border-radius: 8px; /* Bordes redondeados */
+  overflow: hidden; /* Esconde contenido que sale del borde redondeado */
+}
+
+/* Filas de la tabla */
+.tableRow {
+  display: grid; /* Grid para dividir en columnas */
+  grid-template-columns: 1fr 1fr; /* Dos columnas iguales */
+  border-bottom: 1px solid #37352f; /* Línea entre filas */
+}
+
+.tableRow:last-child {
+  border-bottom: none; /* Quita borde de la última fila */
+}
+
+/* Header de la tabla */
+.tableHeader {
+  background-color: #f5f5f5; /* Fondo gris para el header */
+  font-weight: 600; /* Texto en negrita */
+}
+
+/* Celdas de la tabla */
+.tableCell {
+  padding: 16px 20px; /* Espaciado interno de las celdas */
+  border-right: 1px solid #37352f; /* Línea vertical entre columnas */
+  font-size: 14px;
+  color: #37352f;
+}
+
+.tableCell:last-child {
+  border-right: none; /* Quita borde de la última columna */
+}
+
+/* Responsive - para pantallas pequeñas */
+@media (max-width: 768px) {
+  .homeFrame {
+    flex-direction: column; /* Cambia a columna en móviles */
+  }
+
+  .sideBar {
+    width: 100%; /* Sidebar ocupa todo el ancho */
+    height: auto; /* Altura automática */
+  }
+
+  .mainContent {
+    padding: 20px; /* Menos padding en móviles */
+  }
+}

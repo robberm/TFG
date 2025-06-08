@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
-import './App.css';
+import './css/App.css';
+import { useNavigate } from "react-router-dom"
 
 
 const Login = () => {
@@ -10,6 +11,7 @@ const Login = () => {
 
   // Usamos useRef para el campo de contraseña
   const passwordInputRef = useRef(null);
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -22,17 +24,24 @@ const Login = () => {
         },
         body: JSON.stringify({ username: loginUsername, password: loginPw }),
       });
+     // por si falla la request, definimos un LOG:
+     
 
       if (response.ok) {
+        //pasamos token de sesión
+        const data = await response.json();  //convierte response de Java en un objeto Javascript.
+        localStorage.setItem("token",  data.token.trim());
+        localStorage.setItem("username", data.username);
         // Redirige a la home
-        console.log("perfe");
-        window.location.href = "/home";
+        console.log("Login perfecto");
+        navigate("/home");
       } else {
-        setError("Credenciales incorrectas");
+        const errorMessage = await response.text();
+        setError(errorMessage);;
       }
     } catch (err) {
-      console.log(err);
-      setError("Error de conexión");
+      setError("Error query, try again.");
+      
     }
   };
 
@@ -71,11 +80,12 @@ const Login = () => {
           onKeyDown={handleKeyDown}  // Manejo de la tecla Enter
           ref={passwordInputRef}  // Referencia para el campo de contraseña
         />
+        
         {error && <div className="error">{error}</div>}  {/* Muestra el error si existe */}
         <button type="submit">Log-in</button>
       </form>
     </div>
   );
-};
+}
 
 export default Login;

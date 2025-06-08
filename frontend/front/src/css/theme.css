@@ -1,0 +1,21 @@
+
+
+:root {
+  --bg-main: #ffffff;
+  --bg-page: #ffffff;
+  --sidebar-bg: #ffffff;
+  --bg-hover: #e9e5e0;
+  --text-main: #222;
+  --link-active-bg: #2383e2;
+  --link-active-text: white;
+}
+
+body.dark {
+  --bg-main: #1c1c1c;
+  --bg-page: #1c1c1c;
+  --sidebar-bg: #2a2a2a;
+  --bg-hover: #333;
+  --text-main: #eee;
+  --link-active-bg: #4a90e2;
+  --link-active-text: white;
+}

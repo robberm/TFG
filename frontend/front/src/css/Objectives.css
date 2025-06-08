@@ -1,0 +1,50 @@
+:root {
+  --table-header-bg: #f8f9fa;
+  --table-border-color: #dee2e6;
+  --table-border-light: #eee;
+  --table-text-color: #222;
+  --priority-badge-text: #fff;
+}
+
+body.dark {
+  --table-header-bg: #2c2c2c;
+  --table-border-color: #555;
+  --table-border-light: #444;
+  --table-text-color: #eee;
+  --priority-badge-text: #fff;
+}
+
+.todoTable {
+  width: 100%;
+  border-collapse: collapse;
+  display: table;
+}
+
+.tableHeader {
+  background-color: var(--table-header-bg);
+  font-weight: bold;
+  border-bottom: 2px solid var(--table-border-color);
+  display: table-row;
+}
+
+.tableRow {
+  display: table-row;
+  border-bottom: 1px solid var(--table-border-color);
+}
+
+.tableCell {
+  display: table-cell;
+  padding: 12px 10px;
+  font-size: 14px;
+  vertical-align: middle;
+  border-right: 1px solid var(--table-border-light);
+  color: var(--table-text-color);
+}
+
+.priorityBadge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  color: var(--priority-badge-text);
+  font-size: 12px;
+  font-weight: bold;
+}

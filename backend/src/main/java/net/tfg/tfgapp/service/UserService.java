@@ -47,26 +47,39 @@ public class UserService {
             if (userfound != null && userfound.getPassword().equals(newUser.getPassword())){
                 found = true;
             }
-            /*List<User> users = findAll();
-            for(User user : users){
-                if (newUser.getUsername().matches(user.getUsername()) && newUser.getPassword().matches(user.getPassword())){
-                    found = true;
-                    break;
-                }
-            }*/
+
         }catch (Exception e){
             LOG.warning("Error al autenticar usuario");
         }
       return found;
 
     }
+    public boolean checkRegisterParameters(User newUser){
+
+        boolean allGood = true;
+        try{
+            if (!checkCredRestrictions(newUser) || !isUserUnique(newUser) ){
+                allGood = false;
+            }
+
+        }catch(Exception e){
+            LOG.warning("Usuario repetido");
+        }
+        return allGood;
+    }
+
 
     private boolean checkCredRestrictions(User newUser){
+        boolean correct = true;
         try{
             if (newUser == null){
+                System.out.println("Estoy pasando por null");
+                correct = false;
                 throw new IllegalArgumentException("El usuario mapeado es null");
+
             }
             if (!newUser.getPassword().matches("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{10,}$")) {
+                correct = false;
                 throw new IllegalArgumentException("La contraseña debe tener al menos 10 caracteres, incluir letras, números y un símbolo.");
             }
 
@@ -76,8 +89,26 @@ public class UserService {
             return false;
 
         }
-        return true;
+        return correct;
 
+    }
+
+    private boolean isUserUnique(User newUser){
+        boolean unique = true;
+        try{
+            User userFound = uRepo.findByUsername(newUser.getUsername());
+            if (userFound != null){
+                unique = false;
+                throw new IllegalArgumentException("El usuario ya existe");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return unique;
+    }
+
+    public User getUserByUsername(String username){
+        return uRepo.findByUsername(username);
     }
 
 }

@@ -1,0 +1,65 @@
+
+
+
+
+/* ========== ESTRUCTURA PRINCIPAL ========== */
+body, #root, .homeFrame {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
+}
+
+/* MENÚ lateral: ahora con fondo separado */
+.sideBar {
+  background-color: var(--sidebar-bg);
+}
+
+/* Items individuales del menú */
+.sideBar a {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  margin: 2px 0;
+  text-decoration: none;
+  color: var(--text-main);
+  border-radius: 6px;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+}
+
+.sideBar a:hover {
+  background-color: var(--bg-hover);
+}
+
+.sideBar a.active {
+  background-color: var(--link-active-bg);
+  color: var(--link-active-text);
+}
+
+/* Iconos del menú */
+.menuIcon {
+  margin-right: 12px;
+  font-size: 14px;
+  width: 16px;
+}
+
+/* CONTENIDO PRINCIPAL */
+.mainContent {
+  flex: 1;
+  background-color: var(--bg-main); /* unificado */
+  overflow-y: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Contenido de página (debajo del menú) */
+.pageContent {
+  flex: 1;
+  padding: 80px 60px 40px;
+  z-index: 1;
+  position: relative;
+  background-color: var(--bg-page); /* igual a bg-main */
+  color: var(--text-main);
+}

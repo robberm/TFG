@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
-import './App.css';
+import './css/App.css';
+import { useNavigate } from "react-router-dom"
 
 const Register = () => {
   // Definir estado para username y password
@@ -9,10 +10,10 @@ const Register = () => {
 
   // Usamos useRef para el campo de contraseña
   const passwordInputRef = useRef(null);
+  const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
-
     try {
       const response = await fetch("http://localhost:8080/users/register", {
         method: "POST",
@@ -25,13 +26,14 @@ const Register = () => {
       if (response.ok) {
         // Redirige a la home si el registro es exitoso
         console.log("Registro exitoso");
-        window.location.href = "/home";  // Redirige a la página principal después del registro
+         navigate("/home");  // Redirige a la página principal después del registro
       } else {
-        setError("Error al registrar el usuario");  // Muestra error si no fue exitoso
+        const errorMessage = await response.text();
+        setError(errorMessage); 
       }
     } catch (err) {
       console.log(err);
-      setError("Error de conexión");
+      setError(("Error query, try again."));
     }
   };
 
@@ -52,6 +54,7 @@ const Register = () => {
   return (
     <div className="register-form">
       <h2 style={colorRegisterTexto}>Register</h2>
+      
       <form onSubmit={handleRegister}>
         <input
           name="username"
@@ -70,9 +73,12 @@ const Register = () => {
           onKeyDown={handleKeyDown}  // Manejo de la tecla Enter
           ref={passwordInputRef}  // Referencia para el campo de contraseña
         />
-        {error && <div className="error">{error}</div>}  {/* Muestra el error si existe */}
         <button type="submit">Register</button>
-      </form>
+        </form>
+        <h4 style= {colorRegisterTexto} >La contraseña debe tener al menos 10 caracteres, incluir letras, un número y un símbolo</h4>
+        {error && <div className="error">{error}</div>}  {/* Muestra el error si existe */}
+        
+      
     </div>
   );
 };

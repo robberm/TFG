@@ -1,0 +1,25 @@
+:root {
+  --font-color: #222;
+  --background-color: #f5f5f5;
+  --container-color: #fff;
+  --header-color: #333;
+  --accent-color: cornflowerblue;
+}
+
+body.dark {
+  --font-color: #eee;
+  --background-color: #121212;
+  --container-color: #1e1e1e;
+  --header-color: #ddd;
+  --accent-color: #90caf9;
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--font-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+a {
+  color: var(--accent-color);
+}

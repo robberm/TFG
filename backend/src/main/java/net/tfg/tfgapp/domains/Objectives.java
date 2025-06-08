@@ -36,6 +36,11 @@ public class Objectives {
     @Column(unique = false)
     private Prioridad priority;
 
+
+    @ManyToOne
+    @JoinColumn(name = "user_id") //foreign key para usuarios
+    private User user;
+
     public Objectives(int id, String titulo, String description, Prioridad priority) {
         this.id = id;
         this.titulo = titulo;

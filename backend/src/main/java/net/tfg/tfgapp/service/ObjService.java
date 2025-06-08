@@ -25,6 +25,11 @@ public class ObjService {
     private ObjRepo objRepo;
 
 
+        public List<Objectives> getObjectivesByUsername(String username) {
+            return objRepo.findObjectiveByUser(username);
+        }
+
+
 
     public <S extends Objectives> S save(S entity) {
         return objRepo.save(entity);

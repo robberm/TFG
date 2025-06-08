@@ -1,20 +1,20 @@
 import { useState, useEffect } from 'react';
-import './App.css';
+import './css/App.css';
 import Login from './Login'; 
 import Register from './Register';
-import Home from './Home'; 
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
 
 /* */
 const CONFIG_ANIMACION = {
-  retrasoInicial: 500,
+  retrasoInicial: 500, //en ms .
   duracionAparecer: 1500,
   duracionEscalar: 1000,
   duracionDesaparecer: 2000,
-  nombreApp: 'Atomic',
+  nombreApp: 'Martin',
   colorTexto: '#ffffff',
-  colorNombreApp: '#29e1cf',
+  colorNombreApp: '#000000',
   colorFondo: '#111111',
+  
   escala: 1.05,
 };
 
@@ -23,9 +23,7 @@ function App() {
   const [showForm, setShowForm] = useState(null);
   const [config, setConfig] = useState(CONFIG_ANIMACION);
   const [etapaAnimacion, setEtapaAnimacion] = useState(0);
-  const [loginUsername, setLoginUsername] = useState("");
-  const [loginPw, setLoginPw] = useState("");
-  const [error, setError] = useState(null);
+  
   const[showButtons,setShowButtons] = useState(true);
 
   // Control de la animación. Avanza las etapas del switch que ira invocando diferentes IFs en el UseEffect que se invoca cada vez que se actualiza etapaAnimacion
@@ -79,26 +77,13 @@ function App() {
     '--factor-escala': config.escala,
   };
 
-  const estiloNombreApp = {
-    color: config.colorNombreApp,
-  };
+ const estiloNombreApp = {
+  color: 'transparent',
+  WebkitTextStroke: '1px #000000',
+  textStroke: '2px #000000' 
+};
 
-  // Llamada de login
-  const callLogin = async (username, password) => {
-    const response = await fetch("http://localhost:8080/users/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ username, password }),
-    });
-
-    if (response.ok) {
-      window.location.href = "/home"; // Redirige al home si es correcto
-    } else {
-      setError("Credenciales incorrectas");
-    }
-  };
+ 
 
     const handleFormSelection = (form) => {
     setShowForm(form); 
@@ -113,21 +98,18 @@ function App() {
    /* Utilizamos span para encapsular la palabra y su estilo*/
 
    return (
-    <Router>
-      {/* Rutas definidas dentro del Router */}
-      <Routes>
-        <Route path="/" element={<Home />} /> 
-        <Route path="/login" element={<Login />} />  
-        <Route path="/register" element={<Register />} /> 
-      </Routes>
-
-      {/* Contenido principal */}
+    
+     
+     
       <div className="contenedor-app">
+       <video  className="video-bg" autoPlay  loop  muted playsInline>
+      <source src="rrs/white-waves-background.mp4" type="video/mp4" />
+      
+    </video>
         <div className={obtenerClasesAnimacion()} style={estiloTexto}>
           Welcome to <span className="nombre-app" style={estiloNombreApp}>{config.nombreApp}</span> 
         </div>
-
-        {/* Mostrar los botones de selección Login/Register */}
+              
         {showButtons && (
           <div className="form-selection">
             <button onClick={() => handleFormSelection('login')}>Log-in</button>
@@ -135,7 +117,7 @@ function App() {
           </div>
         )}
 
-        {/* Renderiza el formulario de login o registro */}
+        {/* Renderiza el formulario de login o registro sin cambiar de URL */}
         {showForm === 'login' && <Login />}
         {showForm === 'register' && <Register />}
 
@@ -144,7 +126,7 @@ function App() {
           <button onClick={goBack}>Volver</button>
         )}
       </div>
-    </Router>
+    
   );
 }
 
