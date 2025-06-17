@@ -81,7 +81,7 @@ const Login = () => {
           ref={passwordInputRef}  // Referencia para el campo de contraseña
         />
         
-        {error && <div className="error">{error}</div>}  {/* Muestra el error si existe */}
+        {error && <div className="error">{error}</div>}  {/* Mostrar error */}
         <button type="submit">Log-in</button>
       </form>
     </div>

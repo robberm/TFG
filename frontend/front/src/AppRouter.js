@@ -7,6 +7,7 @@ import App from './App';
 import Objectives from './Objectives';
 import Settings from './Settings';
 import ProtectedRoute from './components/ProtectedRoute';
+import Calendar from './Calendar';
 
 const AppRouter = () => {
   return (
@@ -19,6 +20,7 @@ const AppRouter = () => {
         <Route path="/home" element={<ProtectedRoute><Home/></ProtectedRoute>} />
         <Route path="/objectives" element={<ProtectedRoute><Objectives/></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings/></ProtectedRoute>} />
+        <Route path="/calendar" element={<ProtectedRoute><Calendar/></ProtectedRoute>} />
       </Routes>
     
   );

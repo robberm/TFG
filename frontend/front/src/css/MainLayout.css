@@ -63,3 +63,7 @@ body, #root, .homeFrame {
   background-color: var(--bg-page); /* igual a bg-main */
   color: var(--text-main);
 }
+
+.menuHeader h3 {
+  color: var(--fontColor);  /* Example color: Tomato */
+}

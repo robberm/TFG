@@ -23,13 +23,19 @@ const MainLayout = ({ children }) => {
         </div>
         <nav className="menuItems">
           <Link to="/home">
-          <a href="/home"><i className="fa fa-home"></i>  Home</a>
+            <a href="/home">
+              <i className="fa fa-home"></i> &nbsp; Home
+            </a>
           </Link>
           <Link to="/calendar">
-          <a href="#calendar"><i className="fa fa-calendar"></i>  Calendar</a>
+            <a href="#calendar">
+              <i className="fa fa-calendar"></i>&nbsp; Calendar
+            </a>
           </Link>
           <Link to="/objectives">
-          <a href="#objectives"><i className="fa fa-bullseye"></i>  Objectives</a>
+            <a href="#objectives">
+              <i className="fa fa-bullseye"></i>&nbsp; Objectives {/*&nbsp;  es un espacio en blanco */}
+            </a>
           </Link>
         </nav>
       </div>
@@ -39,9 +45,7 @@ const MainLayout = ({ children }) => {
         <div className="userMenuContainer">
           <UserMenu />
         </div>
-        <div className="pageContent">
-    {children}
-  </div>
+        <div className="pageContent">{children}</div>
       </div>
     </div>
   );

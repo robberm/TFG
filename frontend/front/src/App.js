@@ -10,7 +10,7 @@ const CONFIG_ANIMACION = {
   duracionAparecer: 1500,
   duracionEscalar: 1000,
   duracionDesaparecer: 2000,
-  nombreApp: 'Martin',
+  nombreApp: '¿App?',
   colorTexto: '#ffffff',
   colorNombreApp: '#000000',
   colorFondo: '#111111',

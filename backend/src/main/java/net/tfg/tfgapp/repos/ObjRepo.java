@@ -11,7 +11,7 @@ import java.util.List;
 
 @Primary
 @Repository
-public interface ObjRepo extends JpaRepository<Objectives, Long> {
+public interface ObjRepo extends JpaRepository<Objectives, Integer> {
 
     @Query("SELECT o FROM Objectives o WHERE o.user.username = :username")
     public List<Objectives> findObjectiveByUser(@Param("username") String username);

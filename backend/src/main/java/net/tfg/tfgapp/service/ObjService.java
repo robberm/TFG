@@ -40,4 +40,14 @@ public class ObjService {
         return objRepo.findAll();
     }
 
+    public Objectives findById(int id) {
+            return objRepo.findById(id).orElse(null);
+    }
+
+    public void deleteObjective(int id) {
+            objRepo.deleteById(id);
+    }
+
+
+
 }

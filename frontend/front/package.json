@@ -5,25 +5,28 @@
   "main": "./src/electron.js",
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.2",
+    "@stomp/stompjs": "^7.1.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^13.5.0",
     "concurrently": "^9.1.2",
-    "electron": "^35.0.1",
+    "date-fns": "^4.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.6.0",
     "react-scripts": "5.0.1",
+    "sockjs-client": "^1.6.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
+    "dist": "npm run build && electron-builder",
+    "web": "react-scripts start",
     "electron": "electron .",
-    "dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\""
+    "electron-dev": "concurrently \"npm run start\" \"wait-on http://localhost:3000 && electron .\""
   },
   "eslintConfig": {
     "extends": [
@@ -44,6 +47,23 @@
     ]
   },
   "devDependencies": {
+    "concurrently": "^X.X.X",
+    "electron": "^X.X.X",
+    "electron-builder": "^26.0.12",
     "wait-on": "^8.0.3"
+  },
+  "build": {
+    "appId": "com.tfgapp.desktop",
+    "productName": "TFGApp",
+    "directories": {
+      "buildResources": "assets"
+    },
+    "files": [
+      "build/**/*",
+      "electron.js"
+    ],
+    "win": {
+      "target": "nsis"
+    }
   }
 }
