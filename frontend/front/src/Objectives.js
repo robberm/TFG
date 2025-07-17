@@ -56,7 +56,7 @@ const Objectives = () => {
 
   // Añadir nuevo objetivo
   const handleAddObjective = async (e) => {
-    e.preventDefault();
+    
 
     if (!newObjective.titulo.trim()) {
       setErrorMessage("El título es obligatorio.");
@@ -227,6 +227,36 @@ const Objectives = () => {
     }
   };
 
+  /* Delete objective clicked on  */
+  const deleteObjective = async function (objectiveId) {
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(
+        `http://localhost:8080/objectives/${objectiveId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        setObjectives((prevObjectives) =>
+          prevObjectives.filter((obj) => obj.id !== objectiveId)
+        );
+      } else {
+        setErrorMessage("No se pudo borrar el objetivo.");
+      }
+    } catch (err) {
+      setErrorMessage("Error de conexión al eliminar el objetivo.");
+    }
+  };
+  
+
+
   const frontendToBackendStatus = {
     "Sin empezar": "NotStarted",
     "En Progreso": "InProgress",
@@ -387,13 +417,11 @@ const Objectives = () => {
               <i className="fa-solid fa-filter"></i>
             </button>
           </div>
-        </div>
-
-        {/* Formulario para añadir objetivo */}
+        </div>        {/* Formulario para añadir objetivo */}
         {showAddForm &&
           renderObjectiveForm({ isEdit: false, onSubmit: handleAddObjective })}
 
-        {/* Tabla de objetivos */}
+        {/* Objectives table */}
         <div className="todoTable">
           <div className="tableRow tableHeader">
             <div className="tableCell">Título</div>
@@ -407,16 +435,15 @@ const Objectives = () => {
           {objectives.length === 0 ? (
             <div className="emptyState">
               <p>No hay objetivos todavía.</p>
-              <button
-                className="addFirstButton"
-                onClick={() => setShowAddForm(true)}
-              >
-                Añadir tu primer objetivo
-              </button>
             </div>
           ) : (
             objectives.map((objective) => (
-              <div key={objective.id} className="tableRow">
+              <div
+                key={objective.id}
+                className={`tableRow ${
+                  objective.status === "Completado" ? "completedTableRow" : ""
+                }`}
+              >
                 <div className="tableCell">
                   <strong>{objective.titulo}</strong> {/* ponerlo en bond*/}
                 </div>
@@ -485,7 +512,12 @@ const Objectives = () => {
                   >
                     <i className="fa fa-edit"></i>
                   </button>
-                  <button className="actionButton deleteButton">
+                  <button
+                    className="actionButton deleteButton"
+                    onClick={() => {
+                      deleteObjective(objective.id);
+                    }}
+                  >
                     <i className="fa fa-trash"></i>
                   </button>
                 </div>

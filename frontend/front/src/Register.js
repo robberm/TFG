@@ -54,31 +54,36 @@ const Register = () => {
   return (
     <div className="register-form">
       <h2 style={colorRegisterTexto}>Register</h2>
-      
       <form onSubmit={handleRegister}>
         <input
+          className="app-input"
           name="username"
           type="text"
           placeholder="Username"
           value={registerUsername}
-          onChange={(e) => setRegisterUsername(e.target.value)}  // Actualiza el estado
-          onKeyDown={handleKeyDown}  // Manejo de la tecla Enter
+          onChange={(e) => setRegisterUsername(e.target.value)} // Actualiza el estado
+          onKeyDown={handleKeyDown} // Manejo de la tecla Enter
         />
         <input
+          className="app-input"
           name="password"
           type="password"
           placeholder="Password"
           value={registerPw}
-          onChange={(e) => setRegisterPw(e.target.value)}  // Actualiza el estado
-          onKeyDown={handleKeyDown}  // Manejo de la tecla Enter
-          ref={passwordInputRef}  // Referencia para el campo de contraseña
+          onChange={(e) => setRegisterPw(e.target.value)} // Actualiza el estado
+          onKeyDown={handleKeyDown} // Manejo de la tecla Enter
+          ref={passwordInputRef} // Referencia para el campo de contraseña
         />
-        <button type="submit">Register</button>
-        </form>
-        <h4 style= {colorRegisterTexto} >La contraseña debe tener al menos 10 caracteres, incluir letras, un número y un símbolo</h4>
-        {error && <div className="error">{error}</div>}  {/* Muestra el error si existe */}
-        
-      
+        <button className="app-button" type="submit">
+          Register
+        </button>
+      </form>
+      <h4 style={colorRegisterTexto}>
+        La contraseña debe tener al menos 10 caracteres, incluir letras, un
+        número y un símbolo
+      </h4>
+      {error && <div className="error">{error}</div>}{" "}
+      {/* Muestra el error si existe */}
     </div>
   );
 };

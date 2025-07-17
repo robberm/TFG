@@ -98,36 +98,46 @@ function App() {
    /* Utilizamos span para encapsular la palabra y su estilo*/
 
    return (
-    
-     
-     
-      <div className="contenedor-app">
-       <video  className="video-bg" autoPlay  loop  muted playsInline>
-      <source src="rrs/white-waves-background.mp4" type="video/mp4" />
-      
-    </video>
-        <div className={obtenerClasesAnimacion()} style={estiloTexto}>
-          Welcome to <span className="nombre-app" style={estiloNombreApp}>{config.nombreApp}</span> 
-        </div>
-              
-        {showButtons && (
-          <div className="form-selection">
-            <button onClick={() => handleFormSelection('login')}>Log-in</button>
-            <button onClick={() => handleFormSelection('register')}>Register</button>
-          </div>
-        )}
+     <div className="contenedor-app">
+       <video className="video-bg" autoPlay loop muted playsInline>
+         <source src="rrs/white-waves-background.mp4" type="video/mp4" />
+       </video>
+       <div className={obtenerClasesAnimacion()} style={estiloTexto}>
+         Welcome to{" "}
+         <span className="nombre-app" style={estiloNombreApp}>
+           {config.nombreApp}
+         </span>
+       </div>
 
-        {/* Renderiza el formulario de login o registro sin cambiar de URL */}
-        {showForm === 'login' && <Login />}
-        {showForm === 'register' && <Register />}
+       {showButtons && (
+         <div className="form-selection">
+           <button
+             className="app-button"
+             onClick={() => handleFormSelection("login")}
+           >
+             Log-in
+           </button>
+           <button
+             className="app-button"
+             onClick={() => handleFormSelection("register")}
+           >
+             Register
+           </button>
+         </div>
+       )}
 
-        {/* Botón de "Volver" para regresar */}
-        {showForm && (
-          <button onClick={goBack}>Volver</button>
-        )}
-      </div>
-    
-  );
+       {/* Renderiza el formulario de login o registro sin cambiar de URL */}
+       {showForm === "login" && <Login />}
+       {showForm === "register" && <Register />}
+
+       {/* Botón de "Volver" para regresar */}
+       {showForm && (
+         <button className="app-button" onClick={goBack}>
+           Volver
+         </button>
+       )}
+     </div>
+   );
 }
 
 export default App;

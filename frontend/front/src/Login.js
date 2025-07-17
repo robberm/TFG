@@ -64,25 +64,29 @@ const Login = () => {
       <h2 style={colorLogInTexto}>Log-in</h2>
       <form onSubmit={handleLogin}>
         <input
+          
+          className="app-input"
           name="username"
           type="text"
           placeholder="Username"
           value={loginUsername}
-          onChange={(e) => setLoginUsername(e.target.value)}  // Actualiza el estado
-          onKeyDown={handleKeyDown}  // Manejo de la tecla Enter
+          onChange={(e) => setLoginUsername(e.target.value)} // Actualiza el estado
+          onKeyDown={handleKeyDown} // Manejo de la tecla Enter
         />
         <input
+          className="app-input"
           name="password"
           type="password"
           placeholder="Password"
           value={loginPw}
-          onChange={(e) => setLoginPw(e.target.value)}  // Actualiza el estado
-          onKeyDown={handleKeyDown}  // Manejo de la tecla Enter
-          ref={passwordInputRef}  // Referencia para el campo de contraseña
+          onChange={(e) => setLoginPw(e.target.value)} // Actualiza el estado
+          onKeyDown={handleKeyDown} // Manejo de la tecla Enter
+          ref={passwordInputRef} // Referencia para el campo de contraseña
         />
-        
-        {error && <div className="error">{error}</div>}  {/* Mostrar error */}
-        <button type="submit">Log-in</button>
+        {error && <div className="error">{error}</div>} {/* Mostrar error */}
+        <button className="app-button" type="submit">
+          Log-in
+        </button>
       </form>
     </div>
   );
