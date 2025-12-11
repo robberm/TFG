@@ -8,6 +8,7 @@ import Objectives from './Objectives';
 import Settings from './Settings';
 import ProtectedRoute from './components/ProtectedRoute';
 import Calendar from './Calendar';
+import Block from './Block';
 
 const AppRouter = () => {
   return (
@@ -21,6 +22,7 @@ const AppRouter = () => {
         <Route path="/objectives" element={<ProtectedRoute><Objectives/></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings/></ProtectedRoute>} />
         <Route path="/calendar" element={<ProtectedRoute><Calendar/></ProtectedRoute>} />
+        <Route path="/block" element={<ProtectedRoute><Block/></ProtectedRoute>} />
       </Routes>
     
   );

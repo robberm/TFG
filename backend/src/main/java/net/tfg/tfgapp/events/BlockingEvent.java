@@ -1,4 +1,4 @@
-package com.example.papp.events;
+package net.tfg.tfgapp.events;
 
 // Evento para comunicar cambios de estado de bloqueo
 public class BlockingEvent {

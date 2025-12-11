@@ -1,4 +1,4 @@
-package utils;
+package net.tfg.tfgapp.utils;
 
 import com.sun.jna.platform.win32.*;
 import org.springframework.stereotype.Component;

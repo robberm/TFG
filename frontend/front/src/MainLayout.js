@@ -23,19 +23,26 @@ const MainLayout = ({ children }) => {
         </div>
         <nav className="menuItems">
           <Link to="/home">
-            <a href="/home">
+          
               <i className="fa fa-home"></i> &nbsp; Home
-            </a>
+           
           </Link>
           <Link to="/calendar">
-            <a href="#calendar">
+            
               <i className="fa fa-calendar"></i>&nbsp; Calendar
-            </a>
+            
           </Link>
           <Link to="/objectives">
-            <a href="#objectives">
-              <i className="fa fa-bullseye"></i>&nbsp; Objectives {/*&nbsp;  es un espacio en blanco */}
-            </a>
+           
+              <i className="fa fa-bullseye"></i>&nbsp; Objectives{" "}
+              {/*&nbsp;  es un espacio en blanco */}
+            
+          </Link>
+          <Link to="/block">
+            
+              <i className="fa fa-bullseye"></i>&nbsp; Block{" "}
+              {/*&nbsp;  es un espacio en blanco */}
+            
           </Link>
         </nav>
       </div>

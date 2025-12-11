@@ -83,7 +83,6 @@ const Login = () => {
           onKeyDown={handleKeyDown} // Manejo de la tecla Enter
           ref={passwordInputRef} // Referencia para el campo de contraseña
         />
-        {error && <div className="error">{error}</div>} {/* Mostrar error */}
         <button className="app-button" type="submit">
           Log-in
         </button>

@@ -41,7 +41,6 @@ public class UserService {
      User newUser = userMapper.toUser(newUserL);
 
         try{
-            checkCredRestrictions(newUser);
             //Recorrer lista buscando match
             User userfound = uRepo.findByUsername(newUserL.getUsername());
             if (userfound != null && userfound.getPassword().equals(newUser.getPassword())){
@@ -73,7 +72,6 @@ public class UserService {
         boolean correct = true;
         try{
             if (newUser == null){
-                System.out.println("Estoy pasando por null");
                 correct = false;
                 throw new IllegalArgumentException("El usuario mapeado es null");
 

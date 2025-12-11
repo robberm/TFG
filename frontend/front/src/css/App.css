@@ -139,6 +139,7 @@
   text-box: cap alphabetic;
   border-radius: 50px;
   border: none;
+  margin-top: 10px;
   
   position: relative;
   /*Efecto del brillo */
@@ -152,6 +153,8 @@
     border-radius: inherit;
     z-index: -1;
   }
+
+  
 }
 
 
@@ -163,6 +166,12 @@
 .app-button:hover::before {
   filter: blur(25px);
   inset: 12px 12px -12px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 
