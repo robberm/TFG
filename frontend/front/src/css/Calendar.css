@@ -393,8 +393,8 @@
 /* Cada fila de hora en la columna de tiempos */
 .week-time-slot-row {
   display: flex;
-  height: 60px;
-  min-height: 60px;
+  height: 80px;
+  min-height: 80px;
   border-bottom: 1px solid #edebe9;
   position: relative;
   box-sizing: border-box;
@@ -433,8 +433,8 @@
 
 /* Celdas de tiempo (slots) */
 .week-time-cell {
-  height: 60px;
-  min-height: 60px;
+  height: 80px;
+  min-height: 80px;
   cursor: pointer;
   transition: background-color 0.2s;
   position: relative;
@@ -549,12 +549,28 @@
   width: 80px;
   border-right: 1px solid #edebe9;
   background-color: var(--container-color);
+  /* Match Day View grid: 15-min lines every 20px */
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 19px,
+    #edebe9 20px,
+    transparent 20px,
+    transparent 39px,
+    #edebe9 40px,
+    transparent 40px,
+    transparent 59px,
+    #edebe9 60px,
+    transparent 60px,
+    transparent 79px,
+    #edebe9 80px
+  );
 }
 
 /* Time Slot Rows */
 .time-slot-row {
-  height: 60px;
-  min-height: 60px;
+  height: 80px;
+  min-height: 80px;
   display: flex;
   align-items: flex-start;
   position: relative;
@@ -577,12 +593,8 @@
 }
 
 .time-slot-half {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  border-top: 1px dashed #edebe9;
-  pointer-events: none;
+  /* We draw quarter-hour lines via background; avoid double/dashed lines */
+  display: none;
 }
 
 .time-slot:hover {
@@ -597,9 +609,17 @@
   background-image: repeating-linear-gradient(
     to bottom,
     transparent 0px,
+    transparent 19px,
+    #edebe9 20px,
+    transparent 20px,
+    transparent 39px,
+    #edebe9 40px,
+    transparent 40px,
     transparent 59px,
-    #edebe9 59px,
-    #edebe9 60px
+    #edebe9 60px,
+    transparent 60px,
+    transparent 79px,
+    #edebe9 80px
   );
 }
 

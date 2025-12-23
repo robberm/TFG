@@ -57,13 +57,13 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const eventData = {
-      ...formData,
-      startTime: new Date(formData.startTime).toISOString(),
-      endTime: new Date(formData.endTime).toISOString(),
-    };
+ const eventData = {
+   ...formData,
+   startTime: formData.startTime, // string local, sin toISOString ni new Date
+   endTime: formData.endTime,
+ };
 
-    onSave(eventData);
+ onSave(eventData);
   };
 
   const handleDelete = () => {

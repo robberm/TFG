@@ -17,7 +17,7 @@ import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import { es } from "date-fns/locale";
 
-const HOUR_HEIGHT_PX = 60;
+const HOUR_HEIGHT_PX = 80; //EMPIEZA
 const MINUTES_PER_HOUR = 60;
 const PX_PER_MINUTE = HOUR_HEIGHT_PX / MINUTES_PER_HOUR;
 
@@ -207,14 +207,13 @@ const Calendar = () => {
     const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
 
     const dateFormat = "d";
-    const rows = [];
-    let days = [];
+    const days = []; // Cambiado: solo un array de días
     let day = startDate;
     let formattedDate = "";
 
     const daysOfWeek = [];
     const daysOfWeekFormat = "EEE";
-    const startOfTheWeek = startOfWeek(new Date());
+    const startOfTheWeek = startOfWeek(new Date(), { weekStartsOn: 1 });
 
     for (let i = 0; i < 7; i++) {
       const dayOfWeek = addDays(startOfTheWeek, i);
@@ -225,50 +224,43 @@ const Calendar = () => {
       );
     }
 
+    // Simplificado: solo un bucle
     while (day <= endDate) {
-      for (let i = 0; i < 7; i++) {
-        formattedDate = format(day, dateFormat);
-        const cloneDay = day;
-        const dayEvents = events.filter((event) =>
-          isSameDay(new Date(event.startTime), cloneDay)
-        );
+      formattedDate = format(day, dateFormat);
+      const cloneDay = day;
+      const dayEvents = events.filter((event) =>
+        isSameDay(new Date(event.startTime), cloneDay)
+      );
 
-        days.push(
-          <div
-            className={`day ${
-              !isSameMonth(day, monthStart) ? "disabled" : ""
-            } ${isSameDay(day, selectedDate) ? "selected" : ""}`}
-            key={day}
-            onClick={() => handleDateClick(cloneDay)}
-          >
-            <span className="day-number">{formattedDate}</span>
-            <div className="events-container">
-              {dayEvents.map((event) => (
-                <div
-                  key={event.id}
-                  className={`event ${event.category}`}
-                  onClick={(e) => handleEventClick(event, e)}
-                >
-                  {event.title}
-                </div>
-              ))}
-            </div>
+      days.push(
+        <div
+          className={`day ${!isSameMonth(day, monthStart) ? "disabled" : ""} ${
+            isSameDay(day, selectedDate) ? "selected" : ""
+          }`}
+          key={day.toISOString()} // Mejor key única
+          onClick={() => handleDateClick(cloneDay)}
+        >
+          <span className="day-number">{formattedDate}</span>
+          <div className="events-container">
+            {dayEvents.map((event) => (
+              <div
+                key={event.id}
+                className={`event ${event.category}`}
+                onClick={(e) => handleEventClick(event, e)}
+              >
+                {event.title}
+              </div>
+            ))}
           </div>
-        );
-        day = addDays(day, 1);
-      }
-      rows.push(
-        <div className="week" key={day}>
-          {days}
         </div>
       );
-      days = [];
+      day = addDays(day, 1);
     }
 
     return (
       <div className="calendar-month">
         <div className="days-header">{daysOfWeek}</div>
-        <div className="days-grid">{rows}</div>
+        <div className="days-grid">{days}</div>
       </div>
     );
   };
@@ -322,7 +314,7 @@ const Calendar = () => {
   };
 
   const renderWeekView = () => {
-    const weekStart = startOfWeek(currentDate, );
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
     const hours = Array.from({ length: 24 }, (_, i) => i);
     const currentTime = new Date();
 
@@ -357,7 +349,7 @@ const Calendar = () => {
       const top = startMinutes * PX_PER_MINUTE;
       const height = Math.max(
         (endMinutes - startMinutes) * PX_PER_MINUTE,
-        HOUR_HEIGHT_PX / 2
+        HOUR_HEIGHT_PX / 4
       );
 
       return {
@@ -481,7 +473,7 @@ const Calendar = () => {
       const top = startMinutes * PX_PER_MINUTE;
       const height = Math.max(
         (endMinutes - startMinutes) * PX_PER_MINUTE,
-        HOUR_HEIGHT_PX / 2
+        HOUR_HEIGHT_PX / 4
       );
 
       return {
