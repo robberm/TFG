@@ -94,8 +94,6 @@ public class AppRestrictionService {
 
     public void removeBlockedApp(String appName) {
 
-
-
             if (appName == null || appName.trim().isEmpty()) {
                 throw new IllegalArgumentException("El nombre de la aplicación no puede estar vacío");
             }

@@ -1,0 +1,68 @@
+.chartContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.pieChart {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ddd; /* se sobrescribe por JS con el gradient */
+  overflow: hidden;
+}
+
+.pieCenter {
+  width: 60px;
+  height: 60px;
+  background: #fff;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.piePercent {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.pieLabel {
+  font-size: 11px;
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+.chartLegend {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 160px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.legendColor {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  border-radius: 2px;
+}
+
+.legendText {
+  font-size: 13px;
+  color: var(--text-color, #333);
+}

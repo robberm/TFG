@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useEffect } from 'react';
 import './css/Home.css';
 import { useError } from './components/ErrorContext';
+import PieChart from './PieChart.jsx';
 
 const Home = () => {
   const[objectives, setObjectives] = useState([]);
@@ -28,11 +29,9 @@ const Home = () => {
       {/* Sección del gráfico circular */}
       <div className="chartSection">
         <div className="chartContainer">
-          <div className="pieChart">
-            {/* El gráfico se crea con conic-gradient en CSS */}
-          </div>
+          <PieChart /> 
         </div>
-        <p className="chartLabel">Goals, Jiras, etc</p>
+        
       </div>
 
       {/* Sección To-do / Done */}

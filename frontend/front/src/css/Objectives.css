@@ -22,6 +22,10 @@
     display: table-row;
     border-bottom: 1px solid var(--table-border-color);
   }
+
+  .todoSection{
+    color: var(--text-main);
+  }
   
 
 
