@@ -24,7 +24,7 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
         startTime: format(new Date(event.startTime), "yyyy-MM-dd'T'HH:mm"),
         endTime: format(new Date(event.endTime), "yyyy-MM-dd'T'HH:mm"),
         location: event.location || "",
-        category: event.category || "work",
+        category: event.category || "",
         isAllDay: event.isAllDay || false,
       });
     } else if (selectedDate) {
@@ -40,11 +40,59 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
         startTime: format(startDateTime, "yyyy-MM-dd'T'HH:mm"),
         endTime: format(endDateTime, "yyyy-MM-dd'T'HH:mm"),
         location: "",
-        category: "work",
+        category: "",
         isAllDay: false,
       });
     }
   }, [event, selectedDate]);
+
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(
+          "http://localhost:8080/events/categories",
+        );
+
+        if (!response.ok) {
+          throw new Error("Error fetching categories");
+        }
+
+        const data = await response.json();
+        setCategories(data);
+      } catch (error) {
+        console.error("Failed to load categories:", error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  /**
+   * Garantiza que el formulario tenga siempre una categoría válida
+   * una vez que la lista de categorías ha sido cargada desde el backend.
+   *
+   * Este efecto se ejecuta cuando:
+   * - Se actualiza la lista de categorías (tras el fetch)
+   * - Cambia el valor actual de formData.category
+   *
+   * Si no hay ninguna categoría seleccionada (por ejemplo,
+   * al crear un nuevo evento) y ya existen categorías disponibles,
+   * se asigna automáticamente la primera categoría recibida
+   * como valor por defecto.
+   
+   */
+  useEffect(() => {
+    if (!categories.length) return;
+
+    if (!formData.category) {
+      setFormData((prev) => ({
+        ...prev,
+        category: categories[0].value, // si tu backend devuelve DTO {value,label}
+      }));
+    }
+  }, [categories, formData.category]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -57,13 +105,13 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
- const eventData = {
-   ...formData,
-   startTime: formData.startTime, // string local, sin toISOString ni new Date
-   endTime: formData.endTime,
- };
+    const eventData = {
+      ...formData,
+      startTime: formData.startTime, // string local, sin toISOString ni new Date
+      endTime: formData.endTime,
+    };
 
- onSave(eventData);
+    onSave(eventData);
   };
 
   const handleDelete = () => {
@@ -151,14 +199,19 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
             <select
               id="category"
               name="category"
-              value={formData.category}
+              value={formData.category ?? ""}
               onChange={handleChange}
+              required
             >
-              <option value="work">Trabajo</option>
-              <option value="personal">Personal</option>
-              <option value="important">Importante</option>
-              <option value="meeting">Reunión</option>
-              <option value="other">Otro</option>
+              <option value="" disabled>
+                Selecciona una categoría
+              </option>
+
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
             </select>
           </div>
 

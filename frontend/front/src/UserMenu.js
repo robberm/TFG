@@ -15,13 +15,22 @@ const navigate = useNavigate();
 const username = localStorage.getItem("username") || "User";
 console.log("Rendering UserMenu in Home");
 
-const handleLogout = () => {
+
+
+ const handleLogout = async () => {
+  try {
+    await fetch("http://localhost:8080/session/clear", {
+      method: "POST",
+    });
+  } catch (err) {
+    console.warn("Log out failed.", err);
+  }
 
   localStorage.removeItem("token");
   localStorage.removeItem("username");
-
-  navigate("/");
+  navigate("/login");
 };
+
 
 
 

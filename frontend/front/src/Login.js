@@ -30,8 +30,17 @@ const Login = () => {
       if (response.ok) {
         //pasamos token de sesión
         const data = await response.json();  //convierte response de Java en un objeto Javascript.
-        localStorage.setItem("token",  data.token.trim());
+        const token = data.token.trim(); 
+        localStorage.setItem("token", token); 
         localStorage.setItem("username", data.username);
+       
+        //Registramos usuario en la sesión 
+         await fetch("http://localhost:8080/session/active-user", {
+           method: "POST",
+           headers: {
+             Authorization: `Bearer ${token}`,
+           },
+         });
         // Redirige a la home
         console.log("Login perfecto");
         navigate("/home");
@@ -58,6 +67,8 @@ const Login = () => {
   const colorLogInTexto = {
     color: "#FFFFFF" 
   };
+
+  
 
   return (
     <div className="login-form">

@@ -2,12 +2,18 @@ package net.tfg.tfgapp.service;
 
 
 import jakarta.persistence.EntityNotFoundException;
+import net.tfg.tfgapp.components.SessionStore;
 import net.tfg.tfgapp.domains.Event;
+import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.repos.EventRepo;
+import net.tfg.tfgapp.utils.WindowsUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import net.tfg.tfgapp.utils.Constants;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,6 +22,11 @@ public class EventService {
 
     @Autowired
     public EventRepo eventRepo;
+
+    @Autowired
+    public SessionStore sessionStore;
+
+
 
     public <S extends Event> S save(S entity) {
         return eventRepo.save(entity);
@@ -68,5 +79,30 @@ public class EventService {
         return eventRepo.findAll();
     }
 
+    private boolean isEventCategoryActive(String category, Long userId){
+        Event.EventCategory eventCategory = Event.EventCategory.valueOf(category);
+        return eventRepo.existsActiveEventOfCategory(eventCategory, LocalDateTime.now(), userId);
+    }
 
+
+    public List<String> getCategories() {
+
+        return Arrays.stream(Event.EventCategory.values())
+                .map(Enum::name)
+                .toList();
+    }
+
+    @Scheduled(fixedDelay = 5000)
+    public void isEnforceShutdownCategory() {
+
+        if(sessionStore != null){
+        Long userId = sessionStore.getLoggedUserId();
+       
+        if (userId == null) return;
+
+        if (isEventCategoryActive("MANDATORY", userId)){
+            WindowsUtils.shutdownSystem();
+        }
+        }
+    }
 }

@@ -33,9 +33,6 @@ public class CalendarController {
     @Autowired
     private UserService userService;
 
-//    @Autowired
-//    private SimpMessagingTemplate messagingTemplate;
-
     // Get all events
     @GetMapping("/{username}")
     public ResponseEntity<?> getAllEvents(@PathVariable String username) {
@@ -131,6 +128,17 @@ public class CalendarController {
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/categories")
+    public ResponseEntity<?> getCategories(){
+        try{
+           List<String> categories = eventService.getCategories();
+           return ResponseEntity.ok(categories);
+
+        }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching categories: "+e.getMessage());
         }
     }
 

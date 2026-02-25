@@ -147,7 +147,7 @@ const Calendar = () => {
         return;
       }
 
-      const method = eventData.id ? "PUT" : "POST";
+      const method = eventData.id ? "PUT" : "POST"; //en caso de querer editar
       const url = eventData.id
         ? `http://localhost:8080/events/${eventData.id}`
         : "http://localhost:8080/events";

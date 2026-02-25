@@ -9,29 +9,37 @@ function Block() {
   const [deleteApp, setDeleteApp] = useState("");
   const [isBlocked, setIsBlocked] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [lastBlockTime, setLastBlockTime] = useState(() => {
-    const saved = localStorage.getItem("lastBlockTime");
-    if (saved) {
-      return Number(saved);
-    }
 
+  // Mantén username en localStorage si quieres (eso es "identidad")
+  const username = localStorage.getItem("username") || "global";
+
+  // Pero el contador en sessionStorage (se borra al cerrar)
+  const TIMER_STORAGE = window.sessionStorage;
+  const STORAGE_KEY = `lastBlockTime_${username}`;
+
+  const [lastBlockTime, setLastBlockTime] = useState(() => {
+    const saved = TIMER_STORAGE.getItem(STORAGE_KEY);
+    const parsed = saved ? Number(saved) : NaN;
     const now = Date.now();
-    localStorage.setItem("lastBlockTime", String(now)); 
+
+    if (!Number.isNaN(parsed) && parsed > 0 && parsed <= now) return parsed;
+
+    TIMER_STORAGE.setItem(STORAGE_KEY, String(now));
     return now;
   });
 
   const updateLastBlockTime = (timeMs) => {
     setLastBlockTime(timeMs);
-    localStorage.setItem("lastBlockTime", String(timeMs));
+    TIMER_STORAGE.setItem(STORAGE_KEY, String(timeMs));
   };
 
-
   const [timeUntilNextBlock, setTimeUntilNextBlock] = useState(() => {
-    const saved = localStorage.getItem("lastBlockTime");
+    const saved = TIMER_STORAGE.getItem(STORAGE_KEY);
     const base = saved ? Number(saved) : Date.now();
-    const elapsed = Math.floor((Date.now() - base) / 1000);
+    const validBase = !Number.isNaN(base) && base > 0 ? base : Date.now();
+    const elapsed = Math.floor((Date.now() - validBase) / 1000);
     return Math.max(0, 20 * 60 - elapsed);
-  }); // secs
+  });
 
   useEffect(() => {
     fetchBlockedApps();
@@ -41,8 +49,6 @@ function Block() {
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
       onConnect: () => {
-        console.log("Conectado al WebSocket");
-
         stompClient.subscribe("/topic/block", (message) => {
           console.log("Mensaje recibido:", message.body);
 
@@ -165,105 +171,107 @@ function Block() {
 
   return (
     <>
-    <div style = {{display: "flex", justifyContent: "space-between", alignItems: "flex-start", maxWidth: "100%", gap: "1.5rem"} }>
-
-      {isBlocked && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "black",
-            zIndex: 9999,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            color: "white",
-            fontSize: "2rem",
-          }}
-        >
-          Pantalla bloqueada. Tómate un descanso...
-        </div>
-      )}
-      <div className="app">
-        {errorMessage && (
-          <div className="error-box">
-            {errorMessage}
-            <button
-              className="error-close-button"
-              onClick={() => setErrorMessage("")}
-              aria-label="Cerrar error"
-            >
-              &times;
-            </button>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          maxWidth: "100%",
+          gap: "1.5rem",
+        }}
+      >
+        {isBlocked && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100vw",
+              height: "100vh",
+              backgroundColor: "black",
+              zIndex: 9999,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              color: "white",
+              fontSize: "2rem",
+            }}
+          >
+            Pantalla bloqueada. Tómate un descanso...
           </div>
         )}
-        <h1>Atomic tracker</h1>
+        <div className="app">
+          {errorMessage && (
+            <div className="error-box">
+              {errorMessage}
+              <button
+                className="error-close-button"
+                onClick={() => setErrorMessage("")}
+                aria-label="Cerrar error"
+              >
+                &times;
+              </button>
+            </div>
+          )}
+          <h1>Atomic tracker</h1>
 
-        <div className="section">
-          <h2>Aplicaciones Bloqueadas</h2>
-          <h3>Add an app</h3>
-          <div className="add-app">
-            <input
-              type="text"
-              value={newApp}
-              onChange={(e) => setNewApp(e.target.value)}
-              placeholder="Ej. chrome.exe"
-            />
-            <button onClick={addBlockedApp}>Añadir</button>
+          <div className="section">
+            <h2>Aplicaciones Bloqueadas</h2>
+            <h3>Add an app</h3>
+            <div className="add-app">
+              <input
+                type="text"
+                value={newApp}
+                onChange={(e) => setNewApp(e.target.value)}
+                placeholder="Ej. chrome.exe"
+              />
+              <button onClick={addBlockedApp}>Añadir</button>
+            </div>
+            <h3>Remove an app</h3>
+            <div className="delete-app">
+              <input
+                type="text"
+                value={deleteApp}
+                onChange={(e) => setDeleteApp(e.target.value)}
+                placeholder="Ej. chrome.exe"
+              />
+              <button onClick={() => removeBlockedApp(deleteApp)}>
+                Borrar
+              </button>
+            </div>
+
+            <h3>Reset list</h3>
+            <div className="reset-applist">
+              <button onClick={() => resetApplist()}>Reset</button>
+            </div>
+
+            <h4>App list</h4>
+            <ul className="app-list">
+              {blockedApps.map((app, index) => (
+                <li key={index}>{app}</li>
+              ))}
+            </ul>
           </div>
-          <h3>Remove an app</h3>
-          <div className="delete-app">
-            <input
-              type="text"
-              value={deleteApp}
-              onChange={(e) => setDeleteApp(e.target.value)}
-              placeholder="Ej. chrome.exe"
-            />
-            <button onClick={() => removeBlockedApp(deleteApp)}>Borrar</button>
-          </div>
 
-          <h3>Reset list</h3>
-          <div className="reset-applist">
-            <button onClick={() => resetApplist()}>Reset</button>
-          </div>
-
-          <h4>App list</h4>
-          <ul className="app-list">
-            {blockedApps.map((app, index) => (
-              <li key={index}>{app}</li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="status">
-          {isBlocked && <p>¡Pantalla bloqueada! Tómate un descanso.</p>}
-        </div>
-
-        </div>
-
-
-
-      <div className="timer-container">
-      <h3 className="timer-title">Estado</h3>
-      {isBlocked ? (
-        <div className="status-blocked">
-          Descansando...
-        </div>
-      ) : (
-        <div className="status-active">
-          <div className="next-block-label">Próximo bloqueo en:</div>
-          <div className="timer-display">
-            {Math.floor(timeUntilNextBlock / 60)}m {timeUntilNextBlock % 60}s
+          <div className="status">
+            {isBlocked && <p>¡Pantalla bloqueada! Tómate un descanso.</p>}
           </div>
         </div>
-      )}
-    </div>
 
-
-      
+        <div className="timer-container">
+          <h3 className="timer-title">Estado</h3>
+          {isBlocked ? (
+            <div className="status-blocked">Descansando...</div>
+          ) : (
+            <div className="status-active">
+              <div className="next-block-label">Próximo bloqueo en:</div>
+              <div className="timer-display">
+                {Math.floor(timeUntilNextBlock / 60)}m {timeUntilNextBlock % 60}
+                s
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </>
   );

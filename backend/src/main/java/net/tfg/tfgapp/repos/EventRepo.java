@@ -37,5 +37,11 @@ public interface EventRepo extends JpaRepository<Event, Long> {
 
 
     List<Event> findByStartTimeGreaterThanEqual(LocalDateTime now);
+
+    @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM Event e WHERE e.category = :category AND e.startTime <= :now " +
+            "AND e.endTime >= :now AND e.user.id = :userId")
+    boolean existsActiveEventOfCategory(@Param("category") Event.EventCategory category, @Param("now") LocalDateTime now , @Param("userId") Long userId);
+
+
 }
 

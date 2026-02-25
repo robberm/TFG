@@ -28,8 +28,9 @@ private LocalDateTime startTime;
 private LocalDateTime endTime;
 @Column(unique = false)
 private String location;
-@Column(unique = false)
-private String category;
+@Enumerated(EnumType.STRING)
+@Column(nullable = false)
+private EventCategory category;
 @Column(unique = false)
 private Boolean isAllDay;
 
@@ -37,7 +38,7 @@ private Boolean isAllDay;
 @JoinColumn(name = "user_id")
 private User user;
 
-    public Event(Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime, String location, String category, Boolean isAllDay) {
+    public Event(Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime, String location, EventCategory category, Boolean isAllDay) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -50,5 +51,28 @@ private User user;
 
     public Event() {
     }
+
+    public enum EventCategory {
+        WORK("Work"),
+        PERSONAL("Personal"),
+        STUDY("Study"),
+        HEALTH("Health"),
+        MANDATORY("Mandatory");
+
+        
+
+
+        private final String label;
+
+        EventCategory(String label) {
+            this.label = label;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+    }
 }
+
+
 

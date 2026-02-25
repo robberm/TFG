@@ -49,7 +49,7 @@ public class WindowsUtils {
                     // Cada línea está entre comillas y separada por comas
                     String[] columns = line.split("\",\"");
                     if (columns.length >= 2) {
-                        // El segundo campo es el PID, quita comillas si hace falta
+                        // El segundo campo es el PID
                         String pidStr = columns[1].replace("\"", "").trim();
                         try {
                             pids.add(Integer.parseInt(pidStr));
@@ -101,6 +101,7 @@ public class WindowsUtils {
     // Apagar el sistema
     public static void shutdownSystem() {
         try {
+
             Runtime.getRuntime().exec("shutdown -s -t 0");
         } catch (IOException e) {
             e.printStackTrace();

@@ -549,22 +549,6 @@
   width: 80px;
   border-right: 1px solid #edebe9;
   background-color: var(--container-color);
-  /* Match Day View grid: 15-min lines every 20px */
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0px,
-    transparent 19px,
-    #edebe9 20px,
-    transparent 20px,
-    transparent 39px,
-    #edebe9 40px,
-    transparent 40px,
-    transparent 59px,
-    #edebe9 60px,
-    transparent 60px,
-    transparent 79px,
-    #edebe9 80px
-  );
 }
 
 /* Time Slot Rows */
@@ -574,6 +558,8 @@
   display: flex;
   align-items: flex-start;
   position: relative;
+  border-bottom: 1px solid #edebe9;
+  box-sizing: border-box;
 }
 
 .time-label {
@@ -609,16 +595,8 @@
   background-image: repeating-linear-gradient(
     to bottom,
     transparent 0px,
-    transparent 19px,
-    #edebe9 20px,
-    transparent 20px,
-    transparent 39px,
-    #edebe9 40px,
-    transparent 40px,
-    transparent 59px,
-    #edebe9 60px,
-    transparent 60px,
     transparent 79px,
+    #edebe9 79px,
     #edebe9 80px
   );
 }
