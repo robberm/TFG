@@ -96,14 +96,16 @@
 .app-input {
   padding: 10px;
   margin-bottom: 10px;
-  margin-left: 10px;
+  margin-left: 0;          
+  width: 100%;             
+  box-sizing: border-box;  
   border-radius: 5px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(34, 34, 34, 0.3);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   color: #fff;
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
@@ -172,6 +174,9 @@ form {
   display: flex;
   flex-direction: column;
   gap: 15px;
+  padding: 0 10px 10px 10px; /* ✅ margen lateral sin desbordes */
+  box-sizing: border-box;
+  padding-bottom: 10px;
 }
 
 

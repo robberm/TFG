@@ -1,77 +1,94 @@
+:root {
+  --week-gutter: 80px;
+
+  --border-color: #edebe9;
+  --border-color-soft: #f3f2f1;
+}
+
+body.dark {
+  --border-color: #3f3f3f;
+  --border-color-soft: #555;
+}
+
 .calendar-container {
-  background-color:  var(--container-color);
+  background-color: var(--bg-main);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   margin: 20px 0;
   overflow: hidden;
   width: 100%;
 }
 
-/* Calendar Body */
 .calendar-body {
   width: 100%;
   overflow: hidden;
 }
 
-/* Calendar Header */
 .calendar-header {
   align-items: center;
-  border-bottom: 1px solid var(--header-border-color);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   padding: 16px 20px;
+  background-color: var(--bg-main);
 }
 
 .navigation button {
   background-color: transparent;
   border: none;
   border-radius: 4px;
-  color: var(--font-color);
+  color: var(--text-main);
   cursor: pointer;
   font-size: 14px;
   margin-right: 10px;
   padding: 6px 12px;
-  transition: background-color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 
 .navigation button:hover {
-  background-color: var(--button-hover-bg-color);
+  background-color: var(--bg-hover);
+  color: var(--text-main);
 }
 
 .current-date {
   font-size: 16px;
   font-weight: 600;
-  color: var(--font-color);
+  color: var(--text-main);
 }
 
 .view-options button {
   background-color: transparent;
   border: 1px solid transparent;
   border-radius: 4px;
-  color: var(--font-color);
+  color: var(--text-main);
   cursor: pointer;
   margin-left: 10px;
   padding: 6px 12px;
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
 }
 
 .view-options button.active {
-  background-color: var(--button-bg-color);
-  border-color: var(--button-border-color);
-  color: white;
+  background-color: var(--link-active-bg);
+  border-color: var(--link-active-bg);
+  color: var(--link-active-text);
 }
 
 .view-options button:hover {
-  background-color: var(--button-hover-bg-color);
+  background-color: var(--bg-hover);
+  color: var(--text-main);
 }
 
-/* Days Header */
 .days-header {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  background-color: var(--header-bg-color);
-  border-bottom: 1px solid var(--header-border-color);
+  background-color: var(--bg-page);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .day-header {
@@ -79,50 +96,52 @@
   text-align: center;
   font-size: 13px;
   font-weight: 600;
-  color: var(--font-color);
+  color: var(--text-main);
   text-transform: uppercase;
 }
 
-/* Days Grid */
 .days-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
 }
 
-/* Day Cell */
 .day {
-  border-right: 1px solid var(--cell-border-color);
-  border-bottom: 1px solid var(--cell-border-color);
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
   min-height: 90px;
   padding: 8px 10px;
   position: relative;
   cursor: pointer;
-  background-color: var(--container-color);
+  background-color: var(--bg-main);
   transition: background-color 0.2s;
 }
 
 .day:hover {
-  background-color: var(--hover-bg-color);
+  background-color: var(--bg-hover);
 }
 
 .day.disabled {
-  background-color: var(--disabled-bg-color);
-  color: var(--disabled-font-color);
+  background-color: var(--bg-page);
+  color: rgba(0, 0, 0, 0.45);
+}
+
+body.dark .day.disabled {
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .day.disabled .day-number {
-  color: var(--disabled-font-color);
+  color: inherit;
 }
 
 .day.selected {
-  outline: 2px solid var(--selected-border-color);
+  outline: 2px solid var(--link-active-bg);
   outline-offset: -2px;
 }
 
 .day-number {
   font-size: 14px;
   font-weight: 600;
-  color: var(--font-color);
+  color: var(--text-main);
 }
 
 .events-container {
@@ -132,7 +151,6 @@
   gap: 4px;
 }
 
-/* Event Types Styling */
 .event {
   border-radius: 4px;
   padding: 2px 6px;
@@ -142,23 +160,41 @@
   text-overflow: ellipsis;
 }
 
-/* Category Colors - Roblox Style */
+.event.STUDY {
+  background-color: var(--event-study-color);
+}
+
+.event.MANDATORY {
+  background-color: red;
+}
+
+.event.WORK {
+  background-color: var(--event-work-color);
+}
+
+.event.PERSONAL {
+  background-color: var(--event-personal-color);
+}
+
+.event.HEALTH {
+  background-color: var(--event-health-color);
+}
+
 .event.reunion {
-  background-color: rgba(98, 100, 167, 0.2); /* Soft purple */
+  background-color: rgba(98, 100, 167, 0.2);
   color: #ffffff;
 }
 
 .event.personal {
-  background-color: rgba(120, 182, 200, 0.2); /* Soft teal */
+  background-color: rgba(120, 182, 200, 0.2);
   color: #ffffff;
 }
 
 .event.perfil {
-  background-color: rgba(244, 137, 66, 0.2); /* Soft orange */
+  background-color: rgba(244, 137, 66, 0.2);
   color: #ffffff;
 }
 
-/* Hover effect */
 .event.reunion:hover {
   background-color: rgba(98, 100, 167, 0.3);
 }
@@ -171,7 +207,6 @@
   background-color: rgba(244, 137, 66, 0.3);
 }
 
-/* Modal Styles */
 .event-modal-backdrop {
   align-items: center;
   background-color: rgba(0, 0, 0, 0.5);
@@ -186,37 +221,37 @@
 }
 
 .event-modal {
-  background-color: var(--container-color);
+  background-color: var(--bg-main);
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   padding: 20px 24px;
   width: 400px;
   max-width: 90%;
-  color: var(--font-color);
+  color: var(--text-main);
 }
 
 .event-modal h2 {
   margin-top: 0;
   margin-bottom: 16px;
   font-size: 18px;
-  color: var(--font-color);
+  color: var(--text-main);
 }
 
 .event-modal-form label {
   display: block;
   font-size: 13px;
   margin-bottom: 6px;
-  color: var(--font-color);
+  color: var(--text-main);
   font-weight: 500;
 }
 
 .event-modal-form input,
 .event-modal-form textarea,
 .event-modal-form select {
-  background-color: var(--input-bg-color);
-  border: 1px solid var(--input-border-color);
+  background-color: var(--bg-page);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
-  color: var(--font-color);
+  color: var(--text-main);
   font-size: 13px;
   padding: 8px 10px;
   width: 100%;
@@ -243,11 +278,13 @@
   cursor: pointer;
   font-size: 13px;
   padding: 6px 12px;
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 
 .event-modal-footer-left button:hover {
-  background-color: #f8d7da;
+  background-color: rgba(209, 52, 56, 0.12);
 }
 
 .event-modal-footer-right button {
@@ -260,22 +297,19 @@
 
 .event-modal-footer-right button:first-child {
   background-color: transparent;
-  color: var(--font-color);
+  color: var(--text-main);
   margin-right: 8px;
 }
 
 .event-modal-footer-right button:last-child {
-  background-color: var(--button-bg-color);
-  color: #ffffff;
+  background-color: var(--link-active-bg);
+  color: var(--link-active-text);
 }
 
 .event-modal-footer-right button:last-child:hover {
-  background-color: var(--button-hover-bg-color);
+  background-color: var(--bg-hover);
+  color: var(--text-main);
 }
-
-/* -------------------------- */
-/* WEEK VIEW STYLES           */
-/* -------------------------- */
 
 .calendar-week {
   display: flex;
@@ -283,23 +317,30 @@
   height: 100%;
 }
 
-/* Week Header */
 .week-view-header {
-  display: grid;
-  grid-template-columns: 80px repeat(7, minmax(100px, 1fr));
-  background-color: var(--header-bg-color);
-  border-bottom: 1px solid var(--header-border-color);
+  display: flex;
+  width: 100%;
+  background-color: var(--bg-page);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .week-time-gutter {
-  border-right: 1px solid var(--header-border-color);
+  width: var(--week-gutter);
+  flex: 0 0 var(--week-gutter);
+  border-right: 1px solid var(--border-color);
 }
 
-/* Fechas y nombres de las columnas de dias en WeekView */
+.week-view-header-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(100px, 1fr));
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .week-day-header {
   padding: 10px 0;
   text-align: center;
-  border-right: 1px solid var(--header-border-color);
+  border-right: 1px solid var(--border-color);
   position: relative;
 }
 
@@ -314,7 +355,7 @@
 .week-day-name {
   font-size: 11px;
   font-weight: 600;
-  color: var(--font-color);
+  color: var(--text-main);
   text-transform: uppercase;
 }
 
@@ -324,7 +365,7 @@
   padding: 4px 8px;
   border-radius: 12px;
   background-color: transparent;
-  color: var(--font-color);
+  color: var(--text-main);
 }
 
 .week-day-header.today .week-day-number {
@@ -332,7 +373,6 @@
   color: #ffffff;
 }
 
-/* Week Body Container */
 .week-view-container {
   display: flex;
   flex: 1;
@@ -343,14 +383,12 @@
   width: 100%;
 }
 
-/* Fallback for browsers that don't support overlay */
 @supports not (overflow-y: overlay) {
   .week-view-container {
     overflow-y: auto;
   }
 }
 
-/* Scrollbar styling for WebKit-based browsers (Chrome, Edge, Safari) */
 .week-view-container::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -372,10 +410,11 @@
 .week-view-timeline {
   display: flex;
   flex-direction: column;
-  min-width: 80px;
+  width: var(--week-gutter);
+  flex: 0 0 var(--week-gutter);
   flex-shrink: 0;
-  border-right: 1px solid #edebe9;
-  background-color: var(--container-color);
+  border-right: 1px solid var(--border-color);
+  background-color: var(--bg-main);
   position: relative;
 }
 
@@ -386,30 +425,27 @@
   right: 0;
   bottom: 0;
   width: 1px;
-  background-color: #edebe9;
+  background-color: var(--border-color);
   pointer-events: none;
 }
 
-/* Cada fila de hora en la columna de tiempos */
 .week-time-slot-row {
   display: flex;
   height: 80px;
   min-height: 80px;
-  border-bottom: 1px solid #edebe9;
+  border-bottom: 1px solid var(--border-color);
   position: relative;
   box-sizing: border-box;
 }
 
-
 .week-time-label {
   padding: 8px 10px;
   font-size: 12px;
-  color: var(--font-color);
+  color: var(--text-main);
   text-align: right;
   width: 80px;
   margin-top: -10px;
 }
-
 
 .week-view-grid {
   display: grid;
@@ -421,17 +457,15 @@
 
 .week-day-column {
   position: relative;
-  border-right: 1px solid #edebe9;
+  border-right: 1px solid var(--border-color);
   min-width: 100px;
-  background-color: var(--container-color);
+  background-color: var(--bg-main);
 }
-
 
 .week-day-column:last-child {
   border-right: none;
 }
 
-/* Celdas de tiempo (slots) */
 .week-time-cell {
   height: 80px;
   min-height: 80px;
@@ -439,25 +473,22 @@
   transition: background-color 0.2s;
   position: relative;
   box-sizing: border-box;
-  border-bottom: 1px solid #edebe9;  /* línea de la hora */
+  border-bottom: 1px solid var(--border-color);
 }
 
 .week-time-cell:hover {
   background-color: rgba(98, 100, 167, 0.05);
 }
 
-/* línea de la media hora */
 .week-time-cell-half {
   position: absolute;
   top: 50%;
   left: 0;
   right: 0;
   height: 1px;
-  background-color: #f3f2f1;
+  background-color: var(--border-color-soft);
 }
 
-
-/* Contenedor de eventos en Week View */
 .week-events-container {
   position: absolute;
   top: 0;
@@ -465,7 +496,6 @@
   right: 0;
 }
 
-/* Eventos en Week View */
 .week-event {
   position: absolute;
   left: 4px;
@@ -479,7 +509,26 @@
   box-sizing: border-box;
 }
 
-/* Categorías en Week View */
+.week-event.MANDATORY{
+  background-color: var(--event-mandatory-color);
+}
+
+.week-event.WORK {
+  background-color: var(--event-work-color);
+}
+
+.week-event.PERSONAL {
+  background-color: var(--event-personal-color);
+}
+
+.week-event.HEALTH {
+  background-color: var(--event-health-color);
+}
+
+.week-evemt.STUDY {
+  background-color: var(--event-study-color);
+}
+
 .week-event.reunion {
   background-color: rgba(98, 100, 167, 0.9);
 }
@@ -501,7 +550,6 @@
   font-size: 10px;
 }
 
-/* Current time indicator in Week View */
 .week-current-time-indicator {
   position: absolute;
   left: 0;
@@ -515,25 +563,21 @@
   width: 100%;
 }
 
-/* -------------------------- */
-/* DAY VIEW STYLES            */
-/* -------------------------- */
-
 .calendar-day {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: var(--container-color);
+  background-color: var(--bg-main);
 }
 
 .day-view-header {
   padding: 16px 20px;
-  border-bottom: 1px solid #edebe9;
-  background-color: var(--container-color);
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-main);
 }
 
 .day-view-date {
-  color: var(--font-color);
+  color: var(--text-main);
   font-size: 16px;
   font-weight: 600;
 }
@@ -544,33 +588,30 @@
   position: relative;
 }
 
-/* Timeline for Day View */
 .day-view-timeline {
   width: 80px;
-  border-right: 1px solid #edebe9;
-  background-color: var(--container-color);
+  border-right: 1px solid var(--border-color);
+  background-color: var(--bg-main);
 }
 
-/* Time Slot Rows */
 .time-slot-row {
   height: 80px;
   min-height: 80px;
   display: flex;
   align-items: flex-start;
   position: relative;
-  border-bottom: 1px solid #edebe9;
+  border-bottom: 1px solid var(--border-color);
   box-sizing: border-box;
 }
 
 .time-label {
   padding: 8px 10px;
   font-size: 12px;
-  color: var(--font-color);
+  color: var(--text-main);
   text-align: right;
   width: 100%;
 }
 
-/* Time slots in Day View */
 .time-slot {
   flex: 1;
   cursor: pointer;
@@ -579,7 +620,6 @@
 }
 
 .time-slot-half {
-  /* We draw quarter-hour lines via background; avoid double/dashed lines */
   display: none;
 }
 
@@ -587,17 +627,16 @@
   background-color: rgba(98, 100, 167, 0.05);
 }
 
-/* Events in Day View */
 .day-view-events {
   flex: 1;
   position: relative;
-  background-color: var(--container-color);
+  background-color: var(--bg-main);
   background-image: repeating-linear-gradient(
     to bottom,
     transparent 0px,
     transparent 79px,
-    #edebe9 79px,
-    #edebe9 80px
+    var(--border-color) 79px,
+    var(--border-color) 80px
   );
 }
 
@@ -613,7 +652,6 @@
   color: #ffffff;
 }
 
-/* Category colors in Day View */
 .day-event.reunion {
   background-color: rgba(98, 100, 167, 0.9);
 }
@@ -640,7 +678,6 @@
   opacity: 0.9;
 }
 
-/* Current time indicator in Day View */
 .current-time-indicator {
   position: absolute;
   left: 80px;
@@ -666,166 +703,6 @@
   transform: translateY(-50%);
 }
 
-/* -------------------------- */
-/* DARK MODE SUPPORT          */
-/* -------------------------- */
-
-body.dark .calendar-container {
-  background-color: var(--dark-container-color);
-}
-
-body.dark .day {
-  background-color: var(--dark-container-color);
-  border-color: #3f3f3f;
-}
-
-body.dark .day.disabled {
-  background-color: #2b2b2b;
-  color: #777;
-}
-
-body.dark .day.disabled .day-number {
-  color: #777;
-}
-
-body.dark .day:hover {
-  background-color: #2b2b2b;
-}
-
-body.dark .event.reunion {
-  background-color: rgba(98, 100, 167, 0.5);
-}
-
-body.dark .event.personal {
-  background-color: rgba(120, 182, 200, 0.5);
-}
-
-body.dark .event.perfil {
-  background-color: rgba(244, 137, 66, 0.5);
-}
-
-body.dark .event.reunion:hover {
-  background-color: rgba(98, 100, 167, 0.7);
-}
-
-body.dark .event.personal:hover {
-  background-color: rgba(120, 182, 200, 0.7);
-}
-
-body.dark .event.perfil:hover {
-  background-color: rgba(244, 137, 66, 0.7);
-}
-
-body.dark .calendar-header {
-  border-bottom-color: #3f3f3f;
-}
-
-body.dark .days-header {
-  background-color: #202020;
-  border-bottom-color: #3f3f3f;
-}
-
-body.dark .day-header {
-  color: #f3f3f3;
-}
-
-body.dark .day.selected {
-  outline-color: rgba(98, 100, 167, 0.9);
-}
-
-body.dark .event-modal {
-  background-color: #202020;
-  color: #f3f3f3;
-}
-
-body.dark .event-modal-form input,
-body.dark .event-modal-form textarea,
-body.dark .event-modal-form select {
-  background-color: #2b2b2b;
-  border-color: #3f3f3f;
-  color: #f3f3f3;
-}
-
-body.dark .event-modal-footer-left button {
-  border-color: #f1707b;
-  color: #f1707b;
-}
-
-body.dark .event-modal-footer-left button:hover {
-  background-color: rgba(241, 112, 123, 0.15);
-}
-
-body.dark .event-modal-footer-right button:last-child {
-  background-color: rgba(98, 100, 167, 0.9);
-}
-
-body.dark .event-modal-footer-right button:last-child:hover {
-  background-color: rgba(98, 100, 167, 1);
-}
-
-/* Week View - Dark Mode */
-body.dark .week-view-header {
-  background-color: #202020;
-  border-bottom-color: #3f3f3f;
-}
-
-body.dark .week-time-gutter {
-  border-right-color: #3f3f3f;
-}
-
-body.dark .week-day-header {
-  border-right-color: #3f3f3f;
-}
-
-body.dark .week-day-header.today {
-  background-color: rgba(98, 100, 167, 0.3);
-}
-
-body.dark .week-day-name,
-body.dark .week-day-number {
-  color: #f3f3f3;
-}
-
-body.dark .week-view-timeline {
-  background-color: #202020;
-  border-right-color: #3f3f3f;
-}
-
-body.dark .week-view-timeline::after {
-  background-color: #3f3f3f;
-}
-
-body.dark .week-day-column {
-  background-color: #202020;
-  border-right-color: #3f3f3f;
-}
-
-body.dark .week-time-slot-row {
-  border-bottom-color: #3f3f3f;
-}
-
-body.dark .week-time-cell {
-  border-bottom-color: #3f3f3f;
-}
-
-body.dark .week-time-cell-half {
-  background-color: #555;
-}
-
-
-body.dark .week-time-cell-half {
-  background-color: #555;
-}
-
-body.dark .week-time-cell:hover {
-  background-color: rgba(98, 100, 167, 0.15);
-}
-
-body.dark .week-current-time-dot {
-  border-color: #1a1a1a;
-}
-
-/* Responsive Adjustments */
 @media (max-width: 900px) {
   .calendar-container {
     margin: 10px 0;
@@ -880,8 +757,9 @@ body.dark .week-current-time-dot {
 }
 
 @media (max-width: 600px) {
-  .week-view-header {
-    grid-template-columns: 60px repeat(7, minmax(80px, 1fr));
+  .week-view-header-days,
+  .week-view-grid {
+    grid-template-columns: repeat(7, minmax(80px, 1fr));
   }
 
   .week-view-timeline {

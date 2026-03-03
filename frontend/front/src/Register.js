@@ -1,12 +1,13 @@
 import React, { useState, useRef } from "react";
-import './css/App.css';
-import { useNavigate } from "react-router-dom"
+import "./css/App.css";
+import { useNavigate } from "react-router-dom";
+import PasswordInput from "./components/PasswordInput";
 
 const Register = () => {
   // Definir estado para username y password
-  const [registerUsername, setRegisterUsername] = useState("");  // Estado para el nombre de usuario
-  const [registerPw, setRegisterPw] = useState("");  // Estado para la contraseña
-  const [error, setError] = useState(null);  // Estado para el mensaje de error
+  const [registerUsername, setRegisterUsername] = useState(""); // Estado para el nombre de usuario
+  const [registerPw, setRegisterPw] = useState(""); // Estado para la contraseña
+  const [error, setError] = useState(null); // Estado para el mensaje de error
 
   // Usamos useRef para el campo de contraseña
   const passwordInputRef = useRef(null);
@@ -20,20 +21,53 @@ const Register = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username: registerUsername, password: registerPw }),  // Enviamos datos para el registro
+        body: JSON.stringify({
+          username: registerUsername,
+          password: registerPw,
+        }), // Enviamos datos para el registro
       });
 
       if (response.ok) {
-        // Redirige a la home si el registro es exitoso
-        console.log("Registro exitoso");
-         navigate("/home");  // Redirige a la página principal después del registro
+        // 1) Log-in automático con las mismas credenciales
+        const loginResp = await fetch("http://localhost:8080/users/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: registerUsername,
+            password: registerPw,
+          }),
+        });
+
+        if (!loginResp.ok) {
+          // registro OK pero login falló (raro, pero posible)
+          const msg = await loginResp.text();
+          setError(
+            msg ||
+              "Registrado, pero no se pudo iniciar sesión automáticamente.",
+          );
+          return;
+        }
+
+        const data = await loginResp.json();
+        const token = data.token.trim();
+        localStorage.setItem("token", token);
+        localStorage.setItem("username", data.username);
+
+        // 2) Marcar sesión activa en backend (igual que Login.js)
+        await fetch("http://localhost:8080/session/active-user", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // 3) Ir a home ya “logueado”
+        navigate("/home");
       } else {
         const errorMessage = await response.text();
-        setError(errorMessage); 
+        setError(errorMessage);
       }
     } catch (err) {
       console.log(err);
-      setError(("Error query, try again."));
+      setError("Error query, try again.");
     }
   };
 
@@ -42,13 +76,13 @@ const Register = () => {
       if (e.target.name === "username") {
         passwordInputRef.current.focus(); // Foco en la contraseña
       } else {
-        handleRegister(e);  // Si es la contraseña, realiza el registro
+        handleRegister(e); // Si es la contraseña, realiza el registro
       }
     }
   };
 
   const colorRegisterTexto = {
-    color: "#FFFFFF" // Color blanco para el texto de la página de registro
+    color: "#FFFFFF", // Color blanco para el texto de la página de registro
   };
 
   return (
@@ -64,15 +98,16 @@ const Register = () => {
           onChange={(e) => setRegisterUsername(e.target.value)} // Actualiza el estado
           onKeyDown={handleKeyDown} // Manejo de la tecla Enter
         />
-        <input
+        <PasswordInput
           className="app-input"
+          id="password"
           name="password"
-          type="password"
           placeholder="Password"
           value={registerPw}
-          onChange={(e) => setRegisterPw(e.target.value)} // Actualiza el estado
-          onKeyDown={handleKeyDown} // Manejo de la tecla Enter
-          ref={passwordInputRef} // Referencia para el campo de contraseña
+          onChange={(e) => setRegisterPw(e.target.value)}
+          onKeyDown={handleKeyDown}
+          ref={passwordInputRef}
+          autoComplete="new-password"
         />
         <button className="app-button" type="submit">
           Register

@@ -1,5 +1,3 @@
-
-
 :root {
   --bg-main: #ffffff;
   --bg-page: #ffffff;
@@ -8,6 +6,12 @@
   --text-main: #222;
   --link-active-bg: #2383e2;
   --link-active-text: white;
+
+  --event-study-color: #f39c12;
+  --event-mandatory-color: #e74c3c;
+  --event-work-color: #3498db;
+  --event-personal-color: #2ecc71;
+  --event-health-color: #9b59b6;
 }
 
 body.dark {

@@ -366,20 +366,23 @@ const Calendar = () => {
       <div className="calendar-week">
         <div className="week-view-header">
           <div className="week-time-gutter"></div>
-          {weekDays.map((day, index) => {
-            const isToday = isSameDay(day, new Date());
-            return (
-              <div
-                key={index}
-                className={`week-day-header ${isToday ? "today" : ""}`}
-              >
-                <div className="week-day-name">
-                  {format(day, "EEE", { locale: es })}
+
+          <div className="week-view-header-days">
+            {weekDays.map((day, index) => {
+              const isToday = isSameDay(day, new Date());
+              return (
+                <div
+                  key={index}
+                  className={`week-day-header ${isToday ? "today" : ""}`}
+                >
+                  <div className="week-day-name">
+                    {format(day, "EEE", { locale: es })}
+                  </div>
+                  <div className="week-day-number">{format(day, "d")}</div>
                 </div>
-                <div className="week-day-number">{format(day, "d")}</div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
         <div className="week-view-container">

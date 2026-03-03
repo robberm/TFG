@@ -417,10 +417,10 @@ const Objectives = () => {
               <i className="fa-solid fa-filter"></i>
             </button>
           </div>
-        </div>        {/* Formulario para añadir objetivo */}
+        </div>{" "}
+        {/* Formulario para añadir objetivo */}
         {showAddForm &&
           renderObjectiveForm({ isEdit: false, onSubmit: handleAddObjective })}
-
         {/* Objectives table */}
         <div className="todoTable">
           <div className="tableRow tableHeader">
@@ -441,14 +441,27 @@ const Objectives = () => {
               <div
                 key={objective.id}
                 className={`tableRow ${
-                  objective.status === "Completado" ? "completedTableRow" : ""
+                  objective.status === "Done" ? "completedTableRow" : ""
                 }`}
               >
                 <div className="tableCell">
-                  <strong>{objective.titulo}</strong> {/* ponerlo en bond*/}
+                  <strong
+                    className={
+                      objective.status === "Done" ? "completedText" : ""
+                    }
+                  >
+                    {objective.titulo}
+                  </strong>
                 </div>
+
                 <div className="tableCell">
-                  {objective.description || "Sin descripción"}
+                  <span
+                    className={
+                      objective.status === "Done" ? "completedText" : ""
+                    }
+                  >
+                    {objective.description || "Sin descripción"}
+                  </span>
                 </div>
                 <div className="tableCell">
                   <span
@@ -460,8 +473,8 @@ const Objectives = () => {
                     {objective.priority === "Alta"
                       ? "Alta"
                       : objective.priority === "Media"
-                      ? "Media"
-                      : "Baja"}
+                        ? "Media"
+                        : "Baja"}
                   </span>
                 </div>
                 <div className="tableCell">
@@ -470,7 +483,7 @@ const Objectives = () => {
                     onChange={(e) =>
                       changeStatus(
                         objective.id,
-                        frontendToBackendStatus[e.target.value]
+                        frontendToBackendStatus[e.target.value],
                       )
                     }
                     className="statusDropdown"

@@ -1,96 +1,177 @@
-import React, { useState, useEffect } from "react";
-import { format } from "date-fns";
+import React, { useState, useEffect, useRef } from "react";
+import { format, addMinutes, setHours, setMinutes, startOfDay } from "date-fns";
+import { es } from "date-fns/locale";
 import "./css/EventModal.css";
+
+// Genera opciones de tiempo en incrementos de 15 minutos
+const generateTimeOptions = () => {
+  const options = [];
+  const baseDate = startOfDay(new Date());
+
+  for (let i = 0; i < 96; i++) {
+    // 24 horas * 4 (cada 15 min)
+    const time = addMinutes(baseDate, i * 15);
+    options.push({
+      value: format(time, "HH:mm"),
+      label: format(time, "HH:mm"),
+    });
+  }
+  return options;
+};
+
+const TIME_OPTIONS = generateTimeOptions();
+
+const TimeSelector = ({ value, onChange, label }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const dropdownRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+        setSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredOptions = TIME_OPTIONS.filter((opt) =>
+    opt.label.includes(search),
+  );
+
+  const handleSelect = (timeValue) => {
+    onChange(timeValue);
+    setIsOpen(false);
+    setSearch("");
+  };
+
+  return (
+    <div className="time-selector" ref={dropdownRef}>
+      <label className="time-selector-label">{label}</label>
+      <div
+        className={`time-selector-input ${isOpen ? "active" : ""}`}
+        onClick={() => {
+          setIsOpen(true);
+          setTimeout(() => inputRef.current?.focus(), 0);
+        }}
+      >
+        <span className="time-value">{value || "00:00"}</span>
+        <svg
+          className="time-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12,6 12,12 16,14" />
+        </svg>
+      </div>
+
+      {isOpen && (
+        <div className="time-dropdown">
+          <input
+            ref={inputRef}
+            type="text"
+            className="time-search"
+            placeholder="Buscar hora..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <div className="time-options">
+            {filteredOptions.map((opt) => (
+              <div
+                key={opt.value}
+                className={`time-option ${value === opt.value ? "selected" : ""}`}
+                onClick={() => handleSelect(opt.value)}
+              >
+                {opt.label}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
   const [formData, setFormData] = useState({
     id: null,
     title: "",
     description: "",
-    startTime: "",
-    endTime: "",
+    date: "",
+    startTime: "09:00",
+    endTime: "10:00",
     location: "",
-    category: "work",
+    category: "",
     isAllDay: false,
   });
 
+  const [categories, setCategories] = useState([]);
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const titleInputRef = useRef(null);
+
   useEffect(() => {
     if (event) {
-      // Editar evento existente
+      const startDate = new Date(event.startTime);
+      const endDate = new Date(event.endTime);
+
       setFormData({
         id: event.id,
         title: event.title || "",
         description: event.description || "",
-        startTime: format(new Date(event.startTime), "yyyy-MM-dd'T'HH:mm"),
-        endTime: format(new Date(event.endTime), "yyyy-MM-dd'T'HH:mm"),
+        date: format(startDate, "yyyy-MM-dd"),
+        startTime: format(startDate, "HH:mm"),
+        endTime: format(endDate, "HH:mm"),
         location: event.location || "",
         category: event.category || "",
         isAllDay: event.isAllDay || false,
       });
+      setShowMoreOptions(true);
     } else if (selectedDate) {
-      // Nuevo evento
       const startDateTime = new Date(selectedDate);
-      const endDateTime = new Date(selectedDate);
-      endDateTime.setHours(startDateTime.getHours() + 1);
+      const roundedMinutes = Math.ceil(startDateTime.getMinutes() / 15) * 15;
+      startDateTime.setMinutes(roundedMinutes, 0, 0);
+
+      const endDateTime = addMinutes(startDateTime, 60);
 
       setFormData({
         id: null,
         title: "",
         description: "",
-        startTime: format(startDateTime, "yyyy-MM-dd'T'HH:mm"),
-        endTime: format(endDateTime, "yyyy-MM-dd'T'HH:mm"),
+        date: format(startDateTime, "yyyy-MM-dd"),
+        startTime: format(startDateTime, "HH:mm"),
+        endTime: format(endDateTime, "HH:mm"),
         location: "",
         category: "",
         isAllDay: false,
       });
     }
-  }, [event, selectedDate]);
 
-  const [categories, setCategories] = useState([]);
+    setTimeout(() => titleInputRef.current?.focus(), 100);
+  }, [event, selectedDate]);
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(
-          "http://localhost:8080/events/categories",
-        );
-
-        if (!response.ok) {
-          throw new Error("Error fetching categories");
-        }
-
+        const response = await fetch("http://localhost:8080/events/categories");
+        if (!response.ok) throw new Error("Error fetching categories");
         const data = await response.json();
         setCategories(data);
       } catch (error) {
         console.error("Failed to load categories:", error);
       }
     };
-
     fetchCategories();
   }, []);
 
-  /**
-   * Garantiza que el formulario tenga siempre una categoría válida
-   * una vez que la lista de categorías ha sido cargada desde el backend.
-   *
-   * Este efecto se ejecuta cuando:
-   * - Se actualiza la lista de categorías (tras el fetch)
-   * - Cambia el valor actual de formData.category
-   *
-   * Si no hay ninguna categoría seleccionada (por ejemplo,
-   * al crear un nuevo evento) y ya existen categorías disponibles,
-   * se asigna automáticamente la primera categoría recibida
-   * como valor por defecto.
-   
-   */
   useEffect(() => {
-    if (!categories.length) return;
-
-    if (!formData.category) {
-      setFormData((prev) => ({
-        ...prev,
-        category: categories[0].value, // si tu backend devuelve DTO {value,label}
-      }));
+    if (categories.length && !formData.category) {
+      setFormData((prev) => ({ ...prev, category: categories[0] }));
     }
   }, [categories, formData.category]);
 
@@ -102,13 +183,25 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
     });
   };
 
+  const handleTimeChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    const startDateTime = `${formData.date}T${formData.startTime}`;
+    const endDateTime = `${formData.date}T${formData.endTime}`;
+
     const eventData = {
-      ...formData,
-      startTime: formData.startTime, // string local, sin toISOString ni new Date
-      endTime: formData.endTime,
+      id: formData.id,
+      title: formData.title,
+      description: formData.description,
+      startTime: startDateTime,
+      endTime: endDateTime,
+      location: formData.location,
+      category: formData.category,
+      isAllDay: formData.isAllDay,
     };
 
     onSave(eventData);
@@ -120,125 +213,250 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
     }
   };
 
+  const getCategoryColor = (cat) => {
+    const colors = {
+      reunion: "#6264a7",
+      personal: "#78b6c8",
+      perfil: "#f48942",
+    };
+    return colors[cat?.toLowerCase()] || "#6264a7";
+  };
+
+  const formatDisplayDate = () => {
+    if (!formData.date) return "";
+    const date = new Date(formData.date + "T00:00:00");
+    return format(date, "EEEE, d 'de' MMMM", { locale: es });
+  };
+
   return (
-    <div className="event-modal-overlay" onClick={onClose}>
-      <div className="event-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="event-modal-header">
-          <h2>{event ? "Editar Evento" : "Nuevo Evento"}</h2>
-          <button className="close-button" onClick={onClose}>
-            ×
+    <div className="gcal-modal-overlay" onClick={onClose}>
+      <div className="gcal-modal" onClick={(e) => e.stopPropagation()}>
+        {/* Header minimalista */}
+        <div className="gcal-modal-header">
+          <button className="gcal-close-btn" onClick={onClose} type="button">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="title">Título *</label>
+        <form onSubmit={handleSubmit} className="gcal-form">
+          {/* Título principal */}
+          <div className="gcal-title-section">
             <input
+              ref={titleInputRef}
               type="text"
-              id="title"
               name="title"
+              className="gcal-title-input"
+              placeholder="Añadir título"
               value={formData.title}
               onChange={handleChange}
               required
-              placeholder="Título del evento"
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="description">Descripción</label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows="3"
-              placeholder="Añadir descripción..."
-            />
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="startTime">Fecha y hora de inicio *</label>
-              <input
-                type="datetime-local"
-                id="startTime"
-                name="startTime"
-                value={formData.startTime}
-                onChange={handleChange}
-                required
-              />
+          {/* Fecha y hora */}
+          <div className="gcal-datetime-section">
+            <div className="gcal-section-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="endTime">Fecha y hora de fin *</label>
-              <input
-                type="datetime-local"
-                id="endTime"
-                name="endTime"
-                value={formData.endTime}
-                onChange={handleChange}
-                required
-              />
+            <div className="gcal-datetime-content">
+              <div className="gcal-date-row">
+                <input
+                  type="date"
+                  name="date"
+                  className="gcal-date-input"
+                  value={formData.date}
+                  onChange={handleChange}
+                  required
+                />
+                <span className="gcal-date-display">{formatDisplayDate()}</span>
+              </div>
+
+              {!formData.isAllDay && (
+                <div className="gcal-time-row">
+                  <TimeSelector
+                    label="Inicio"
+                    value={formData.startTime}
+                    onChange={(val) => handleTimeChange("startTime", val)}
+                  />
+                  <span className="gcal-time-separator">—</span>
+                  <TimeSelector
+                    label="Fin"
+                    value={formData.endTime}
+                    onChange={(val) => handleTimeChange("endTime", val)}
+                  />
+                </div>
+              )}
+
+              <label className="gcal-allday-toggle">
+                <input
+                  type="checkbox"
+                  name="isAllDay"
+                  checked={formData.isAllDay}
+                  onChange={handleChange}
+                />
+                <span className="gcal-toggle-slider"></span>
+                <span className="gcal-toggle-label">Todo el día</span>
+              </label>
             </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="location">Ubicación</label>
-            <input
-              type="text"
-              id="location"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              placeholder="Añadir ubicación..."
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="category">Categoría</label>
-            <select
-              id="category"
-              name="category"
-              value={formData.category ?? ""}
-              onChange={handleChange}
-              required
+          {/* Botón para mostrar más opciones */}
+          {!showMoreOptions && (
+            <button
+              type="button"
+              className="gcal-more-options-btn"
+              onClick={() => setShowMoreOptions(true)}
             >
-              <option value="" disabled>
-                Selecciona una categoría
-              </option>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Más opciones
+            </button>
+          )}
 
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Opciones adicionales */}
+          {showMoreOptions && (
+            <>
+              {/* Ubicación */}
+              <div className="gcal-location-section">
+                <div className="gcal-section-icon">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  name="location"
+                  className="gcal-location-input"
+                  placeholder="Añadir ubicación"
+                  value={formData.location}
+                  onChange={handleChange}
+                />
+              </div>
 
-          <div className="form-group checkbox">
-            <input
-              type="checkbox"
-              id="isAllDay"
-              name="isAllDay"
-              checked={formData.isAllDay}
-              onChange={handleChange}
-            />
-            <label htmlFor="isAllDay">Evento de todo el día</label>
-          </div>
+              {/* Descripción */}
+              <div className="gcal-description-section">
+                <div className="gcal-section-icon">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <line x1="17" y1="10" x2="3" y2="10" />
+                    <line x1="21" y1="6" x2="3" y2="6" />
+                    <line x1="21" y1="14" x2="3" y2="14" />
+                    <line x1="17" y1="18" x2="3" y2="18" />
+                  </svg>
+                </div>
+                <textarea
+                  name="description"
+                  className="gcal-description-input"
+                  placeholder="Añadir descripción"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows="3"
+                />
+              </div>
 
-          <div className="modal-actions">
+              {/* Categoría */}
+              <div className="gcal-category-section">
+                <div className="gcal-section-icon">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 6v6l4 2" />
+                  </svg>
+                </div>
+                <div className="gcal-category-chips">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      className={`gcal-category-chip ${formData.category === cat ? "active" : ""}`}
+                      style={{
+                        "--chip-color": getCategoryColor(cat),
+                      }}
+                      onClick={() =>
+                        setFormData((prev) => ({ ...prev, category: cat }))
+                      }
+                    >
+                      <span className="gcal-chip-dot"></span>
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Footer con acciones */}
+          <div className="gcal-modal-footer">
             {event && (
               <button
                 type="button"
-                className="delete-button"
+                className="gcal-delete-btn"
                 onClick={handleDelete}
               >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <polyline points="3,6 5,6 21,6" />
+                  <path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2" />
+                </svg>
                 Eliminar
               </button>
             )}
-            <button type="submit" className="save-button">
-              {event ? "Guardar cambios" : "Crear evento"}
-            </button>
+            <div className="gcal-footer-right">
+              <button
+                type="button"
+                className="gcal-cancel-btn"
+                onClick={onClose}
+              >
+                Cancelar
+              </button>
+              <button type="submit" className="gcal-save-btn">
+                {event ? "Guardar" : "Crear"}
+              </button>
+            </div>
           </div>
         </form>
       </div>

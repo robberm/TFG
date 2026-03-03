@@ -97,7 +97,7 @@ public class EventService {
 
         if(sessionStore != null){
         Long userId = sessionStore.getLoggedUserId();
-       
+
         if (userId == null) return;
 
         if (isEventCategoryActive("MANDATORY", userId)){

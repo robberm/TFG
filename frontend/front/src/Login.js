@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import './css/App.css';
-import { useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom";
+import PasswordInput from "./components/PasswordInput";
 
 
 const Login = () => {
@@ -75,7 +76,6 @@ const Login = () => {
       <h2 style={colorLogInTexto}>Log-in</h2>
       <form onSubmit={handleLogin}>
         <input
-          
           className="app-input"
           name="username"
           type="text"
@@ -84,15 +84,16 @@ const Login = () => {
           onChange={(e) => setLoginUsername(e.target.value)} // Actualiza el estado
           onKeyDown={handleKeyDown} // Manejo de la tecla Enter
         />
-        <input
+        <PasswordInput
           className="app-input"
+          id="password"
           name="password"
-          type="password"
           placeholder="Password"
           value={loginPw}
-          onChange={(e) => setLoginPw(e.target.value)} // Actualiza el estado
-          onKeyDown={handleKeyDown} // Manejo de la tecla Enter
-          ref={passwordInputRef} // Referencia para el campo de contraseña
+          onChange={(e) => setLoginPw(e.target.value)}
+          onKeyDown={handleKeyDown}
+          ref={passwordInputRef}
+          autoComplete="new-password"
         />
         <button className="app-button" type="submit">
           Log-in
