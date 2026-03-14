@@ -652,6 +652,26 @@ body.dark .day.disabled {
   color: #ffffff;
 }
 
+.day-event.MANDATORY {
+  background-color: var(--event-mandatory-color);
+}
+
+.day-event.WORK {
+  background-color: var(--event-work-color);
+}
+
+.day-event.PERSONAL {
+  background-color: var(--event-personal-color);
+}
+
+.day-event.HEALTH {
+  background-color: var(--event-health-color);
+}
+
+.day-event.STUDY {
+  background-color: var(--event-study-color);
+}
+
 .day-event.reunion {
   background-color: rgba(98, 100, 167, 0.9);
 }

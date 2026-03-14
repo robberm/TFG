@@ -1,70 +1,88 @@
 package net.tfg.tfgapp.security;
 
-
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.boot.autoconfigure.security.oauth2.resource.OAuth2ResourceServerProperties;
-import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
-
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
 @Component
 public class JwtUtil {
 
-
-    public JwtUtil() {
-    }
-
-    /**
-     * Clase cuyo propósito es gestionar los tokkens de sesíón.
-     */
-
-
-
     @Value("${jwt.secret}")
-    private String secret_key;
+    private String secretKey;
 
     @Value("${jwt.expiration}")
-    private int EXPIRATION_MS;
+    private long expirationMs;
 
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(secret_key.getBytes());
+        return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String username) {
+    public String generateToken(String username, Integer tokenVersion) {
         return Jwts.builder()
                 .setSubject(username)
+                .claim("tokenVersion", tokenVersion)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-     // obtener username a raíz del token
     public String extractUsername(String token) {
+        return extractAllClaims(token).getSubject();
+    }
+
+    public Integer extractTokenVersion(String token) {
+        Object claim = extractAllClaims(token).get("tokenVersion");
+
+        if (claim instanceof Integer integerClaim) {
+            return integerClaim;
+        }
+        if (claim instanceof Number numberClaim) {
+            return numberClaim.intValue();
+        }
+
+        throw new IllegalArgumentException("Claim tokenVersion no válida.");
+    }
+
+    public boolean validateToken(String token) {
+        try {
+            extractAllClaims(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    public boolean validateToken(String token, String expectedUsername, Integer expectedTokenVersion) {
+        try {
+            Claims claims = extractAllClaims(token);
+
+            String username = claims.getSubject();
+            Integer tokenVersion = extractTokenVersion(token);
+            Date expiration = claims.getExpiration();
+
+            return username.equals(expectedUsername)
+                    && tokenVersion.equals(expectedTokenVersion)
+                    && expiration.after(new Date());
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
-    }
-
-     //verifica que el token no es invalido / expirado
-    public boolean validateToken(String token) {
-        try {
-            Jwts.parserBuilder()
-                    .setSigningKey(getSigningKey())
-                    .build()
-                    .parseClaimsJws(token);
-            return true;
-        } catch (JwtException e) {
-            return false;
-        }
+                .getBody();
     }
 }
-
 

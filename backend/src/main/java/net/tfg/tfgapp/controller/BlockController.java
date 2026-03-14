@@ -4,9 +4,11 @@ package net.tfg.tfgapp.controller;
 import lombok.Getter;
 import lombok.Setter;
 import net.tfg.tfgapp.service.BlockingService;
+import net.tfg.tfgapp.utils.WindowsUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 
@@ -43,5 +45,22 @@ public class BlockController {
     @PostMapping("/cancel")
     public void cancelBlock() {
         blockingService.cancelCurrentBlock();
+    }
+
+    /**
+     * Obtiene la lista de procesos en ejecución con información detallada.
+     * Cada proceso incluye: executableName, displayName, category, iconBase64
+     */
+    @GetMapping("/running-processes")
+    public List<Map<String, String>> getRunningProcesses() {
+        return WindowsUtils.getRunningProcessesDetailed();
+    }
+
+    /**
+     * Obtiene solo los nombres de los procesos en ejecución (versión simple)
+     */
+    @GetMapping("/running-processes/simple")
+    public List<String> getRunningProcessesSimple() {
+        return WindowsUtils.getRunningProcesses();
     }
 }

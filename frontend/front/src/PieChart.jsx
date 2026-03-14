@@ -114,7 +114,7 @@ export default function PieChart() {
       <div className="pieChart" ref={pieRef}>
         <div className="pieCenter">
           <div className="piePercent">{completedPercent}%</div>
-          <div className="pieLabel">completado</div>
+          
         </div>
       </div>
 

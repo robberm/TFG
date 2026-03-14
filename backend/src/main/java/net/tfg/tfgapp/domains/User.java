@@ -1,22 +1,18 @@
 package net.tfg.tfgapp.domains;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 @Setter
-
 @Entity
-@Table(name= "Users")
+@Table(name = "Users")
 public class User {
-
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,16 +24,20 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    @Column(nullable = false)
+    private Integer tokenVersion = 0;
+
     public User(String username, String password) {
         this.username = username;
         this.password = password;
+        this.tokenVersion = 0;
     }
-    @JsonIgnore  // Esto evita la serialización del campo `objetivos` en la respuesta
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)// No necesido Cascade.ALL ya que solo me interesa en caso del borrado de un User.
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Objectives> objetivos = new ArrayList<>();
 
-
-    public User() {}
-
-
+    public User() {
+        this.tokenVersion = 0;
+    }
 }

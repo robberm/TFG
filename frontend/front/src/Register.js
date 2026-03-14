@@ -28,38 +28,19 @@ const Register = () => {
       });
 
       if (response.ok) {
-        // 1) Log-in automático con las mismas credenciales
-        const loginResp = await fetch("http://localhost:8080/users/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            username: registerUsername,
-            password: registerPw,
-          }),
-        });
-
-        if (!loginResp.ok) {
-          // registro OK pero login falló (raro, pero posible)
-          const msg = await loginResp.text();
-          setError(
-            msg ||
-              "Registrado, pero no se pudo iniciar sesión automáticamente.",
-          );
-          return;
-        }
-
-        const data = await loginResp.json();
+        const data = await response.json();
         const token = data.token.trim();
+
         localStorage.setItem("token", token);
         localStorage.setItem("username", data.username);
 
-        // 2) Marcar sesión activa en backend (igual que Login.js)
+        //  Marco sesión activa en backend 
         await fetch("http://localhost:8080/session/active-user", {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // 3) Ir a home ya “logueado”
+        // 3) Ir a home ya logged in
         navigate("/home");
       } else {
         const errorMessage = await response.text();

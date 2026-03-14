@@ -1,105 +1,18 @@
-/* Título PERSONAL en la parte superior */
 .personalHeader {
-  padding: 0 0 20px 0; /* Espaciado: arriba, derecha, abajo, izquierda */
-  background-color: var(--bg-page);
-  
+  padding: 0 0 20px 0;
+  background-color: transparent;
 }
 
 .personalHeader h1 {
-  margin: 0 0 30px 0; /* Solo margen inferior */
-  font-size: 42px; 
-  color: --var(--text-main);
+  margin: 0 0 30px 0;
+  font-size: 42px;
+  color: var(--text-main);
   letter-spacing: 1px;
   font-family: Caoli;
 }
 
-/* Uso flexbox para dividir sidebar y el main content */
-.homeFrame {
-  display: flex; /* Flexbox permite que sidebar y contenido estén lado a lado */
-  height: 100vh; /* Altura q ocupa */
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: #fafafa; /* Color de fondo claro como Notion */
-}
-
-/* SIDEBAR - Menú lateral */
-.sideBar {
-  width: 260px; /* Ancho fijo del sidebar */
-  background-color: #f7f6f3; /* Color beige claro como Notion */
-  border-right: 1px solid #e9e5e0; /* Borde sutil */
-  padding: 20px 0; /* Espaciado vertical */
-  box-sizing: border-box; /* Incluye padding en el ancho total */
-  position: relative; /* Para posicionamiento interno */
-}
-
-/* Header del menú */
-.menuHeader {
-  padding: 0 20px 16px 20px; /* Espaciado interno */
-  border-bottom: 1px solid #e9e5e0; /* Línea separadora */
-  margin-bottom: 16px;
-}
-
-.menuHeader h3 {
-  margin: 0; /* Quita márgenes por defecto */
-  font-size: 14px;
-  font-weight: 600;
-  color: #37352f; /* Color oscuro para texto */
-  text-transform: uppercase; /* Texto en mayúsculas */
-  letter-spacing: 0.5px; /* Espaciado entre letras */
-}
-
-/* Contenedor de items del menú */
-.menuItems {
-  padding: 0 12px;
-   
-  /* Espaciado horizontal */
-}
-
-/* Items individuales del menú */
-.sideBar a {
-  display: flex; /* Flexbox para alinear bullet y texto */
-  align-items: center; /* Centra verticalmente */
-  padding: 8px 16px; /* Espaciado interno */
-  margin: 2px 0; /* Espaciado entre items */
-  text-decoration: none; /* Quita subrayado de enlaces */
-  color: #37352f; /* Color del texto */
-  border-radius: 6px; /* Bordes redondeados */
-  font-size: 14px;
-  transition: background-color 0.2s ease; /* Transición suave para hover */
-}
-
-.sideBar a:hover {
-  background-color: #e9e5e0; /* Color de fondo al pasar el mouse */
-}
-
-.sideBar a.active {
-  background-color: #2383e2; /* Color azul para item activo */
-  color: white; /* Texto blanco para contraste */
-}
-
-/* Iconos del menú */
-.menuIcon {
-  margin-right: 12px; /* Espacio entre icono y texto */
-  font-size: 14px; /* Tamaño del icono */
-  width: 16px; /* Ancho fijo para alineación */
-}
-
-/* Icono del botón filtrar */
-.filterIcon {
-  margin-right: 8px; /* Espacio entre icono y texto */
-  font-size: 12px; /* Tamaño del icono */
-}
-
-/* CONTENIDO PRINCIPAL */
-.mainContent {
-  flex: 1; /* Ocupa todo el espacio restante */
-  padding: 40px 60px; /* Espaciado interno generoso */
-  background-color: white; /* Fondo blanco para el contenido */
-  overflow-y: auto; /* Permite scroll si el contenido es muy largo */
-}
-
-/* Header del dashboard */
 .dashboardHeader {
-  margin-bottom: 40px; /* Espacio debajo del header */
+  margin-bottom: 28px;
 }
 
 .dashboardHeader h1 {
@@ -109,43 +22,122 @@
   color: var(--text-main);
 }
 
-/* SECCIÓN DEL GRÁFICO */
-.chartSection {
-  display: flex; /* Flexbox para centrar el gráfico */
-  flex-direction: column;
-  align-items: center; /* Centra horizontalmente */
-  margin-bottom: 50px;
-  padding: 30px;
-  background-color: var(--bg-page); /* Fondo gris claro */
-  border-radius: 12px; /* Bordes redondeados */
-  border: 1px solid #e9e5e0; /* Borde sutil */
+.homeHeroSection {
+  width: 100%;
 }
 
-/* Contenedor del gráfico circular */
+.homeHeroGrid {
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) 300px;
+  gap: 24px;
+  align-items: start;
+  transition: grid-template-columns 0.4s ease;
+}
+
+.homeHeroGrid:hover {
+  grid-template-columns: minmax(260px, 0.72fr) minmax(500px, 1.28fr);
+}
+
+.homeLeftColumn {
+  min-width: 0;
+}
+
+.chartSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  padding: 22px;
+  background-color: var(--bg-page);
+  border-radius: 16px;
+  border: 1px solid var(--border-color, #e9e5e0);
+  box-sizing: border-box;
+}
+
 .chartContainer {
   position: relative;
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
-/* Gráfico circular creado con CSS */
+.remindersSection {
+  width: 100%;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-color, #e9e5e0);
+  background-color: transparent;
+}
+
+.remindersSection h2 {
+  margin: 0 0 10px 0;
+  font-size: 20px;
+  color: var(--text-main);
+}
+
+.remindersList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reminderCard {
+  padding: 12px 14px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 12px;
+  background: var(--bg-page);
+}
+
+.reminderCardTime {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--text-main);
+  opacity: 0.75;
+}
+
+.reminderCardTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.reminderCardLocation {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-main);
+  opacity: 0.7;
+}
+
+.remindersEmptyState {
+  padding: 12px 0;
+  font-size: 14px;
+  color: var(--text-main);
+  opacity: 0.7;
+}
+
+.reminderItem {
+  padding: 8px 0;
+  color: #555;
+  font-size: 14px;
+}
+
 .pieChart {
   width: 120px;
   height: 120px;
-  border-radius: 50%; /* Hace el círculo */
+  border-radius: 50%;
   position: relative;
   overflow: hidden;
   background: conic-gradient(
-    #2383e2 0deg 72deg,     /* Azul - primer segmento */
-    #e91e63 72deg 144deg,   /* Rosa - segundo segmento */
-    #4caf50 144deg 216deg,  /* Verde - tercer segmento */
-    #ff9800 216deg 288deg,  /* Naranja - cuarto segmento */
-    #9c27b0 288deg 360deg   /* Morado - quinto segmento */
+    #2383e2 0deg 72deg,
+    #e91e63 72deg 144deg,
+    #4caf50 144deg 216deg,
+    #ff9800 216deg 288deg,
+    #9c27b0 288deg 360deg
   );
 }
 
-/* Círculo blanco en el centro para hacer efecto donut */
 .pieChart::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -163,19 +155,265 @@
   font-style: italic;
 }
 
-/* SECCIÓN TO-DO */
+.homeDailyWidget {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  justify-self: end;
+  border-radius: 20px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  background: var(--bg-main);
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transition:
+    width 0.4s ease,
+    height 0.4s ease,
+    border-radius 0.3s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+.homeHeroGrid:hover .homeDailyWidget {
+  width: 100%;
+  height: 560px;
+  border-radius: 22px;
+}
+
+.homeDailyWidget:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.12);
+}
+
+.homeDailyWidgetInner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.homeDailyWidgetCollapsedContent {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 22px;
+  opacity: 1;
+  transition:
+    opacity 0.2s ease,
+    transform 0.24s ease;
+}
+
+.homeHeroGrid:hover .homeDailyWidgetCollapsedContent {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.97);
+}
+
+.homeDailyPreviewShell {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.homeDailyPreviewCircle {
+  width: 112px;
+  height: 112px;
+  border-radius: 999px;
+  border: 3px solid var(--border-color, #d8d8d8);
+  background: radial-gradient(
+    circle at center,
+    transparent 58%,
+    rgba(0, 0, 0, 0.04) 59%,
+    transparent 60%
+  );
+}
+
+.homeDailyPreviewMeta {
+  text-align: center;
+}
+
+.homeDailyPreviewTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.homeDailyPreviewSubtitle {
+  font-size: 13px;
+  color: var(--text-main);
+  opacity: 0.7;
+}
+
+.homeDailyWidgetExpandedContent {
+  position: absolute;
+  inset: 0;
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition:
+    opacity 0.26s ease,
+    transform 0.26s ease;
+  overflow: auto;
+}
+
+.homeHeroGrid:hover .homeDailyWidgetExpandedContent {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.homeDailyExpandedHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.homeDailyWidgetEyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-main);
+  opacity: 0.65;
+  margin-bottom: 4px;
+}
+
+.homeDailyWidgetDate {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.homeDailyAllDayBlock {
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 12px;
+  background: var(--bg-page);
+}
+
+.homeDailyAllDayLabel {
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-main);
+  opacity: 0.7;
+}
+
+.homeDailyAllDayList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.homeAllDayEvent {
+  position: relative !important;
+  inset: auto !important;
+  height: auto !important;
+  left: auto !important;
+  right: auto !important;
+  cursor: pointer;
+  min-height: unset !important;
+}
+
+.homeDailyTimeline {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 8px;
+  min-height: 672px;
+}
+
+.homeDailyTimelineLabels {
+  position: relative;
+}
+
+.homeDailyTimelineLabel {
+  height: 28px;
+  font-size: 11px;
+  color: var(--text-main);
+  opacity: 0.72;
+  text-align: right;
+  padding-right: 4px;
+  box-sizing: border-box;
+  line-height: 28px;
+}
+
+.homeDailyTimelineGrid {
+  position: relative;
+  min-height: 672px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 14px;
+  overflow: hidden;
+  background-color: var(--bg-main);
+}
+
+.homeDailyTimelineRow {
+  height: 28px;
+  cursor: pointer;
+  transition: background-color 0.18s ease;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+  box-sizing: border-box;
+}
+
+.homeDailyTimelineRow:last-child {
+  border-bottom: none;
+}
+
+.homeDailyTimelineRow:hover {
+  background-color: rgba(98, 100, 167, 0.05);
+}
+
+.homeDailyEventsLayer {
+  position: absolute;
+  inset: 0;
+}
+
+.homeDailyEventCard {
+  cursor: pointer;
+}
+
+.homeDailyNowIndicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.homeDailyNowDot {
+  width: 7px;
+  height: 7px;
+  background-color: #d13438;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  position: absolute;
+  left: -4px;
+  transform: translateY(-50%);
+}
+
+.homeDailyNowLine {
+  border-top: 1px solid #d13438;
+  width: 100%;
+  transform: translateY(-50%);
+}
+
 .todoSection {
   max-width: 100%;
 }
 
-/* Header de la sección to-do */
 .todoHeader {
-  display: flex; /* Flexbox para alinear título y botón */
-  justify-content: space-between; /* Separa título y botón */
-  align-items: center; /* Centra verticalmente */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
   padding-bottom: 10px;
-  border-bottom: 2px solid #37352f; /* Línea gruesa debajo */
+  border-bottom: 2px solid #37352f;
 }
 
 .todoHeader h2 {
@@ -185,71 +423,84 @@
   color: var(--text-main);
 }
 
-/* Botón de filtrar */
 .filterButton {
   padding: 8px 16px;
-  background-color: transparent; /* Fondo transparente */
-  border: 1px solid #ccc; /* Borde gris */
+  background-color: transparent;
+  border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 14px;
   color: #666;
-  cursor: pointer; /* Cursor de mano al pasar por encima */
-  transition: all 0.2s ease; /* Transición suave */
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .filterButton:hover {
-  background-color: #f0f0f0; /* Fondo gris claro al hover */
-  border-color: #999; /* Borde más oscuro al hover */
+  background-color: #f0f0f0;
+  border-color: #999;
 }
 
-/* TABLA DE TAREAS */
 .todoTable {
-  border: 2px solid #37352f; /* Borde grueso alrededor de la tabla */
-  border-radius: 8px; /* Bordes redondeados */
-  overflow: hidden; /* Esconde contenido que sale del borde redondeado */
+  border: 2px solid #37352f;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-/* Filas de la tabla */
 .tableRow {
-  display: grid; /* Grid para dividir en columnas */
-  grid-template-columns: 1fr 1fr; /* Dos columnas iguales */
-  border-bottom: 1px solid #37352f; /* Línea entre filas */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid #37352f;
 }
 
 .tableRow:last-child {
-  border-bottom: none; /* Quita borde de la última fila */
+  border-bottom: none;
 }
 
-/* Header de la tabla */
 .tableHeader {
-  background-color: #f5f5f5; /* Fondo gris para el header */
-  font-weight: 600; /* Texto en negrita */
+  background-color: #f5f5f5;
+  font-weight: 600;
 }
 
-/* Celdas de la tabla */
 .tableCell {
-  padding: 16px 20px; /* Espaciado interno de las celdas */
-  border-right: 1px solid #37352f; /* Línea vertical entre columnas */
+  padding: 16px 20px;
+  border-right: 1px solid #37352f;
   font-size: 14px;
   color: #37352f;
 }
 
 .tableCell:last-child {
-  border-right: none; /* Quita borde de la última columna */
+  border-right: none;
 }
 
-/* Responsive - para pantallas pequeñas */
+@media (max-width: 1180px) {
+  .homeHeroGrid,
+  .homeHeroGrid:hover {
+    grid-template-columns: 1fr;
+  }
+
+  .homeDailyWidget,
+  .homeHeroGrid:hover .homeDailyWidget {
+    width: 100%;
+    height: 420px;
+    justify-self: stretch;
+  }
+
+  .chartSection {
+    height: auto;
+    min-height: 260px;
+  }
+}
+
 @media (max-width: 768px) {
-  .homeFrame {
-    flex-direction: column; /* Cambia a columna en móviles */
+  .homeDailyPreviewCircle {
+    width: 96px;
+    height: 96px;
   }
 
-  .sideBar {
-    width: 100%; /* Sidebar ocupa todo el ancho */
-    height: auto; /* Altura automática */
+  .homeDailyTimeline {
+    grid-template-columns: 44px 1fr;
   }
 
-  .mainContent {
-    padding: 20px; /* Menos padding en móviles */
+  .homeDailyTimelineLabel {
+    font-size: 10px;
   }
 }

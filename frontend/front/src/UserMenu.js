@@ -1,61 +1,72 @@
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
-import React, {useState} from "react";
+import "./css/UserMenu.css";
 
-import { useNavigate } from "react-router-dom"
-import { Link } from 'react-router-dom';
-import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-
-import './css/UserMenu.css';
-
-function UserMenu(){
-
-const [userMenuIsOpen,setUserMenuIsOpen] = useState(false);
-const navigate = useNavigate();
-const username = localStorage.getItem("username") || "User";
-console.log("Rendering UserMenu in Home");
+function UserMenu() {
+  const [userMenuIsOpen, setUserMenuIsOpen] = useState(false);
+  const navigate = useNavigate();
+  const username = localStorage.getItem("username") || "User";
+  const userInitial = username.charAt(0).toUpperCase();
+  const profileImage = localStorage.getItem("profileImage");
 
 
+  const handleLogout = async () => {
+    try {
+      await fetch("http://localhost:8080/session/clear", {
+        method: "POST",
+      });
+    } catch (err) {
+      console.warn("Log out failed.", err);
+    }
 
- const handleLogout = async () => {
-  try {
-    await fetch("http://localhost:8080/session/clear", {
-      method: "POST",
-    });
-  } catch (err) {
-    console.warn("Log out failed.", err);
-  }
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    navigate("/login");
+  };
 
-  localStorage.removeItem("token");
-  localStorage.removeItem("username");
-  navigate("/login");
-};
+  const location = useLocation();
 
+  useEffect(() => {
+    setUserMenuIsOpen(false);
+  }, [location]);
 
+ 
 
+  return (
+    <div className="userMenuFrame">
+      <button
+        type="button"
+        className="userMenuTrigger"
+        onClick={() => setUserMenuIsOpen(!userMenuIsOpen)}
+      >
+        <div className="userAvatar">
+          {profileImage ? (
+            <img
+              src={profileImage}
+              alt={`${username} profile`}
+              className="userAvatarImage"
+            />
+          ) : (
+            <span className="userAvatarFallback">{userInitial}</span>
+          )}
+        </div>
 
-// Dentro del componente UserMenu
-const location = useLocation();
+        <div className="userInfo">
+          <span className="userName">{username}</span>
+          <span className="userRole">Mi cuenta</span>
+        </div>
 
-useEffect(() => {
-  setUserMenuIsOpen(false); // Cierra el menú al cambiar de ruta
-}, [location]);
-
-const redirectSettings = () => {
-   navigate("/settings");
-}
-
-
-
-         return (
-             <div className="userMenuFrame">
-      <div onClick={() => setUserMenuIsOpen(!userMenuIsOpen)} className="userIcon">
-        {username}
-      </div>
+        <i
+          className={`fa fa-chevron-down userFlecha ${userMenuIsOpen ? "open" : ""}`}
+        ></i>
+      </button>
 
       {userMenuIsOpen && (
         <div className="userMenuPop">
-          {/* Settings */}
           <Link
             to="/settings"
             className="menuItem"
@@ -65,7 +76,6 @@ const redirectSettings = () => {
             <span>Settings</span>
           </Link>
 
-          {/* Sign Out */}
           <div className="menuItem logout" onClick={handleLogout}>
             <i className="fa fa-sign-out-alt"></i>
             <span>Sign Out</span>
@@ -75,17 +85,5 @@ const redirectSettings = () => {
     </div>
   );
 }
-    
-  
-
 
 export default UserMenu;
-
-           
-
-
-
-
-
-
-

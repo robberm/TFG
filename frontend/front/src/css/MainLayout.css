@@ -1,18 +1,57 @@
 
 
 
-
 /* ========== ESTRUCTURA PRINCIPAL ========== */
-body, #root, .homeFrame {
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body,
+#root,
+.homeFrame {
   background-color: var(--bg-main);
   color: var(--text-main);
-  transition: background-color 0.3s ease, color 0.3s ease;
   min-height: 100vh;
 }
 
-/* MENÚ lateral: ahora con fondo separado */
+.homeFrame {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+/* MENÚ lateral */
 .sideBar {
+  width: 260px;
+  min-width: 260px;
   background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--border-color);
+  padding: 20px 0;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.menuHeader {
+  padding: 0 20px 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 16px;
+}
+
+.menuHeader h3 {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.menuItems {
+  padding: 0 12px;
 }
 
 /* Items individuales del menú */
@@ -47,23 +86,48 @@ body, #root, .homeFrame {
 /* CONTENIDO PRINCIPAL */
 .mainContent {
   flex: 1;
-  background-color: var(--bg-main); /* unificado */
+  background-color: var(--bg-main);
   overflow-y: auto;
   position: relative;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
-/* Contenido de página (debajo del menú) */
+/* Contenido de página */
 .pageContent {
   flex: 1;
   padding: 80px 60px 40px;
   z-index: 1;
   position: relative;
-  background-color: var(--bg-page); /* igual a bg-main */
+  background-color: var(--bg-page);
   color: var(--text-main);
+  min-width: 0;
 }
 
-.menuHeader h3 {
-  color: var(--fontColor);  /* Example color: Tomato */
+.userMenuContainer {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  z-index: 10;
+}
+
+@media (max-width: 768px) {
+  .homeFrame {
+    flex-direction: column;
+  }
+
+  .sideBar {
+    width: 100%;
+    min-width: 100%;
+    height: auto;
+  }
+
+  .pageContent {
+    padding: 80px 20px 24px;
+  }
+
+  .userMenuContainer {
+    right: 16px;
+  }
 }
