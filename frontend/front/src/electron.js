@@ -10,7 +10,11 @@ function createWindow() {
     width: 800,
     height: 600,
     icon: null,
-    autoHideMenuBar: false,
+    autoHideMenuBar: true,
+    frame: false,
+    transparent: true,
+    backgroundColor: "#00000000",
+    hasShadow: false,
     webPreferences: {
       preload: path.join(__dirname, ".", "preload.js"),
       nodeIntegration: false,
@@ -23,12 +27,10 @@ function createWindow() {
 
   if (isDev) {
     mainWindow.loadURL("http://localhost:3000");
-    mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, "build", "index.html"));
   }
 
-  // Zoom con teclado español: Ctrl + + , Ctrl + - , Ctrl + 0
   mainWindow.webContents.on("before-input-event", (event, input) => {
     const wc = mainWindow.webContents;
 

@@ -1,6 +1,6 @@
 .settingsPage {
   min-height: 100vh;
-  background-color: var(--bg-page);
+  background: transparent;
   color: var(--text-main);
   padding: 32px 20px;
 }
@@ -24,7 +24,10 @@
   background-color: var(--sidebar-bg);
   border-radius: 18px;
   padding: 22px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--panel-shadow);
+  border: 1px solid var(--panel-border);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 }
 
 .settingsCardHeader {
@@ -53,6 +56,10 @@
   gap: 16px;
 }
 
+.settingsCard .settingsRow + .settingsRow {
+  margin-top: 18px;
+}
+
 .settingsLabel {
   display: block;
   font-size: 15px;
@@ -73,7 +80,7 @@
   position: relative;
   width: 58px;
   height: 32px;
-  border: none;
+  border: 1px solid var(--panel-border);
   border-radius: 999px;
   background-color: var(--bg-hover);
   cursor: pointer;
@@ -169,13 +176,16 @@
   width: 100%;
   min-height: 46px;
   padding: 12px 14px;
-  border: 1px solid transparent;
+  border: 1px solid var(--panel-border);
   border-radius: 12px;
   background-color: var(--bg-main);
   color: var(--text-main);
   font-size: 14px;
   outline: none;
-  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
   box-sizing: border-box;
 }
 
@@ -201,7 +211,11 @@
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
-  transition: transform 0.15s ease, background-color 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.15s ease,
+    background-color 0.2s ease,
+    opacity 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .settingsButton:hover {
@@ -220,6 +234,7 @@
 .settingsButton.secondary {
   background-color: var(--bg-hover);
   color: var(--text-main);
+  border: 1px solid var(--panel-border);
 }
 
 .hiddenFileInput {

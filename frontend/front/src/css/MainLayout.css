@@ -1,7 +1,3 @@
-
-
-
-/* ========== ESTRUCTURA PRINCIPAL ========== */
 html,
 body,
 #root {
@@ -11,20 +7,107 @@ body,
 }
 
 body,
-#root,
-.homeFrame {
-  background-color: var(--bg-main);
+#root {
   color: var(--text-main);
   min-height: 100vh;
+  background: transparent;
+}
+
+.appShell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: transparent;
+}
+
+.customTitleBar {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(20, 20, 20, 0.28);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  flex-shrink: 0;
+}
+
+.customTitleBarDrag {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  -webkit-app-region: drag;
+}
+
+.customTitleBarBrand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.customTitleBarIcon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.customTitleBarTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f5f5f5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.customTitleBarActions {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.titleBarButton {
+  width: 46px;
+  height: 42px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #f5f5f5;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.titleBarButton:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+.titleBarButton:active {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.titleBarButtonClose:hover {
+  background: #e81123;
+}
+
+.titleBarButtonClose:active {
+  background: #c50f1f;
 }
 
 .homeFrame {
   display: flex;
   flex-direction: row;
   align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  background: transparent;
 }
 
-/* MENÚ lateral */
 .sideBar {
   width: 260px;
   min-width: 260px;
@@ -33,6 +116,8 @@ body,
   padding: 20px 0;
   box-sizing: border-box;
   flex-shrink: 0;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 }
 
 .menuHeader {
@@ -54,7 +139,6 @@ body,
   padding: 0 12px;
 }
 
-/* Items individuales del menú */
 .sideBar a {
   display: flex;
   align-items: center;
@@ -76,31 +160,29 @@ body,
   color: var(--link-active-text);
 }
 
-/* Iconos del menú */
 .menuIcon {
   margin-right: 12px;
   font-size: 14px;
   width: 16px;
 }
 
-/* CONTENIDO PRINCIPAL */
 .mainContent {
   flex: 1;
-  background-color: var(--bg-main);
   overflow-y: auto;
   position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
+  background: transparent;
 }
 
-/* Contenido de página */
 .pageContent {
   flex: 1;
   padding: 80px 60px 40px;
   z-index: 1;
   position: relative;
-  background-color: var(--bg-page);
+  background: transparent;
   color: var(--text-main);
   min-width: 0;
 }
@@ -129,5 +211,13 @@ body,
 
   .userMenuContainer {
     right: 16px;
+  }
+
+  .customTitleBarTitle {
+    font-size: 12px;
+  }
+
+  .titleBarButton {
+    width: 42px;
   }
 }

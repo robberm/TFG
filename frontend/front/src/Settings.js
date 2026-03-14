@@ -3,7 +3,8 @@ import { useDarkMode } from "./DarkModeContext";
 import "./css/Settings.css";
 
 const Settings = () => {
-  const { darkMode, toggleDarkMode } = useDarkMode();
+  const { darkMode, translucentMode, toggleDarkMode, toggleTranslucentMode } =
+    useDarkMode();
 
   const [username, setUsername] = useState(
     localStorage.getItem("username") || "",
@@ -150,6 +151,23 @@ const Settings = () => {
               type="button"
               className={`settingsSwitch ${darkMode ? "active" : ""}`}
               onClick={toggleDarkMode}
+            >
+              <span className="settingsSwitchThumb"></span>
+            </button>
+          </div>
+
+          <div className="settingsRow">
+            <div>
+              <span className="settingsLabel">Tema translúcido</span>
+              <p className="settingsHint">
+                Hace la ventana transparente para que se vea el escritorio.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className={`settingsSwitch ${translucentMode ? "active" : ""}`}
+              onClick={toggleTranslucentMode}
             >
               <span className="settingsSwitchThumb"></span>
             </button>
