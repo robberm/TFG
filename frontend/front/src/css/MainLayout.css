@@ -4,6 +4,8 @@ body,
   margin: 0;
   padding: 0;
   min-height: 100%;
+  height: 100%;
+  background: transparent;
 }
 
 body,
@@ -13,90 +15,37 @@ body,
   background: transparent;
 }
 
+body {
+  overflow: hidden;
+}
+
 .appShell {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  height: 100vh;
   min-height: 100vh;
   background: transparent;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
 }
 
-.customTitleBar {
-  height: 42px;
+.appWindowFrame {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(20, 20, 20, 0.28);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  flex-shrink: 0;
-}
-
-.customTitleBarDrag {
+  flex-direction: column;
   flex: 1;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  -webkit-app-region: drag;
-}
-
-.customTitleBarBrand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.customTitleBarIcon {
-  width: 16px;
-  height: 16px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-.customTitleBarTitle {
-  font-size: 13px;
-  font-weight: 600;
-  color: #f5f5f5;
-  white-space: nowrap;
+  width: 100%;
+  height: 100vh;
+  min-height: 0;
+  background: var(--bg-main);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
   overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.customTitleBarActions {
-  display: flex;
-  align-items: center;
-  height: 100%;
-  -webkit-app-region: no-drag;
-}
-
-.titleBarButton {
-  width: 46px;
-  height: 42px;
-  border: none;
-  outline: none;
-  background: transparent;
-  color: #f5f5f5;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.2s ease, opacity 0.2s ease;
-}
-
-.titleBarButton:hover {
-  background: rgba(255, 255, 255, 0.10);
-}
-
-.titleBarButton:active {
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.titleBarButtonClose:hover {
-  background: #e81123;
-}
-
-.titleBarButtonClose:active {
-  background: #c50f1f;
+  box-sizing: border-box;
+  box-shadow: var(--panel-shadow);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
 }
 
 .homeFrame {
@@ -112,7 +61,7 @@ body,
   width: 260px;
   min-width: 260px;
   background-color: var(--sidebar-bg);
-  border-right: 1px solid var(--border-color);
+  border-right: 1px solid var(--panel-border);
   padding: 20px 0;
   box-sizing: border-box;
   flex-shrink: 0;
@@ -122,7 +71,7 @@ body,
 
 .menuHeader {
   padding: 0 20px 16px 20px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--panel-border);
   margin-bottom: 16px;
 }
 
@@ -148,14 +97,15 @@ body,
   color: var(--text-main);
   border-radius: 6px;
   font-size: 14px;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .sideBar a:hover {
   background-color: var(--bg-hover);
 }
 
-.sideBar a.active {
+.sideBar a.active,
+.sideBar a[aria-current="page"] {
   background-color: var(--link-active-bg);
   color: var(--link-active-text);
 }
@@ -185,13 +135,14 @@ body,
   background: transparent;
   color: var(--text-main);
   min-width: 0;
+  box-sizing: border-box;
 }
 
 .userMenuContainer {
   position: absolute;
   top: 20px;
   right: 24px;
-  z-index: 10;
+  z-index: 20;
 }
 
 @media (max-width: 768px) {
@@ -211,13 +162,5 @@ body,
 
   .userMenuContainer {
     right: 16px;
-  }
-
-  .customTitleBarTitle {
-    font-size: 12px;
-  }
-
-  .titleBarButton {
-    width: 42px;
   }
 }

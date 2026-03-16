@@ -1,21 +1,19 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { format } from "date-fns";
-import "./css/Home.css";
+import "../../css/Home.css";
 
-const TodayReminders = ({ events }) => {
-  const sortedEvents = useMemo(() => {
-    return [...events].sort((a, b) => a.startTime - b.startTime);
-  }, [events]);
-
+const RemindersPanel = ({ todayEvents, isLoadingTodayEvents }) => {
   return (
     <div className="remindersSection">
       <h2>Reminders</h2>
 
-      {sortedEvents.length === 0 ? (
+      {isLoadingTodayEvents ? (
+        <div className="remindersEmptyState">Cargando eventos...</div>
+      ) : todayEvents.length === 0 ? (
         <div className="remindersEmptyState">No tienes eventos para hoy.</div>
       ) : (
         <div className="remindersList">
-          {sortedEvents.map((event) => (
+          {todayEvents.map((event) => (
             <div key={event.id} className="reminderCard">
               <div className="reminderCardTime">
                 {event.isAllDay
@@ -39,4 +37,4 @@ const TodayReminders = ({ events }) => {
   );
 };
 
-export default TodayReminders;
+export default RemindersPanel;

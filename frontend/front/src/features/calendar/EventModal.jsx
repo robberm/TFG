@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { format, addMinutes, setHours, setMinutes, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
-import "./css/EventModal.css";
+import "../../css/EventModal.css";
 
 // Genera opciones de tiempo en incrementos de 15 minutos
 const generateTimeOptions = () => {

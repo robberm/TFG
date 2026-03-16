@@ -2,7 +2,7 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
-  "main": "./src/electron.js",
+  "main": "electron/electron.js",
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.2",
     "@stomp/stompjs": "^7.1.1",
@@ -10,7 +10,6 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^13.5.0",
-    "concurrently": "^9.1.2",
     "date-fns": "^4.1.0",
     "react": "^19.0.0",
     "react-calendar": "^6.0.0",
@@ -26,10 +25,16 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "dist": "npm run build && electron-builder",
     "web": "react-scripts start",
     "electron": "electron .",
-    "electron-dev": "concurrently \"npm run start\" \"wait-on http://localhost:3000 && electron .\""
+    "electron-dev": "concurrently \"npm run web\" \"wait-on http://localhost:3000 && electron .\"",
+    "dist": "npm run build && electron-builder"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "electron": "^35.0.0",
+    "electron-builder": "^26.0.12",
+    "wait-on": "^8.0.3"
   },
   "eslintConfig": {
     "extends": [
@@ -49,12 +54,6 @@
       "last 1 safari version"
     ]
   },
-  "devDependencies": {
-    "concurrently": "^X.X.X",
-    "electron": "^X.X.X",
-    "electron-builder": "^26.0.12",
-    "wait-on": "^8.0.3"
-  },
   "build": {
     "appId": "com.tfgapp.desktop",
     "productName": "TFGApp",
@@ -63,7 +62,7 @@
     },
     "files": [
       "build/**/*",
-      "electron.js"
+      "electron/**/*"
     ],
     "win": {
       "target": "nsis"

@@ -4,7 +4,7 @@ import AppRouter from './AppRouter';
 import { BrowserRouter } from 'react-router-dom';
 import { ErrorMessageGenerator } from './components/ErrorContext';
 import ErrorBox from './components/Error';
-import MainLayout from './MainLayout';
+import MainLayout from './components/layout/MainLayout';
 
 import './css/index.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';

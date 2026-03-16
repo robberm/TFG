@@ -2,12 +2,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-import Home from './Home';
+import Home from './pages/Home';
 import App from './App';
 import Objectives from './Objectives';
 import Settings from './Settings';
 import ProtectedRoute from './components/ProtectedRoute';
-import Calendar from './Calendar';
+import Calendar from './features/calendar/Calendar';
 import Block from './Block';
 
 const AppRouter = () => {

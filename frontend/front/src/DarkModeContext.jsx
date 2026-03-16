@@ -1,68 +1,94 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 const DarkModeContext = createContext();
 
-export const useDarkMode = () => useContext(DarkModeContext);
+const THEME_CLASSES = ["light", "dark", "translucent"];
+
+const getStoredTheme = () => {
+  const translucentMode = localStorage.getItem("translucentMode") === "true";
+  const darkMode = localStorage.getItem("darkMode") === "true";
+
+  if (translucentMode) return "translucent";
+  if (darkMode) return "dark";
+  return "light";
+};
+
+const applyThemeToBody = (theme) => {
+  document.body.classList.remove(...THEME_CLASSES);
+  document.body.classList.add(theme);
+};
+
+const getCurrentRoute = () => {
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+};
 
 export const DarkModeProvider = ({ children }) => {
-  const storedTheme = localStorage.getItem("theme");
-  const prefersDark = window.matchMedia?.(
-    "(prefers-color-scheme: dark)",
-  ).matches;
-
-  const [darkMode, setDarkMode] = useState(
-    storedTheme ? storedTheme === "dark" : prefersDark,
-  );
-
-  const [translucentMode, setTranslucentMode] = useState(
-    storedTheme === "translucent",
-  );
+  const [theme, setTheme] = useState(getStoredTheme);
 
   useEffect(() => {
-    document.body.classList.remove("dark", "light", "translucent");
+    applyThemeToBody(theme);
+    localStorage.setItem("darkMode", String(theme === "dark"));
+    localStorage.setItem("translucentMode", String(theme === "translucent"));
+  }, [theme]);
 
-    let className = "light";
+  const switchTheme = (nextTheme) => {
+    const wasTransparent = theme === "translucent";
+    const willBeTransparent = nextTheme === "translucent";
 
-    if (darkMode) {
-      className = "dark";
-    } else if (translucentMode) {
-      className = "translucent";
+    setTheme(nextTheme);
+
+    if (
+      window.electronAPI?.setWindowTransparencyMode &&
+      wasTransparent !== willBeTransparent
+    ) {
+      window.electronAPI.setWindowTransparencyMode({
+        transparent: willBeTransparent,
+        route: getCurrentRoute(),
+      });
     }
-
-    document.body.classList.add(className);
-    localStorage.setItem("theme", className);
-  }, [darkMode, translucentMode]);
+  };
 
   const toggleDarkMode = () => {
-    setDarkMode((prev) => {
-      const next = !prev;
-      if (next) {
-        setTranslucentMode(false);
-      }
-      return next;
-    });
+    if (theme === "dark") {
+      switchTheme("light");
+      return;
+    }
+
+    switchTheme("dark");
   };
 
   const toggleTranslucentMode = () => {
-    setTranslucentMode((prev) => {
-      const next = !prev;
-      if (next) {
-        setDarkMode(false);
-      }
-      return next;
-    });
+    if (theme === "translucent") {
+      switchTheme("light");
+      return;
+    }
+
+    switchTheme("translucent");
   };
 
+  const value = useMemo(
+    () => ({
+      darkMode: theme === "dark",
+      translucentMode: theme === "translucent",
+      toggleDarkMode,
+      toggleTranslucentMode,
+      setTheme: switchTheme,
+      theme,
+    }),
+    [theme],
+  );
+
   return (
-    <DarkModeContext.Provider
-      value={{
-        darkMode,
-        translucentMode,
-        toggleDarkMode,
-        toggleTranslucentMode,
-      }}
-    >
+    <DarkModeContext.Provider value={value}>
       {children}
     </DarkModeContext.Provider>
   );
 };
+
+export const useDarkMode = () => useContext(DarkModeContext);

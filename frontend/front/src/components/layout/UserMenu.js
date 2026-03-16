@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
-import "./css/UserMenu.css";
+import "../../css/UserMenu.css";
 
 function UserMenu() {
   const [userMenuIsOpen, setUserMenuIsOpen] = useState(false);

@@ -1,15 +1,16 @@
 import React, { useMemo, useState } from "react";
 import { format, isSameDay } from "date-fns";
 import { es } from "date-fns/locale";
-import EventModal from "./EventModal";
-import "./css/Home.css";
-import "./css/Calendar.css";
+import EventModal from "../calendar/EventModal.jsx";
+import { deleteCalendarEvent, saveCalendarEvent } from "../../api/eventApi.js";
+import "../../css/Home.css";
+import "../../css/Calendar.css";
 
 const HOUR_HEIGHT_PX = 28;
 const MINUTES_PER_HOUR = 60;
 const PX_PER_MINUTE = HOUR_HEIGHT_PX / MINUTES_PER_HOUR;
 
-const HomeDailyCalendarWidget = ({ events, onEventsChanged }) => {
+const DailyWidget = ({ events, onEventsChanged }) => {
   const [currentDate] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -60,6 +61,7 @@ const HomeDailyCalendarWidget = ({ events, onEventsChanged }) => {
 
   const formatEventTime = (event) => {
     if (event.isAllDay) return "Todo el día";
+
     return `${format(event.startTime, "HH:mm")} - ${format(
       event.endTime,
       "HH:mm",
@@ -78,40 +80,18 @@ const HomeDailyCalendarWidget = ({ events, onEventsChanged }) => {
     if (e) {
       e.stopPropagation();
     }
+
     setSelectedEvent(event);
     setShowModal(true);
   };
 
   const handleSaveEvent = async (eventData) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("Token is missing.");
-        return;
-      }
-
-      const method = eventData.id ? "PUT" : "POST";
-      const url = eventData.id
-        ? `http://localhost:8080/events/${eventData.id}`
-        : "http://localhost:8080/events";
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(eventData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
+      await saveCalendarEvent(eventData);
       setShowModal(false);
       onEventsChanged();
     } catch (error) {
-      console.error("Error saving event from home widget:", error);
+      console.error("Error saving event from daily widget:", error);
     }
   };
 
@@ -119,27 +99,11 @@ const HomeDailyCalendarWidget = ({ events, onEventsChanged }) => {
     if (!eventId) return;
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("Token is missing.");
-        return;
-      }
-
-      const response = await fetch(`http://localhost:8080/events/${eventId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
+      await deleteCalendarEvent(eventId);
       setShowModal(false);
       onEventsChanged();
     } catch (error) {
-      console.error("Error deleting event from home widget:", error);
+      console.error("Error deleting event from daily widget:", error);
     }
   };
 
@@ -185,6 +149,7 @@ const HomeDailyCalendarWidget = ({ events, onEventsChanged }) => {
                         {formatEventTime(event)}
                       </div>
                       <div className="day-event-title">{event.title}</div>
+
                       {event.location && (
                         <div className="day-event-location">
                           📍 {event.location}
@@ -226,6 +191,7 @@ const HomeDailyCalendarWidget = ({ events, onEventsChanged }) => {
                         {formatEventTime(event)}
                       </div>
                       <div className="day-event-title">{event.title}</div>
+
                       {event.location && (
                         <div className="day-event-location">
                           📍 {event.location}
@@ -263,4 +229,4 @@ const HomeDailyCalendarWidget = ({ events, onEventsChanged }) => {
   );
 };
 
-export default HomeDailyCalendarWidget;
+export default DailyWidget;
