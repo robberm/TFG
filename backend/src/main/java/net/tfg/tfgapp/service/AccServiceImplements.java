@@ -4,6 +4,7 @@ import net.tfg.tfgapp.DTOs.ChangePasswordRequest;
 import net.tfg.tfgapp.DTOs.ChangeUsernameRequest;
 import net.tfg.tfgapp.DTOs.LoginRequest;
 import net.tfg.tfgapp.domains.User;
+import net.tfg.tfgapp.service.interfaces.AccountService;
 import net.tfg.tfgapp.validation.PasswordPolicy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;

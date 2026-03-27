@@ -2,35 +2,26 @@ package net.tfg.tfgapp.service;
 
 
 
-import jakarta.annotation.PostConstruct;
-import lombok.Getter;
-import lombok.Setter;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 import net.tfg.tfgapp.utils.WindowsUtils;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-@Getter
-@Setter
+
 @Service
 public class AppRestrictionService {
+
     private final StorageService storageService;
-    private final WindowsUtils windowsUtils;
-    private boolean isGameModeActive = false;
+    private volatile boolean gameModeActive = false;
 
-    public AppRestrictionService(StorageService storageService, WindowsUtils windowsUtils) {
+    public AppRestrictionService(StorageService storageService) {
         this.storageService = storageService;
-        this.windowsUtils = windowsUtils;
-
-
     }
 
     @PostConstruct
@@ -39,91 +30,150 @@ public class AppRestrictionService {
         scheduler.scheduleAtFixedRate(this::checkSystemState, 0, 5, TimeUnit.SECONDS);
     }
 
+    /**
+     * Revisa periódicamente el estado del sistema y aplica restricciones si corresponde.
+     * Primero recalcula el game mode para que la decisión de bloqueo use un estado actualizado.
+     */
     private void checkSystemState() {
-        if(shouldEnforceRestrictions()){
+        refreshGameModeState();
+
+        if (shouldEnforceRestrictions()) {
             enforceRestrictions();
         }
-
     }
 
-    private void checkGameMode() {
+    /**
+     * Recalcula si el game mode está activo.
+     * Se considera activo cuando hay un juego configurado ejecutándose
+     * y además la aplicación en primer plano está a pantalla completa.
+     */
+    private void refreshGameModeState() {
         StorageService.Config config = storageService.loadConfig();
-        isGameModeActive = windowsUtils.getRunningProcesses().stream()
-                .anyMatch(config.getGames()::contains) && windowsUtils.isAppFullscreen();
+
+        this.gameModeActive = WindowsUtils.getRunningProcesses().stream()
+                .anyMatch(process -> config.getGames().contains(process))
+                && WindowsUtils.isAppFullscreen();
     }
 
+    /**
+     * Determina si deben aplicarse las restricciones de aplicaciones.
+     * Ahora mismo la condición principal es que no esté activo el game mode.
+     *
+     * @return true si procede forzar el cierre de aplicaciones bloqueadas.
+     */
     private boolean shouldEnforceRestrictions() {
-        LocalTime now = LocalTime.now();
-        DayOfWeek day = LocalDate.now().getDayOfWeek();
-
-        return !isGameModeActive;
+        return !gameModeActive;
     }
 
+    /**
+     * Fuerza el cierre de las aplicaciones que estén configuradas como bloqueadas
+     * y actualmente estén en ejecución.
+     */
     private void enforceRestrictions() {
         StorageService.Config config = storageService.loadConfig();
-        windowsUtils.getRunningProcesses().stream()
+
+        WindowsUtils.getRunningProcesses().stream()
                 .filter(config.getBlockedApps()::contains)
                 .forEach(WindowsUtils::killProcess);
     }
 
-    public void addBlockedApp(String appName) {
-        // Validación robusta del nombre de la aplicación
-        if (appName == null || appName.trim().isEmpty()) {
-            throw new IllegalArgumentException("El nombre de la aplicación no puede estar vacío");
-        }
+    /**
+     * Añade un ejecutable a la lista de aplicaciones bloqueadas.
+     * El sistema bloquea por nombre de proceso y no por nombre bonito de la aplicación.
+     *
+     * @param executableName nombre del proceso principal, por ejemplo "discord.exe".
+     */
+    public void addBlockedApp(String executableName) {
+        String cleanExecutableName = normalizeExecutableName(executableName);
 
-        // Limpieza del input
-        String cleanAppName = appName.trim().toLowerCase();
-
-        // Validación del formato (solo permite nombres de archivo válidos)
-        if (!cleanAppName.matches("^[a-z0-9_.-]+\\.(exe|EXE)$")) {
-            throw new IllegalArgumentException("Formato de nombre de aplicación inválido: " + appName);
-        }
-
-        // Validación de duplicados
         StorageService.Config config = storageService.loadConfig();
-        if (config.getBlockedApps().contains(cleanAppName)) {
+
+        if (config.getBlockedApps().contains(cleanExecutableName)) {
             throw new IllegalStateException("La aplicación ya está en la lista bloqueada");
         }
 
-        // Añadir y guardar
-        config.getBlockedApps().add(cleanAppName);
+        Set<String> updatedBlockedApps = new HashSet<>(config.getBlockedApps());
+        updatedBlockedApps.add(cleanExecutableName);
+
+        config.setBlockedApps(updatedBlockedApps);
         storageService.saveConfig(config);
     }
 
+    /**
+     * Elimina un ejecutable de la lista de aplicaciones bloqueadas.
+     *
+     * @param executableName nombre del proceso principal a eliminar.
+     */
+    public void removeBlockedApp(String executableName) {
+        String cleanExecutableName = normalizeExecutableName(executableName);
 
-    public void removeBlockedApp(String appName) {
+        StorageService.Config config = storageService.loadConfig();
+        Set<String> updatedBlockedApps = new HashSet<>(config.getBlockedApps());
 
-            if (appName == null || appName.trim().isEmpty()) {
-                throw new IllegalArgumentException("El nombre de la aplicación no puede estar vacío");
-            }
+        if (!updatedBlockedApps.remove(cleanExecutableName)) {
+            throw new IllegalArgumentException("La aplicación no estaba en la lista");
+        }
 
-            String cleanAppName = appName.trim().toLowerCase();
-
-            if (!cleanAppName.matches("^[a-z0-9_.-]+\\.(exe|EXE)$")) {
-                throw new IllegalArgumentException("Formato de nombre de aplicación inválido: " + appName);
-            }
-
-            StorageService.Config config = storageService.loadConfig();
-            if (!config.getBlockedApps().remove(cleanAppName)) {
-                throw new IllegalArgumentException("La aplicación no estaba en la lista");
-            }
-
-            storageService.saveConfig(config);
+        config.setBlockedApps(updatedBlockedApps);
+        storageService.saveConfig(config);
     }
+
+    /**
+     * Restablece la configuración por defecto de aplicaciones bloqueadas y juegos.
+     */
     public void resetBlockedApps() {
         StorageService.Config config = new StorageService.Config();
-        config.setBlockedApps(new HashSet<>(Set.of("valorant.exe", "leagueoflegends.exe", "riotclientservices.exe", "steam.exe")));
-        config.setGames(Set.of("valorant.exe", "leagueoflegends.exe", "riotclientservices.exe", "steam.exe"));
+        config.setBlockedApps(new HashSet<>(Set.of(
+                "valorant.exe",
+                "leagueoflegends.exe",
+                "riotclientservices.exe",
+                "steam.exe"
+        )));
+        config.setGames(Set.of(
+                "valorant.exe",
+                "leagueoflegends.exe",
+                "riotclientservices.exe",
+                "steam.exe"
+        ));
         storageService.saveConfig(config);
     }
+
+    /**
+     * Devuelve la lista actual de ejecutables bloqueados en modo solo lectura.
+     *
+     * @return conjunto inmodificable de ejecutables bloqueados.
+     */
     public Set<String> getBlockedApps() {
         return Collections.unmodifiableSet(storageService.loadConfig().getBlockedApps());
     }
 
+    /**
+     * Indica si el sistema considera que el game mode está activo.
+     *
+     * @return true si hay juego detectado a pantalla completa.
+     */
+
     public boolean isGameModeActive() {
-        return isGameModeActive;
+        return gameModeActive;
     }
 
+    /**
+     * Normaliza y valida el nombre del ejecutable recibido desde el frontend.
+     *
+     * @param executableName valor recibido.
+     * @return nombre limpio y en minúsculas.
+     */
+    private String normalizeExecutableName(String executableName) {
+        if (executableName == null || executableName.trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre de la aplicación no puede estar vacío");
+        }
 
+        String cleanExecutableName = executableName.trim().toLowerCase();
+
+        if (!cleanExecutableName.matches("^[a-z0-9_.-]+\\.exe$")) {
+            throw new IllegalArgumentException("Formato de nombre de aplicación inválido: " + executableName);
+        }
+
+        return cleanExecutableName;
+    }
 }

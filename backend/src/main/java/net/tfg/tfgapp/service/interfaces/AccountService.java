@@ -1,4 +1,4 @@
-package net.tfg.tfgapp.service;
+package net.tfg.tfgapp.service.interfaces;
 
 import net.tfg.tfgapp.DTOs.ChangePasswordRequest;
 import net.tfg.tfgapp.DTOs.ChangeUsernameRequest;

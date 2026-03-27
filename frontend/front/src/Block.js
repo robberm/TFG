@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import "./css/Block.css";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 
 //Constantes:
-const bubbleContent = "Esta ventana está dedicada a ofrecer herramientas para gestionar un uso más saludable del ordenador, fomentando descansos regulares y ayudándote a mantener el enfoque.";
+const bubbleContent =
+  "Esta ventana está dedicada a ofrecer herramientas para gestionar un uso más saludable del ordenador, fomentando descansos regulares y ayudándote a mantener el enfoque.";
 
 // Iconos SVG como componentes
 const SearchIcon = () => (
@@ -172,13 +173,13 @@ const CategoryIcons = {
 
 function Block() {
   const [blockedApps, setBlockedApps] = useState([]);
-  const [runningProcesses, setRunningProcesses] = useState([]);
+  const [installedApps, setInstalledApps] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [isBlocked, setIsBlocked] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [isLoadingProcesses, setIsLoadingProcesses] = useState(false);
+  const [isLoadingApps, setIsLoadingApps] = useState(false);
   const [activeTab, setActiveTab] = useState("add"); // 'add' | 'manage'
 
   const searchInputRef = useRef(null);
@@ -212,37 +213,48 @@ function Block() {
     return Math.max(0, 20 * 60 - elapsed);
   });
 
-  // Filtrar procesos según búsqueda
-  const filteredProcesses = runningProcesses.filter((process) => {
-    const query = searchQuery.toLowerCase();
+  const normalizedBlockedApps = useMemo(
+    () => blockedApps.map((app) => app.toLowerCase()),
+    [blockedApps],
+  );
+
+  const filteredApplications = installedApps.filter((app) => {
+    const query = searchQuery.toLowerCase().trim();
+
+    if (!query) {
+      return true;
+    }
+
     return (
-      process.displayName.toLowerCase().includes(query) ||
-      process.executableName.toLowerCase().includes(query)
+      (app.displayName || "").toLowerCase().includes(query) ||
+      (app.executableName || "").toLowerCase().includes(query)
     );
   });
 
-  // Cargar procesos en ejecución
-  const fetchRunningProcesses = useCallback(async () => {
-    setIsLoadingProcesses(true);
+  const fetchInstalledApps = useCallback(async () => {
+    setIsLoadingApps(true);
+
     try {
-      const response = await fetch(
-        "http://localhost:8080/api/block/running-processes",
-      );
-      if (response.ok) {
-        const processes = await response.json();
-        setRunningProcesses(processes);
+      const response = await fetch("http://localhost:8080/api/installed-apps");
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status} - ${errorText}`);
       }
+
+      const apps = await response.json();
+      setInstalledApps(Array.isArray(apps) ? apps : []);
     } catch (error) {
-      console.error("Error obteniendo procesos:", error);
+      console.error("Error obteniendo aplicaciones instaladas:", error);
+      setErrorMessage("No se pudo cargar la lista de aplicaciones instaladas");
     } finally {
-      setIsLoadingProcesses(false);
+      setIsLoadingApps(false);
     }
   }, []);
 
-  // WebSocket y carga inicial
   useEffect(() => {
     fetchBlockedApps();
-    fetchRunningProcesses();
+    fetchInstalledApps();
 
     const socket = new SockJS("http://localhost:8080/ws");
     const stompClient = new Client({
@@ -274,9 +286,8 @@ function Block() {
     return () => {
       stompClient.deactivate();
     };
-  }, []);
+  }, [fetchInstalledApps]);
 
-  // Timer countdown
   useEffect(() => {
     const interval = setInterval(() => {
       const elapsedSeconds = Math.floor((Date.now() - lastBlockTime) / 1000);
@@ -287,7 +298,6 @@ function Block() {
     return () => clearInterval(interval);
   }, [lastBlockTime]);
 
-  // Cerrar dropdown al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -303,23 +313,32 @@ function Block() {
   const fetchBlockedApps = async () => {
     try {
       const response = await fetch("http://localhost:8080/api/blocked-apps");
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status} - ${errorText}`);
+      }
+
       const apps = await response.json();
-      setBlockedApps(apps);
+      setBlockedApps(Array.isArray(apps) ? apps : []);
     } catch (error) {
       console.error("Error obteniendo apps bloqueadas:", error);
+      setErrorMessage("No se pudo cargar la lista de aplicaciones bloqueadas");
     }
   };
 
-  const addBlockedApp = async (process) => {
-    const appName =
-      typeof process === "string" ? process : process.executableName;
+  const addBlockedApp = async (application) => {
+    const executableName =
+      typeof application === "string"
+        ? application
+        : application?.executableName || "";
 
-    if (!appName) return;
+    if (!executableName) {
+      setErrorMessage("No se puede bloquear esta aplicación porque no tiene ejecutable principal resuelto");
+      return;
+    }
 
-    // Verificar si ya está bloqueada
-    if (
-      blockedApps.some((app) => app.toLowerCase() === appName.toLowerCase())
-    ) {
+    if (normalizedBlockedApps.includes(executableName.toLowerCase())) {
       setErrorMessage("Esta aplicación ya está en la lista de bloqueadas");
       return;
     }
@@ -328,9 +347,11 @@ function Block() {
       const response = await fetch("http://localhost:8080/api/blocked-apps", {
         method: "POST",
         headers: {
-          "Content-Type": "text/plain",
+          "Content-Type": "application/json",
         },
-        body: appName,
+        body: JSON.stringify({
+          executableName,
+        }),
       });
 
       if (!response.ok) {
@@ -341,7 +362,7 @@ function Block() {
       setSearchQuery("");
       setIsDropdownOpen(false);
       setSelectedIndex(-1);
-      fetchBlockedApps();
+      await fetchBlockedApps();
     } catch (error) {
       console.error("Error agregando app bloqueada:", error);
       setErrorMessage("No se pudo agregar la aplicación");
@@ -351,7 +372,7 @@ function Block() {
   const removeBlockedApp = async (appName) => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/blocked-apps/${appName}`,
+        `http://localhost:8080/api/blocked-apps/${encodeURIComponent(appName)}`,
         { method: "DELETE" },
       );
 
@@ -359,7 +380,8 @@ function Block() {
         const errorText = await response.text();
         throw new Error(`HTTP ${response.status} - ${errorText}`);
       }
-      fetchBlockedApps();
+
+      await fetchBlockedApps();
     } catch (error) {
       console.error("Error eliminando app bloqueada:", error);
       setErrorMessage("No se pudo eliminar la aplicación");
@@ -374,23 +396,23 @@ function Block() {
           method: "DELETE",
         },
       );
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`HTTP ${response.status} - ${errorText}`);
       }
-      fetchBlockedApps();
+
+      await fetchBlockedApps();
     } catch (error) {
       console.error("Error reseteando app list", error);
       setErrorMessage("Error al resetear la lista");
     }
   };
 
-  // Manejar navegación con teclado
   const handleKeyDown = (e) => {
     if (!isDropdownOpen) {
       if (e.key === "ArrowDown" || e.key === "Enter") {
         setIsDropdownOpen(true);
-        fetchRunningProcesses();
       }
       return;
     }
@@ -399,7 +421,7 @@ function Block() {
       case "ArrowDown":
         e.preventDefault();
         setSelectedIndex((prev) =>
-          prev < filteredProcesses.length - 1 ? prev + 1 : prev,
+          prev < filteredApplications.length - 1 ? prev + 1 : prev,
         );
         break;
       case "ArrowUp":
@@ -408,14 +430,16 @@ function Block() {
         break;
       case "Enter":
         e.preventDefault();
-        if (selectedIndex >= 0 && filteredProcesses[selectedIndex]) {
-          addBlockedApp(filteredProcesses[selectedIndex]);
-        } else if (searchQuery.trim()) {
-          // Si no hay selección pero hay texto, añadir el texto + .exe
-          const appName = searchQuery.toLowerCase().endsWith(".exe")
-            ? searchQuery
-            : `${searchQuery}.exe`;
-          addBlockedApp(appName);
+        if (selectedIndex >= 0 && filteredApplications[selectedIndex]) {
+          const selectedApp = filteredApplications[selectedIndex];
+
+          if (selectedApp.blockable) {
+            addBlockedApp(selectedApp);
+          } else {
+            setErrorMessage(
+              "Esta aplicación no tiene un ejecutable principal detectable y no se puede bloquear automáticamente",
+            );
+          }
         }
         break;
       case "Escape":
@@ -430,44 +454,47 @@ function Block() {
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
     setSelectedIndex(-1);
+
     if (!isDropdownOpen) {
       setIsDropdownOpen(true);
-      fetchRunningProcesses();
     }
   };
 
   const handleSearchFocus = () => {
     setIsDropdownOpen(true);
-    fetchRunningProcesses();
   };
 
-  // Obtener información del proceso bloqueado
-  const getProcessInfo = (appName) => {
-    const process = runningProcesses.find(
-      (p) => p.executableName.toLowerCase() === appName.toLowerCase(),
+  const getBlockedAppInfo = (appName) => {
+    const installedMatch = installedApps.find(
+      (app) =>
+        (app.executableName || "").toLowerCase() === appName.toLowerCase(),
     );
-    return (
-      process || {
-        executableName: appName,
-        displayName: appName.replace(".exe", ""),
-        category: "other",
-      }
-    );
+
+    if (installedMatch) {
+      return installedMatch;
+    }
+
+    return {
+      executableName: appName,
+      displayName: appName.replace(/\.exe$/i, ""),
+      iconBase64: null,
+      category: "other",
+      blockable: true,
+    };
   };
 
-  // Formatear tiempo
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
   };
 
-  // Calcular porcentaje para el círculo de progreso
   const progressPercentage = ((20 * 60 - timeUntilNextBlock) / (20 * 60)) * 100;
 
   return (
     <div className="block-container">
-      {/* Overlay de bloqueo */}
       {isBlocked && (
         <div className="block-overlay">
           <div className="block-overlay-content">
@@ -490,7 +517,6 @@ function Block() {
         </div>
       )}
 
-      {/* Toast de error */}
       {errorMessage && (
         <div className="error-toast">
           <span>{errorMessage}</span>
@@ -504,7 +530,6 @@ function Block() {
       )}
 
       <div className="block-main">
-        {/* Header */}
         <header className="block-header">
           <h1 className="block-title with-bubble">
             Time Tracker
@@ -512,7 +537,6 @@ function Block() {
           </h1>
         </header>
 
-        {/* Timer Card */}
         <div className="timer-card">
           <div className="timer-progress-ring">
             <svg className="timer-ring" viewBox="0 0 120 120">
@@ -532,7 +556,9 @@ function Block() {
                 fill="none"
                 strokeWidth="8"
                 strokeDasharray={`${2 * Math.PI * 54}`}
-                strokeDashoffset={`${2 * Math.PI * 54 * (1 - progressPercentage / 100)}`}
+                strokeDashoffset={`${
+                  2 * Math.PI * 54 * (1 - progressPercentage / 100)
+                }`}
                 transform="rotate(-90 60 60)"
               />
             </svg>
@@ -552,7 +578,6 @@ function Block() {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="block-tabs">
           <button
             className={`tab-btn ${activeTab === "add" ? "active" : ""}`}
@@ -570,7 +595,6 @@ function Block() {
           </button>
         </div>
 
-        {/* Tab Content */}
         <div className="tab-content">
           {activeTab === "add" && (
             <div className="add-section">
@@ -602,86 +626,82 @@ function Block() {
                   )}
                   <button
                     className="search-refresh"
-                    onClick={fetchRunningProcesses}
-                    disabled={isLoadingProcesses}
-                    title="Actualizar lista de procesos"
+                    onClick={fetchInstalledApps}
+                    disabled={isLoadingApps}
+                    title="Actualizar lista de aplicaciones"
                   >
                     <RefreshIcon />
                   </button>
                 </div>
 
-                {/* Dropdown de resultados */}
                 {isDropdownOpen && (
                   <div className="search-dropdown">
-                    {isLoadingProcesses ? (
+                    {isLoadingApps ? (
                       <div className="dropdown-loading">
                         <div className="loading-spinner"></div>
-                        <span>Cargando procesos...</span>
+                        <span>Cargando aplicaciones...</span>
                       </div>
-                    ) : filteredProcesses.length > 0 ? (
+                    ) : filteredApplications.length > 0 ? (
                       <ul className="process-list">
-                        {filteredProcesses.map((process, index) => (
-                          <li
-                            key={process.executableName}
-                            className={`process-item ${index === selectedIndex ? "selected" : ""} ${
-                              blockedApps.some(
-                                (app) =>
-                                  app.toLowerCase() ===
-                                  process.executableName.toLowerCase(),
-                              )
-                                ? "already-blocked"
-                                : ""
-                            }`}
-                            onClick={() => addBlockedApp(process)}
-                            onMouseEnter={() => setSelectedIndex(index)}
-                          >
-                            <div className="process-icon">
-                              {process.iconBase64 ? (
-                                <img src={process.iconBase64} alt="" />
-                              ) : (
-                                <span className="category-icon">
-                                  {CategoryIcons[process.category] ||
-                                    CategoryIcons.other}
-                                </span>
-                              )}
-                            </div>
-                            <div className="process-info">
-                              <span className="process-name">
-                                {process.displayName}
-                              </span>
-                              <span className="process-exe">
-                                {process.executableName}
-                              </span>
-                            </div>
-                            <span
-                              className={`process-category cat-${process.category}`}
+                        {filteredApplications.map((application, index) => {
+                          const isAlreadyBlocked = normalizedBlockedApps.includes(
+                            (application.executableName || "").toLowerCase(),
+                          );
+
+                          return (
+                            <li
+                              key={`${application.displayName}-${application.executableName || index}`}
+                              className={`process-item ${
+                                index === selectedIndex ? "selected" : ""
+                              } ${isAlreadyBlocked ? "already-blocked" : ""} ${
+                                !application.blockable ? "already-blocked" : ""
+                              }`}
+                              onClick={() => {
+                                if (!application.blockable) {
+                                  setErrorMessage(
+                                    "Esta aplicación no tiene un ejecutable principal detectable y no se puede bloquear automáticamente",
+                                  );
+                                  return;
+                                }
+
+                                if (!isAlreadyBlocked) {
+                                  addBlockedApp(application);
+                                }
+                              }}
+                              onMouseEnter={() => setSelectedIndex(index)}
                             >
-                              {process.category}
-                            </span>
-                          </li>
-                        ))}
+                              <div className="process-icon">
+                                {application.iconBase64 ? (
+                                  <img src={application.iconBase64} alt="" />
+                                ) : (
+                                  <span className="category-icon">
+                                    {CategoryIcons.other}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="process-info">
+                                <span className="process-name">
+                                  {application.displayName}
+                                </span>
+                                <span className="process-exe">
+                                  {application.executableName ||
+                                    "Ejecutable no resuelto"}
+                                </span>
+                              </div>
+                              <span className="process-category cat-other">
+                                {application.blockable ? "instalada" : "manual"}
+                              </span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     ) : searchQuery ? (
                       <div className="dropdown-empty">
-                        <p>No se encontraron procesos</p>
-                        <button
-                          className="add-custom-btn"
-                          onClick={() => {
-                            const appName = searchQuery
-                              .toLowerCase()
-                              .endsWith(".exe")
-                              ? searchQuery
-                              : `${searchQuery}.exe`;
-                            addBlockedApp(appName);
-                          }}
-                        >
-                          <PlusIcon />
-                          Añadir "{searchQuery}" manualmente
-                        </button>
+                        <p>No se encontraron aplicaciones instaladas</p>
                       </div>
                     ) : (
                       <div className="dropdown-hint">
-                        <p>Escribe para buscar o selecciona de la lista</p>
+                        <p>Escribe para buscar entre las aplicaciones instaladas</p>
                       </div>
                     )}
                   </div>
@@ -696,7 +716,8 @@ function Block() {
                 <>
                   <ul className="blocked-apps-list">
                     {blockedApps.map((app) => {
-                      const info = getProcessInfo(app);
+                      const info = getBlockedAppInfo(app);
+
                       return (
                         <li key={app} className="blocked-app-item">
                           <div className="blocked-app-icon">
@@ -704,8 +725,7 @@ function Block() {
                               <img src={info.iconBase64} alt="" />
                             ) : (
                               <span className="category-icon">
-                                {CategoryIcons[info.category] ||
-                                  CategoryIcons.other}
+                                {CategoryIcons.other}
                               </span>
                             )}
                           </div>

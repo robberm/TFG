@@ -5,7 +5,7 @@ import net.tfg.tfgapp.DTOs.ChangeUsernameRequest;
 import net.tfg.tfgapp.DTOs.LoginRequest;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.security.TokenService;
-import net.tfg.tfgapp.service.AccountService;
+import net.tfg.tfgapp.service.interfaces.AccountService;
 import net.tfg.tfgapp.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
