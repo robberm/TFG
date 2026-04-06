@@ -27,6 +27,9 @@ public class User {
     @Column(nullable = false)
     private Integer tokenVersion = 0;
 
+    @Column(nullable = true)
+    private String profileImagePath;
+
     public User(String username, String password) {
         this.username = username;
         this.password = password;

@@ -33,12 +33,14 @@ private String location;
 private EventCategory category;
 @Column(unique = false)
 private Boolean isAllDay;
+@Column(unique = false)
+private Integer reminderMinutesBefore;
 
 @ManyToOne
 @JoinColumn(name = "user_id")
 private User user;
 
-    public Event(Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime, String location, EventCategory category, Boolean isAllDay) {
+    public Event(Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime, String location, EventCategory category, Boolean isAllDay, Integer reminderMinutesBefore, User user) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -47,6 +49,8 @@ private User user;
         this.location = location;
         this.category = category;
         this.isAllDay = isAllDay;
+        this.reminderMinutesBefore = reminderMinutesBefore;
+        this.user = user;
     }
 
     public Event() {

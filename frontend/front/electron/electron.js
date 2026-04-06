@@ -1,4 +1,10 @@
-const { app, BrowserWindow, ipcMain, globalShortcut } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  ipcMain,
+  globalShortcut,
+  screen,
+} = require("electron");
 const path = require("path");
 const { exec } = require("child_process");
 
@@ -221,6 +227,167 @@ function createBlockWindow() {
   }, 21000);
 }
 
+function escapeHtml(value = "") {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function createReminderWindow(reminder) {
+  const display = screen.getPrimaryDisplay();
+  const width = 360;
+  const height = 220;
+  const margin = 18;
+
+  const x = Math.round(
+    display.workArea.x + display.workArea.width - width - margin,
+  );
+  const y = Math.round(
+    display.workArea.y + display.workArea.height - height - margin,
+  );
+
+  const reminderWindow = new BrowserWindow({
+    width,
+    height,
+    x,
+    y,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    show: false,
+    hasShadow: true,
+    focusable: true,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      devTools: false,
+    },
+  });
+
+  const title = escapeHtml(reminder?.title || "Evento");
+  const description = escapeHtml(reminder?.description || "");
+  const location = escapeHtml(reminder?.location || "");
+  const isAllDay = !!reminder?.allDay;
+
+  const startTime = reminder?.startTime
+    ? new Date(reminder.startTime).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "";
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="es">
+      <head>
+        <meta charset="UTF-8" />
+        <title>Reminder</title>
+        <style>
+          * {
+            box-sizing: border-box;
+            font-family: "Segoe UI", sans-serif;
+          }
+
+          body {
+            margin: 0;
+            background: transparent;
+            overflow: hidden;
+          }
+
+          .card {
+            width: 100%;
+            height: 100%;
+            padding: 18px;
+            border-radius: 18px;
+            background: rgba(22, 22, 22, 0.96);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 18px 42px rgba(0, 0, 0, 0.32);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+          }
+
+          .eyebrow {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(255,255,255,0.65);
+          }
+
+          .title {
+            font-size: 20px;
+            font-weight: 600;
+            line-height: 1.2;
+          }
+
+          .time,
+          .location,
+          .description {
+            font-size: 13px;
+            color: rgba(255,255,255,0.82);
+          }
+
+          .actions {
+            margin-top: auto;
+            display: flex;
+            justify-content: flex-end;
+          }
+
+          button {
+            border: 1px solid rgba(255,255,255,0.14);
+            background: transparent;
+            color: white;
+            border-radius: 999px;
+            padding: 8px 14px;
+            cursor: pointer;
+          }
+
+          button:hover {
+            background: rgba(255,255,255,0.08);
+          }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="eyebrow">Próximo evento</div>
+          <div class="title">${title}</div>
+          <div class="time">${isAllDay ? "Todo el día" : `Empieza a las ${startTime}`}</div>
+          ${location ? `<div class="location">📍 ${location}</div>` : ""}
+          ${description ? `<div class="description">${description}</div>` : ""}
+          <div class="actions">
+            <button onclick="window.close()">Cerrar</button>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  reminderWindow.loadURL(
+    `data:text/html;charset=utf-8,${encodeURIComponent(html)}`,
+  );
+
+  reminderWindow.once("ready-to-show", () => {
+    if (!reminderWindow.isDestroyed()) {
+      reminderWindow.showInactive();
+    }
+  });
+
+  setTimeout(() => {
+    if (!reminderWindow.isDestroyed()) {
+      reminderWindow.close();
+    }
+  }, 12000);
+}
+
 app.whenReady().then(() => {
   openInitialWindow();
 
@@ -290,6 +457,10 @@ ipcMain.on("window:set-transparency-mode", (_, payload) => {
   const transparentMode = !!payload?.transparent;
   const route = getRouteToLoad(payload?.route);
   recreateMainWindow({ transparentMode, route });
+});
+
+ipcMain.on("show-reminder-window", (_event, reminder) => {
+  createReminderWindow(reminder);
 });
 
 ipcMain.handle("window:is-maximized", () => {

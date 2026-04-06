@@ -1,4 +1,4 @@
-package net.tfg.tfgapp.DTOs;
+package net.tfg.tfgapp.DTOs.users;
 
 import lombok.Getter;
 import lombok.Setter;

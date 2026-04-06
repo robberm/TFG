@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { format, addMinutes, setHours, setMinutes, startOfDay } from "date-fns";
+import { format, addMinutes, startOfDay, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import "../../css/EventModal.css";
 
@@ -9,17 +9,58 @@ const generateTimeOptions = () => {
   const baseDate = startOfDay(new Date());
 
   for (let i = 0; i < 96; i++) {
-    // 24 horas * 4 (cada 15 min)
     const time = addMinutes(baseDate, i * 15);
     options.push({
       value: format(time, "HH:mm"),
       label: format(time, "HH:mm"),
     });
   }
+
   return options;
 };
 
 const TIME_OPTIONS = generateTimeOptions();
+
+/**
+ * Convierte una fecha del backend a objeto Date de forma estable.
+ * Soporta correctamente LocalDateTime sin zona horaria y fechas ISO con zona.
+ *
+ * @param {string|Date} value fecha recibida del backend
+ * @returns {Date} fecha parseada
+ */
+const parseCalendarDate = (value) => {
+  if (value instanceof Date) {
+    return new Date(value.getTime());
+  }
+
+  if (typeof value !== "string") {
+    return new Date(value);
+  }
+
+  const localDateTimeRegex =
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.(\d{1,9}))?$/;
+
+  const match = value.match(localDateTimeRegex);
+
+  if (match) {
+    const [, year, month, day, hour, minute, second = "0", fraction = "0"] =
+      match;
+
+    const milliseconds = Number(fraction.slice(0, 3).padEnd(3, "0"));
+
+    return new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      Number(second),
+      milliseconds,
+    );
+  }
+
+  return parseISO(value);
+};
 
 const TimeSelector = ({ value, onChange, label }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -34,6 +75,7 @@ const TimeSelector = ({ value, onChange, label }) => {
         setSearch("");
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -110,15 +152,15 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
     category: "",
     isAllDay: false,
   });
-
+  const [reminderMinutesBefore, setReminderMinutesBefore] = useState(null);
   const [categories, setCategories] = useState([]);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const titleInputRef = useRef(null);
 
   useEffect(() => {
     if (event) {
-      const startDate = new Date(event.startTime);
-      const endDate = new Date(event.endTime);
+      const startDate = parseCalendarDate(event.startTime);
+      const endDate = parseCalendarDate(event.endTime);
 
       setFormData({
         id: event.id,
@@ -131,6 +173,7 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
         category: event.category || "",
         isAllDay: event.isAllDay || false,
       });
+      setReminderMinutesBefore(event.reminderMinutesBefore ?? null);
       setShowMoreOptions(true);
     } else if (selectedDate) {
       const startDateTime = new Date(selectedDate);
@@ -150,6 +193,8 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
         category: "",
         isAllDay: false,
       });
+      setReminderMinutesBefore(null);
+      setShowMoreOptions(false);
     }
 
     setTimeout(() => titleInputRef.current?.focus(), 100);
@@ -166,6 +211,7 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
         console.error("Failed to load categories:", error);
       }
     };
+
     fetchCategories();
   }, []);
 
@@ -202,6 +248,7 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
       location: formData.location,
       category: formData.category,
       isAllDay: formData.isAllDay,
+      reminderMinutesBefore,
     };
 
     onSave(eventData);
@@ -224,14 +271,13 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
 
   const formatDisplayDate = () => {
     if (!formData.date) return "";
-    const date = new Date(formData.date + "T00:00:00");
+    const date = new Date(`${formData.date}T00:00:00`);
     return format(date, "EEEE, d 'de' MMMM", { locale: es });
   };
 
   return (
     <div className="gcal-modal-overlay" onClick={onClose}>
       <div className="gcal-modal" onClick={(e) => e.stopPropagation()}>
-        {/* Header minimalista */}
         <div className="gcal-modal-header">
           <button className="gcal-close-btn" onClick={onClose} type="button">
             <svg
@@ -247,7 +293,6 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="gcal-form">
-          {/* Título principal */}
           <div className="gcal-title-section">
             <input
               ref={titleInputRef}
@@ -261,7 +306,6 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
             />
           </div>
 
-          {/* Fecha y hora */}
           <div className="gcal-datetime-section">
             <div className="gcal-section-icon">
               <svg
@@ -319,7 +363,6 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
             </div>
           </div>
 
-          {/* Botón para mostrar más opciones */}
           {!showMoreOptions && (
             <button
               type="button"
@@ -339,10 +382,8 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
             </button>
           )}
 
-          {/* Opciones adicionales */}
           {showMoreOptions && (
             <>
-              {/* Ubicación */}
               <div className="gcal-location-section">
                 <div className="gcal-section-icon">
                   <svg
@@ -365,7 +406,6 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
                 />
               </div>
 
-              {/* Descripción */}
               <div className="gcal-description-section">
                 <div className="gcal-section-icon">
                   <svg
@@ -390,7 +430,22 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
                 />
               </div>
 
-              {/* Categoría */}
+              <div className="formGroup">
+                <label>Reminder</label>
+                <select
+                  value={reminderMinutesBefore ?? ""}
+                  onChange={(e) =>
+                    setReminderMinutesBefore(
+                      e.target.value === "" ? null : Number(e.target.value),
+                    )
+                  }
+                >
+                  <option value="">None</option>
+                  <option value="10">10 minutes before</option>
+                  <option value="1440">24 hours before</option>
+                </select>
+              </div>
+
               <div className="gcal-category-section">
                 <div className="gcal-section-icon">
                   <svg
@@ -425,7 +480,6 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
             </>
           )}
 
-          {/* Footer con acciones */}
           <div className="gcal-modal-footer">
             {event && (
               <button

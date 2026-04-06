@@ -91,13 +91,17 @@ body {
 .sideBar a {
   display: flex;
   align-items: center;
-  padding: 8px 16px;
+  gap: 12px;
+  padding: 10px 16px;
   margin: 2px 0;
   text-decoration: none;
   color: var(--text-main);
-  border-radius: 6px;
+  border-radius: 8px;
+  border: 1px solid transparent;
   font-size: 14px;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  font-weight: 500;
+  line-height: 1;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .sideBar a:hover {
@@ -106,14 +110,24 @@ body {
 
 .sideBar a.active,
 .sideBar a[aria-current="page"] {
-  background-color: var(--link-active-bg);
-  color: var(--link-active-text);
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid #111111;
 }
 
 .menuIcon {
-  margin-right: 12px;
-  font-size: 14px;
-  width: 16px;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.menuLabel {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
 }
 
 .mainContent {

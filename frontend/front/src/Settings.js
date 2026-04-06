@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDarkMode } from "./DarkModeContext";
 import "./css/Settings.css";
+
+const API_BASE_URL = "http://localhost:8080";
 
 const Settings = () => {
   const { darkMode, translucentMode, toggleDarkMode, toggleTranslucentMode } =
@@ -12,24 +14,121 @@ const Settings = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [profileImage, setProfileImage] = useState(
-    localStorage.getItem("profileImage") || "",
-  );
-
-  const handleProfileImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const imageUrl = URL.createObjectURL(file);
-    setProfileImage(imageUrl);
-  };
-
-  const handleRemoveProfileImage = () => {
-    setProfileImage("");
-  };
+  const [profileImage, setProfileImage] = useState("");
 
   const [accountMessage, setAccountMessage] = useState("");
   const [accountError, setAccountError] = useState(false);
+
+  useEffect(() => {
+    loadCurrentUserProfile();
+  }, []);
+
+  const loadCurrentUserProfile = async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.message || "No se pudo cargar el perfil.");
+      }
+
+      if (data?.username) {
+        setUsername(data.username);
+        localStorage.setItem("username", data.username);
+      }
+
+      if (data?.profileImagePath) {
+        setProfileImage(`${API_BASE_URL}/uploads/${data.profileImagePath}`);
+      } else {
+        setProfileImage("");
+      }
+    } catch (error) {
+      setAccountMessage(error.message || "No se pudo cargar el perfil.");
+      setAccountError(true);
+    }
+  };
+
+  const handleProfileImageChange = async (e) => {
+    const token = localStorage.getItem("token");
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/profile-image`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message || "No se pudo actualizar la foto de perfil.",
+        );
+      }
+
+      if (data?.profileImagePath) {
+        setProfileImage(`${API_BASE_URL}/uploads/${data.profileImagePath}`);
+      } else {
+        setProfileImage("");
+      }
+
+      setAccountMessage(
+        data?.message || "Imagen de perfil actualizada correctamente.",
+      );
+      setAccountError(false);
+      e.target.value = "";
+    } catch (error) {
+      setAccountMessage(
+        error.message || "No se pudo actualizar la foto de perfil.",
+      );
+      setAccountError(true);
+      e.target.value = "";
+    }
+  };
+
+  const handleRemoveProfileImage = async () => {
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/profile-image`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.message || "No se pudo eliminar la foto.");
+      }
+
+      setProfileImage("");
+      setAccountMessage(data?.message || "Imagen eliminada correctamente.");
+      setAccountError(false);
+    } catch (error) {
+      setAccountMessage(error.message || "No se pudo eliminar la foto.");
+      setAccountError(true);
+    }
+  };
 
   const handleUsernameSave = async () => {
     const token = localStorage.getItem("token");
@@ -43,20 +142,17 @@ const Settings = () => {
     }
 
     try {
-      const response = await fetch(
-        "http://localhost:8080/users/change/username",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            newUsername: username,
-            currentPassword,
-          }),
+      const response = await fetch(`${API_BASE_URL}/users/change/username`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          newUsername: username,
+          currentPassword,
+        }),
+      });
 
       const data = await response.json().catch(() => null);
       const message = data?.message || "No se pudo actualizar el username.";
@@ -68,6 +164,7 @@ const Settings = () => {
       localStorage.setItem("token", data.token);
       localStorage.setItem("username", data.username);
 
+      setUsername(data.username);
       setAccountMessage(message);
       setAccountError(false);
       setCurrentPassword("");
@@ -93,21 +190,18 @@ const Settings = () => {
     }
 
     try {
-      const response = await fetch(
-        "http://localhost:8080/users/change/password",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            currentPassword,
-            newPassword,
-            confirmPassword,
-          }),
+      const response = await fetch(`${API_BASE_URL}/users/change/password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+          confirmPassword,
+        }),
+      });
 
       const data = await response.json().catch(() => null);
       const message = data?.message || "No se pudo actualizar la contraseña.";
@@ -319,6 +413,12 @@ const Settings = () => {
             Cambiar contraseña
           </button>
         </section>
+
+        {accountMessage && (
+          <p className={`accountMessage ${accountError ? "error" : "success"}`}>
+            {accountMessage}
+          </p>
+        )}
       </div>
     </div>
   );

@@ -1,3 +1,5 @@
+import { format, parse, parseISO, isValid } from "date-fns";
+
 const EVENTS_BASE_URL = "http://localhost:8080/events";
 
 const getAuthHeaders = (includeJson = false) => {
@@ -18,15 +20,66 @@ const getAuthHeaders = (includeJson = false) => {
   return headers;
 };
 
+/**
+ * Convierte una fecha a texto local compatible con LocalDateTime del backend.
+ *
+ * @param {Date} date fecha a convertir
+ * @returns {string} fecha en formato yyyy-MM-dd'T'HH:mm:ss
+ */
+const toLocalDateTimeParam = (date) => {
+  return format(date, "yyyy-MM-dd'T'HH:mm:ss");
+};
+
+/**
+ * Parsea una fecha recibida del backend de forma segura.
+ *
+ * @param {string|Date} value valor a parsear
+ * @returns {Date|null} fecha parseada o null si no es válida
+ */
+const safeParseDate = (value) => {
+  if (!value) return null;
+
+  if (value instanceof Date) {
+    return isValid(value) ? value : null;
+  }
+
+  try {
+    const iso = parseISO(value);
+    if (isValid(iso)) return iso;
+  } catch (e) {
+    // ignore
+  }
+
+  try {
+    const withMicros = parse(value, "yyyy-MM-dd HH:mm:ss.SSSSSS", new Date());
+    if (isValid(withMicros)) return withMicros;
+  } catch (e) {
+    // ignore
+  }
+
+  try {
+    const withoutMicros = parse(value, "yyyy-MM-dd HH:mm:ss", new Date());
+    if (isValid(withoutMicros)) return withoutMicros;
+  } catch (e) {
+    // ignore
+  }
+
+  const fallback = new Date(value);
+  return isValid(fallback) ? fallback : null;
+};
+
 const mapEventDates = (event) => ({
   ...event,
-  startTime: new Date(event.startTime),
-  endTime: new Date(event.endTime),
+  startTime: safeParseDate(event.startTime),
+  endTime: safeParseDate(event.endTime),
 });
 
 export const fetchEventsByRange = async (startDate, endDate) => {
+  const start = encodeURIComponent(toLocalDateTimeParam(startDate));
+  const end = encodeURIComponent(toLocalDateTimeParam(endDate));
+
   const response = await fetch(
-    `${EVENTS_BASE_URL}/range?start=${startDate.toISOString()}&end=${endDate.toISOString()}`,
+    `${EVENTS_BASE_URL}/range?start=${start}&end=${end}`,
     {
       headers: getAuthHeaders(),
     },

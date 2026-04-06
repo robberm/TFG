@@ -18,6 +18,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
 
   isWindowMaximized: () => ipcRenderer.invoke("window:is-maximized"),
 
+  showReminderWindow: (reminder) =>
+    ipcRenderer.send("show-reminder-window", reminder),
+
   onWindowMaximizedChange: (callback) => {
     ipcRenderer.removeAllListeners("window:maximized");
     ipcRenderer.on("window:maximized", (_, isMaximized) => {

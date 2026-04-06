@@ -4,6 +4,8 @@ package net.tfg.tfgapp.service;
 
 
 import jakarta.annotation.PostConstruct;
+import net.tfg.tfgapp.service.interfaces.IStorageService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import net.tfg.tfgapp.utils.WindowsUtils;
 
@@ -17,10 +19,12 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class AppRestrictionService {
 
-    private final StorageService storageService;
+    @Autowired
+    private final IStorageService storageService;
+
     private volatile boolean gameModeActive = false;
 
-    public AppRestrictionService(StorageService storageService) {
+    public AppRestrictionService(IStorageService storageService) {
         this.storageService = storageService;
     }
 
@@ -48,7 +52,7 @@ public class AppRestrictionService {
      * y además la aplicación en primer plano está a pantalla completa.
      */
     private void refreshGameModeState() {
-        StorageService.Config config = storageService.loadConfig();
+        IStorageService.Config config = storageService.loadConfig();
 
         this.gameModeActive = WindowsUtils.getRunningProcesses().stream()
                 .anyMatch(process -> config.getGames().contains(process))
@@ -70,7 +74,7 @@ public class AppRestrictionService {
      * y actualmente estén en ejecución.
      */
     private void enforceRestrictions() {
-        StorageService.Config config = storageService.loadConfig();
+        IStorageService.Config config = storageService.loadConfig();
 
         WindowsUtils.getRunningProcesses().stream()
                 .filter(config.getBlockedApps()::contains)
@@ -86,7 +90,7 @@ public class AppRestrictionService {
     public void addBlockedApp(String executableName) {
         String cleanExecutableName = normalizeExecutableName(executableName);
 
-        StorageService.Config config = storageService.loadConfig();
+        IStorageService.Config config = storageService.loadConfig();
 
         if (config.getBlockedApps().contains(cleanExecutableName)) {
             throw new IllegalStateException("La aplicación ya está en la lista bloqueada");
@@ -107,7 +111,7 @@ public class AppRestrictionService {
     public void removeBlockedApp(String executableName) {
         String cleanExecutableName = normalizeExecutableName(executableName);
 
-        StorageService.Config config = storageService.loadConfig();
+        IStorageService.Config config = storageService.loadConfig();
         Set<String> updatedBlockedApps = new HashSet<>(config.getBlockedApps());
 
         if (!updatedBlockedApps.remove(cleanExecutableName)) {
@@ -122,7 +126,7 @@ public class AppRestrictionService {
      * Restablece la configuración por defecto de aplicaciones bloqueadas y juegos.
      */
     public void resetBlockedApps() {
-        StorageService.Config config = new StorageService.Config();
+        IStorageService.Config config = new IStorageService.Config();
         config.setBlockedApps(new HashSet<>(Set.of(
                 "valorant.exe",
                 "leagueoflegends.exe",

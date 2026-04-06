@@ -44,9 +44,7 @@ const Calendar = () => {
           fetchEvents();
         });
       },
-      onStompError: (frame) => {
-        console.error("Error in STOMP", frame);
-      },
+      onStompError: () => {},
     });
 
     stompClient.activate();

@@ -8,7 +8,49 @@ import {
   addDays,
   isSameMonth,
   isSameDay,
+  parseISO,
 } from "date-fns";
+
+/**
+ * Convierte una fecha del backend a objeto Date de forma estable.
+ * Soporta correctamente LocalDateTime sin zona horaria y fechas ISO con zona.
+ *
+ * @param {string|Date} value fecha recibida del backend
+ * @returns {Date} fecha parseada
+ */
+const parseCalendarDate = (value) => {
+  if (value instanceof Date) {
+    return new Date(value.getTime());
+  }
+
+  if (typeof value !== "string") {
+    return new Date(value);
+  }
+
+  const localDateTimeRegex =
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.(\d{1,9}))?$/;
+
+  const match = value.match(localDateTimeRegex);
+
+  if (match) {
+    const [, year, month, day, hour, minute, second = "0", fraction = "0"] =
+      match;
+
+    const milliseconds = Number(fraction.slice(0, 3).padEnd(3, "0"));
+
+    return new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hour),
+      Number(minute),
+      Number(second),
+      milliseconds,
+    );
+  }
+
+  return parseISO(value);
+};
 
 const MonthView = ({
   currentDate,
@@ -28,12 +70,14 @@ const MonthView = ({
   const daysOfWeekFormat = "EEE";
   const startOfTheWeek = startOfWeek(new Date(), { weekStartsOn: 1 });
 
+  const shortDayNames = ["L", "M", "X", "J", "V", "S", "D"];
+
   for (let i = 0; i < 7; i++) {
     const dayOfWeek = addDays(startOfTheWeek, i);
 
     daysOfWeek.push(
       <div className="day-header" key={`header-${i}`}>
-        {format(dayOfWeek, daysOfWeekFormat)}
+        {shortDayNames[i]}
       </div>,
     );
   }
@@ -45,7 +89,7 @@ const MonthView = ({
     const cloneDay = day;
 
     const dayEvents = events.filter((event) =>
-      isSameDay(new Date(event.startTime), cloneDay),
+      isSameDay(parseCalendarDate(event.startTime), cloneDay),
     );
 
     days.push(

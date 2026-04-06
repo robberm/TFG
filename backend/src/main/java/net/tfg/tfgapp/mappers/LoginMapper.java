@@ -1,6 +1,6 @@
 package net.tfg.tfgapp.mappers;
 
-import net.tfg.tfgapp.DTOs.LoginRequest;
+import net.tfg.tfgapp.DTOs.users.LoginRequest;
 import net.tfg.tfgapp.domains.User;
 import org.springframework.stereotype.Component;
 

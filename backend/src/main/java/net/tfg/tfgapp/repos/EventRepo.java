@@ -1,7 +1,6 @@
 package net.tfg.tfgapp.repos;
 
 import net.tfg.tfgapp.domains.Event;
-import net.tfg.tfgapp.domains.Objectives;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,36 +11,97 @@ import java.util.List;
 
 @Repository
 public interface EventRepo extends JpaRepository<Event, Long> {
-//Pongo mejor Long por si fuera escalable
 
-
-
+    /**
+     * Obtiene eventos comprendidos completamente entre dos fechas.
+     *
+     * @param start fecha de inicio
+     * @param end fecha de fin
+     * @return lista de eventos del rango
+     */
     @Query("SELECT e FROM Event e WHERE e.startTime >= :start AND e.endTime <= :end")
-    List<Event> findEventsBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+    List<Event> findEventsBetween(@Param("start") LocalDateTime start,
+                                  @Param("end") LocalDateTime end);
 
+    /**
+     * Obtiene los eventos de un usuario que se solapan con el rango indicado.
+     *
+     * @param username username del usuario
+     * @param start fecha de inicio
+     * @param end fecha de fin
+     * @return lista de eventos del usuario para ese rango
+     */
+    @Query("""
+            SELECT e
+            FROM Event e
+            WHERE e.user.username = :username
+              AND e.startTime >= :start
+              AND e.endTime <= :end
+            """)
+    List<Event> findEventsByUserAndDateRange(@Param("username") String username,
+                                             @Param("start") LocalDateTime start,
+                                             @Param("end") LocalDateTime end);
 
-    @Query("SELECT e FROM Event e WHERE e.user.username = :username AND e.startTime >= :start AND e.endTime <= :end")
-    public List<Event> findEventsByUserAndDateRange(@Param("username") String username,
-                                                    @Param("start") LocalDateTime start,
-                                                    @Param("end") LocalDateTime end);
+    /**
+     * Obtiene todos los eventos de un usuario.
+     *
+     * @param username username del usuario
+     * @return lista de eventos del usuario
+     */
+    @Query("SELECT e FROM Event e WHERE e.user.username = :username")
+    List<Event> findEventsByUser(@Param("username") String username);
 
-
-    List<Event> findByCategory(String category);
-
-
-    @Query("SELECT o FROM Event o WHERE o.user.username = :username")
-    public List<Event> findEventsByUser(@Param("username") String username);
-
+    /**
+     * Obtiene los eventos de un día concreto.
+     *
+     * @param date fecha objetivo
+     * @return lista de eventos del día
+     */
     @Query("SELECT e FROM Event e WHERE FUNCTION('DATE', e.startTime) = FUNCTION('DATE', :date)")
     List<Event> findByStartDate(@Param("date") LocalDateTime date);
 
-
+    /**
+     * Obtiene eventos futuros a partir del instante indicado.
+     *
+     * @param now instante de referencia
+     * @return lista de eventos futuros
+     */
     List<Event> findByStartTimeGreaterThanEqual(LocalDateTime now);
 
-    @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM Event e WHERE e.category = :category AND e.startTime <= :now " +
-            "AND e.endTime >= :now AND e.user.id = :userId")
-    boolean existsActiveEventOfCategory(@Param("category") Event.EventCategory category, @Param("now") LocalDateTime now , @Param("userId") Long userId);
-
-
+    /**
+     * Comprueba si existe actualmente un evento activo de una categoría concreta
+     * perteneciente al usuario indicado.
+     *
+     * @param category categoría del evento
+     * @param now instante actual
+     * @param userId id del usuario
+     * @return true si existe un evento activo de esa categoría
+     */
+    @Query("""
+            SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END
+            FROM Event e
+            WHERE e.category = :category
+              AND e.startTime <= :now
+              AND e.endTime >= :now
+              AND e.user.id = :userId
+            """)
+    boolean existsActiveEventOfCategory(@Param("category") Event.EventCategory category,
+                                        @Param("now") LocalDateTime now,
+                                        @Param("userId") Long userId);
+    /**
+     * Obtiene los eventos que todavía no han finalizado y que tienen un reminder
+     * configurado, para poder programar sus avisos pendientes.
+     *
+     * @param now instante actual usado como referencia
+     * @return lista de eventos con reminder aún pendientes de ejecución
+     */
+    @Query("""
+        SELECT e
+        FROM Event e
+        WHERE e.reminderMinutesBefore IS NOT NULL
+          AND e.endTime > :now
+        ORDER BY e.startTime ASC
+        """)
+    List<Event> findPendingReminders(@Param("now") LocalDateTime now);
 }
 
