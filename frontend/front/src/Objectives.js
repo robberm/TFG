@@ -1,571 +1,307 @@
-import React, { useState, useEffect } from 'react';
-import { useError } from './components/ErrorContext';
-import './css/Objectives.css';
+import React, { useCallback, useMemo, useState } from "react";
+import { useError } from "./components/ErrorContext";
+import "./css/Objectives.css";
+
+import {
+  createGoal,
+  createHabit,
+  deleteGoal,
+  deleteHabit,
+  getGoals,
+  getHabits,
+  getObjectiveLogsByRange,
+  markHabitCompletion,
+  updateGoal,
+  updateGoalProgress,
+  updateHabit,
+} from "./api/objectivesApi";
+
+import GoalModal from "./features/objectives/components/GoalModal";
+import HabitModal from "./features/objectives/components/HabitModal";
+import GoalsSection from "./features/objectives/components/GoalsSection";
+import HabitsSection from "./features/objectives/components/HabitsSection";
+import ObjectivesDashboard from "./features/objectives/components/ObjectivesDashboard";
+
+import {
+  buildHabitCompletionMap,
+  formatIsoDate,
+  getEndOfWeek,
+  getStartOfWeek,
+} from "./features/objectives/utils/objectiveHelpers";
 
 const Objectives = () => {
-  const [objectives, setObjectives] = useState([]);
-  const [objectiveId, setObjectiveId] = useState(null);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [showEditForm, setShowEditForm] = useState(false);
-  const [newObjective, setNewObjective] = useState({
-    titulo: "",
-    description: "",
-    priority: "Media",
-    status: "NotStarted",
-    isNumeric: false,
-    valorProgreso: "",
-    valorObjetivo: "",
-  });
   const { setErrorMessage } = useError();
 
-  /* GET ALL OBJECTIVES IN LIST */
-  useEffect(() => {
-    const getObjectives = async function () {
-      const username = localStorage.getItem("username");
-      const token = localStorage.getItem("token");
+  const [goals, setGoals] = useState([]);
+  const [habits, setHabits] = useState([]);
+  const [logs, setLogs] = useState([]);
 
-      const response = await fetch(
-        `http://localhost:8080/objectives/${username}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmittingGoal, setIsSubmittingGoal] = useState(false);
+  const [isSubmittingHabit, setIsSubmittingHabit] = useState(false);
+  const [isHabitUpdating, setIsHabitUpdating] = useState(false);
+
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
+  const [isHabitModalOpen, setIsHabitModalOpen] = useState(false);
+
+  const [selectedGoal, setSelectedGoal] = useState(null);
+  const [selectedHabit, setSelectedHabit] = useState(null);
+
+  const loadObjectivesData = useCallback(async () => {
+    setIsLoading(true);
+
+    try {
+      const startOfWeek = getStartOfWeek(new Date());
+      const endOfWeek = getEndOfWeek(startOfWeek);
+
+      const [goalsResponse, habitsResponse, logsResponse] = await Promise.all([
+        getGoals(),
+        getHabits(),
+        getObjectiveLogsByRange(
+          formatIsoDate(startOfWeek),
+          formatIsoDate(endOfWeek),
+        ),
+      ]);
+
+      setGoals(Array.isArray(goalsResponse) ? goalsResponse : []);
+      setHabits(Array.isArray(habitsResponse) ? habitsResponse : []);
+      setLogs(Array.isArray(logsResponse) ? logsResponse : []);
+    } catch (error) {
+      setErrorMessage(
+        error.message || "No se pudo cargar la pantalla de objetivos.",
       );
-
-      if (response.ok) {
-        const objectiveList = await response.json(); 
-        setObjectives(objectiveList); 
-      } else {
-        setErrorMessage("Error al obtener objetivos.");
-      }
-    };
-
-    getObjectives();
+    } finally {
+      setIsLoading(false);
+    }
   }, [setErrorMessage]);
-  
-  
 
-  useEffect(() => {
-    if (showEditForm && objectiveId) {
-      getObjective(objectiveId);
-    }
-  }, [showEditForm, objectiveId]);
+  React.useEffect(() => {
+    loadObjectivesData();
+  }, [loadObjectivesData]);
 
-  // Añadir nuevo objetivo
-  const handleAddObjective = async (e) => {
-    
-
-    if (!newObjective.titulo.trim()) {
-      setErrorMessage("El título es obligatorio.");
-      return;
-    }
-
-    try {
-      /* Obtengo el token de sesión*/
-      const token = localStorage.getItem("token"); // Asegúrate de que el token está en el localStorage
-      if (!token) {
-        console.error("Token is missing, cannot proceed.");
-        return;
-      }
-
-      const response = await fetch("http://localhost:8080/objectives", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Envio el token en la cabecera
-        },
-        body: JSON.stringify(newObjective),
-      });
-
-      if (response.ok) {
-        const addedObjective = await response.json();
-        setObjectives([...objectives, addedObjective]);
-
-        setShowAddForm(false);
-        clearObjective();
-      } else {
-        setErrorMessage("Error al añadir objetivo.");
-      }
-    } catch (error) {
-      setErrorMessage("Error de conexión.");
-    }
-  };
-
-  /* GET ONE OBJECTIVE */
-  const getObjective = async function (id) {
-    const token = localStorage.getItem("token");
-
-    try {
-      const response = await fetch(`http://localhost:8080/objectives/${id}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const objective = await response.json();
-
-        setNewObjective({
-          titulo: objective.titulo,
-          description: objective.description,
-          priority: objective.priority,
-          status: objective.status,
-          isNumeric: objective.isNumeric,
-          valorProgreso: objective.valorProgreso ?? "",
-          valorObjetivo: objective.valorObjetivo ?? "",
-        });
-      } else {
-        console.error("No se pudo obtener el objetivo.");
-      }
-    } catch (error) {
-      console.error("Error al obtener el objetivo:", error);
-    }
-  };
-
-  const handleSaveEdit = async (formData) => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      console.error("Token is missing, cannot proceed.");
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `http://localhost:8080/objectives/${objectiveId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(formData),
-        }
-      );
-
-      if (response.ok) {
-        const updatedObjective = await response.json();
-
-        setObjectives((prevObjectives) =>
-          prevObjectives.map((obj) =>
-            obj.id === updatedObjective.id ? updatedObjective : obj
-          )
-        );
-
-        setShowEditForm(false);
-        setObjectiveId(null);
-        clearObjective();
-      } else {
-        setErrorMessage("Error al actualizar objetivo.");
-      }
-    } catch (error) {
-      setErrorMessage("Error de conexión.");
-    }
-  };
-
-  const filterObjectives = () => {
-    // Implementar filtro aquí si es necesario
-    console.log("Filtrar objetivos");
-  };
-
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case "Alta":
-        return "#ff4757";
-      case "Media":
-        return "#ffa502";
-      case "Baja":
-        return "#2ed573";
-      default:
-        return "#747d8c";
-    }
-  };
-
-  const clearObjective = () => {
-    setNewObjective({
-      titulo: "",
-      description: "",
-      priority: "Media",
-      status: "NotStarted",
-      isNumeric: false,
-      valorProgreso: "",
-      valorObjetivo: "",
-    });
-  };
-
-  const changeStatus = async (id, newStatus) => {
-    const token = localStorage.getItem("token");
-
-    try {
-      const response = await fetch(
-        `http://localhost:8080/objectives/${id}/status`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status: newStatus }),
-        }
-      );
-
-      if (response.ok) {
-        const updated = await response.json();
-        setObjectives((prev) =>
-          prev.map((obj) =>
-            obj.id === id ? { ...obj, status: updated.status } : obj
-          )
-        );
-      } else {
-        setErrorMessage("No se pudo actualizar el estado.");
-      }
-    } catch (err) {
-      setErrorMessage("Error de conexión al actualizar el estado.");
-    }
-  };
-
-  /* Delete objective clicked on  */
-  const deleteObjective = async function (objectiveId) {
-    const token = localStorage.getItem("token");
-
-    try {
-      const response = await fetch(
-        `http://localhost:8080/objectives/${objectiveId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        setObjectives((prevObjectives) =>
-          prevObjectives.filter((obj) => obj.id !== objectiveId)
-        );
-      } else {
-        setErrorMessage("No se pudo borrar el objetivo.");
-      }
-    } catch (err) {
-      setErrorMessage("Error de conexión al eliminar el objetivo.");
-    }
-  };
-  
-
-
-  const frontendToBackendStatus = {
-    "Sin empezar": "NotStarted",
-    "En Progreso": "InProgress",
-    Completado: "Done",
-  };
-
-  const backendToFrontendStatus = {
-    NotStarted: "Sin empezar",
-    InProgress: "En Progreso",
-    Done: "Completado",
-  };
-
-  const renderObjectiveForm = ({ isEdit, onSubmit }) => (
-    <div className="addObjectiveForm">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmit(newObjective); 
-        }}
-      >
-        <div className="formRow">
-          <div className="formGroup">
-            <label htmlFor="titulo">Título *</label>
-            <input
-              type="text"
-              id="titulo"
-              value={newObjective.titulo}
-              onChange={(e) =>
-                setNewObjective({ ...newObjective, titulo: e.target.value })
-              }
-              placeholder="Ingresa el título del objetivo"
-              required
-            />
-          </div>
-          <div className="formGroup">
-            <label htmlFor="priority">Prioridad</label>
-            <select
-              id="priority"
-              value={newObjective.priority}
-              onChange={(e) =>
-                setNewObjective({ ...newObjective, priority: e.target.value })
-              }
-            >
-              <option value="Baja">Baja</option>
-              <option value="Media">Media</option>
-              <option value="Alta">Alta</option>
-            </select>
-          </div>
-        </div>
-        <div className="formRow">
-          <div className="formGroup">
-            <label htmlFor="description">Descripción</label>
-            <textarea
-              id="description"
-              value={newObjective.description}
-              onChange={(e) =>
-                setNewObjective({
-                  ...newObjective,
-                  description: e.target.value,
-                })
-              }
-              placeholder="Describe el objetivo (opcional)"
-              rows="3"
-            />
-          </div>
-          <div className="formGroup">
-            <label htmlFor="isNumeric">
-              Is Numeric?
-              <input
-                type="checkbox"
-                id="isNumeric"
-                checked={newObjective.isNumeric}
-                onChange={(e) =>
-                  setNewObjective({
-                    ...newObjective,
-                    isNumeric: e.target.checked,
-                  })
-                }
-              />
-            </label>
-          </div>
-        </div>
-
-        {newObjective.isNumeric === true && (
-          <div className="formRow">
-            <div className="formGroup">
-              <label htmlFor="valorProgreso">Valor progreso</label>
-              <input
-                type="number"
-                id="valorProgreso"
-                value={newObjective.valorProgreso}
-                onChange={(e) =>
-                  setNewObjective({
-                    ...newObjective,
-                    valorProgreso: e.target.value,
-                  })
-                }
-              />
-            </div>
-
-            <div className="formGroup">
-              <label htmlFor="valorObjetivo">Valor de cumplimiento</label>
-              <input
-                type="number"
-                id="valorObjetivo"
-                value={newObjective.valorObjetivo}
-                onChange={(e) =>
-                  setNewObjective({
-                    ...newObjective,
-                    valorObjetivo: e.target.value,
-                  })
-                }
-              />
-            </div>
-          </div>
-        )}
-
-        <div className="formActions">
-          <button type="submit" className="saveButton">
-            {isEdit ? "Actualizar" : "Guardar"}
-          </button>
-          <button
-            type="button"
-            className="cancelButton"
-            onClick={() => {
-              if (isEdit) setShowEditForm(false);
-              else {
-                setShowAddForm(false);
-                clearObjective();
-              }
-            }}
-          >
-            Cancelar
-          </button>
-        </div>
-      </form>
-    </div>
+  const habitCompletionMap = useMemo(
+    () => buildHabitCompletionMap(logs),
+    [logs],
   );
+
+  const openCreateGoalModal = () => {
+    setSelectedGoal(null);
+    setIsGoalModalOpen(true);
+  };
+
+  const openEditGoalModal = (goal) => {
+    setSelectedGoal(goal);
+    setIsGoalModalOpen(true);
+  };
+
+  const openCreateHabitModal = () => {
+    setSelectedHabit(null);
+    setIsHabitModalOpen(true);
+  };
+
+  const openEditHabitModal = (habit) => {
+    setSelectedHabit(habit);
+    setIsHabitModalOpen(true);
+  };
+
+  const closeGoalModal = () => {
+    setSelectedGoal(null);
+    setIsGoalModalOpen(false);
+  };
+
+  const closeHabitModal = () => {
+    setSelectedHabit(null);
+    setIsHabitModalOpen(false);
+  };
+
+  const handleGoalSubmit = async (payload) => {
+    if (!payload.titulo.trim()) {
+      setErrorMessage("El título del goal es obligatorio.");
+      return;
+    }
+
+    setIsSubmittingGoal(true);
+
+    try {
+      if (selectedGoal) {
+        const previousProgress = Number(selectedGoal.valorProgreso ?? 0);
+        const nextProgress = payload.isNumeric
+          ? Number(payload.valorProgreso ?? 0)
+          : null;
+
+        await updateGoal(selectedGoal.id, {
+          titulo: payload.titulo,
+          description: payload.description,
+          priority: payload.priority,
+          status: payload.status,
+          isNumeric: payload.isNumeric,
+          valorProgreso: payload.valorProgreso,
+          valorObjetivo: payload.valorObjetivo,
+          active: payload.active,
+        });
+
+        if (payload.isNumeric && previousProgress !== nextProgress) {
+          await updateGoalProgress(selectedGoal.id, {
+            valorProgreso: nextProgress,
+            notes: payload.notes || "Actualización de progreso desde frontend.",
+          });
+        }
+      } else {
+        await createGoal({
+          titulo: payload.titulo,
+          description: payload.description,
+          priority: payload.priority,
+          status: payload.status,
+          isNumeric: payload.isNumeric,
+          valorProgreso: payload.valorProgreso,
+          valorObjetivo: payload.valorObjetivo,
+          active: payload.active,
+        });
+      }
+
+      closeGoalModal();
+      await loadObjectivesData();
+    } catch (error) {
+      setErrorMessage(error.message || "No se pudo guardar el goal.");
+    } finally {
+      setIsSubmittingGoal(false);
+    }
+  };
+
+  const handleHabitSubmit = async (payload) => {
+    if (!payload.titulo.trim()) {
+      setErrorMessage("El título del hábito es obligatorio.");
+      return;
+    }
+
+    setIsSubmittingHabit(true);
+
+    try {
+      if (selectedHabit) {
+        await updateHabit(selectedHabit.id, payload);
+      } else {
+        await createHabit(payload);
+      }
+
+      closeHabitModal();
+      await loadObjectivesData();
+    } catch (error) {
+      setErrorMessage(error.message || "No se pudo guardar el hábito.");
+    } finally {
+      setIsSubmittingHabit(false);
+    }
+  };
+
+  const handleGoalDelete = async (goal) => {
+    const confirmed = window.confirm(
+      `¿Seguro que quieres eliminar "${goal.titulo}"?`,
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteGoal(goal.id);
+      await loadObjectivesData();
+    } catch (error) {
+      setErrorMessage(error.message || "No se pudo eliminar el goal.");
+    }
+  };
+
+  const handleHabitDelete = async (habit) => {
+    const confirmed = window.confirm(
+      `¿Seguro que quieres eliminar "${habit.titulo}"?`,
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteHabit(habit.id);
+      await loadObjectivesData();
+    } catch (error) {
+      setErrorMessage(error.message || "No se pudo eliminar el hábito.");
+    }
+  };
+
+  const handleToggleHabitToday = async (habit, shouldComplete) => {
+    setIsHabitUpdating(true);
+
+    try {
+      await markHabitCompletion(habit.id, {
+        date: formatIsoDate(new Date()),
+        completed: shouldComplete,
+        notes: shouldComplete
+          ? "Marcado como completado hoy."
+          : "Desmarcado desde frontend.",
+      });
+
+      await loadObjectivesData();
+    } catch (error) {
+      setErrorMessage(error.message || "No se pudo actualizar el hábito.");
+    } finally {
+      setIsHabitUpdating(false);
+    }
+  };
 
   return (
     <div className="objectivesPage">
-      {/*Main */}
-      <div className="pageHeader">
-        <h1>Objetivos</h1>
-      </div>
-
-      <div className="todoSection">
-        <div className="todoHeader">
-          <h2>Mis Objetivos</h2>
-          <div className="headerActions">
-            <button
-              className="addButton"
-              onClick={() => setShowAddForm(!showAddForm)}
-            >
-              <i className="fa fa-plus"></i> Añadir Objetivo
-            </button>
-            <button className="filterButton" onClick={filterObjectives}>
-              <i className="fa-solid fa-filter"></i>
-            </button>
-          </div>
-        </div>{" "}
-        {/* Formulario para añadir objetivo */}
-        {showAddForm &&
-          renderObjectiveForm({ isEdit: false, onSubmit: handleAddObjective })}
-        {/* Objectives table */}
-        <div className="todoTable">
-          <div className="tableRow tableHeader">
-            <div className="tableCell">Título</div>
-            <div className="tableCell">Descripción</div>
-            <div className="tableCell">Prioridad</div>
-            <div className="tableCell statusCell">Status</div>
-            <div className="tableCell">Progress</div>
-            <div className="tableCell">Acciones</div>
-          </div>
-
-          {objectives.length === 0 ? (
-            <div className="emptyState">
-              <p>No hay objetivos todavía.</p>
-            </div>
-          ) : (
-            objectives.map((objective) => (
-              <div
-                key={objective.id}
-                className={`tableRow ${
-                  objective.status === "Done" ? "completedTableRow" : ""
-                }`}
-              >
-                <div className="tableCell">
-                  <strong
-                    className={
-                      objective.status === "Done" ? "completedText" : ""
-                    }
-                  >
-                    {objective.titulo}
-                  </strong>
-                </div>
-
-                <div className="tableCell">
-                  <span
-                    className={
-                      objective.status === "Done" ? "completedText" : ""
-                    }
-                  >
-                    {objective.description || "Sin descripción"}
-                  </span>
-                </div>
-                <div className="tableCell">
-                  <span
-                    className="priorityBadge"
-                    style={{
-                      backgroundColor: getPriorityColor(objective.priority),
-                    }}
-                  >
-                    {objective.priority === "Alta"
-                      ? "Alta"
-                      : objective.priority === "Media"
-                        ? "Media"
-                        : "Baja"}
-                  </span>
-                </div>
-                <div className="tableCell">
-                  <select
-                    value={backendToFrontendStatus[objective.status]}
-                    onChange={(e) =>
-                      changeStatus(
-                        objective.id,
-                        frontendToBackendStatus[e.target.value],
-                      )
-                    }
-                    className="statusDropdown"
-                  >
-                    <option value="Sin empezar">Sin empezar</option>
-                    <option value="En Progreso">En Progreso</option>
-                    <option value="Completado">Completado</option>
-                  </select>
-                </div>
-
-                <div className="tableCell">
-                  {objective.isNumeric ? (
-                    <div className="progressBarContainer">
-                      <div
-                        className="progressBarFill"
-                        style={{
-                          width: `${
-                            objective.valorObjetivo > 0
-                              ? (objective.valorProgreso * 100) /
-                                objective.valorObjetivo
-                              : 0
-                          }%`,
-                        }}
-                      ></div>
-                    </div>
-                  ) : (
-                    "-"
-                  )}
-                  {/* Las últimas 3 lineas es para denotar que si es Numeric enseña, si no, no.*/}
-                </div>
-
-                <div className="tableCell">
-                  <button
-                    className="actionButton editButton"
-                    onClick={() => {
-                      setShowEditForm(true);
-                      setObjectiveId(objective.id);
-                    }}
-                  >
-                    <i className="fa fa-edit"></i>
-                  </button>
-                  <button
-                    className="actionButton deleteButton"
-                    onClick={() => {
-                      deleteObjective(objective.id);
-                    }}
-                  >
-                    <i className="fa fa-trash"></i>
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
+      <div className="pageHeader objectivesHeader">
+        <div>
+          <h1>Objectives</h1>
+          <p>Goals a largo plazo, hábitos diarios y estadísticas semanales.</p>
         </div>
-      </div>
-      {/* Modal de edición */}
-      {showEditForm && (
-        <div
-          className="modalOverlay"
-          onClick={() => {
-            clearObjective();
-          }}
+
+        <button
+          className="refreshButton"
+          onClick={loadObjectivesData}
+          disabled={isLoading}
         >
-          <div className="editModal" onClick={(e) => e.stopPropagation()}>
-            <div className="modalHeader">
-              <h3>Editar Objetivo</h3>
-              <button
-                className="closeButton"
-                onClick={() => {
-                  clearObjective();
-                  setShowEditForm(false);
-                }}
-              >
-                <i className="fa fa-times"></i>
-              </button>
-            </div>
-            <div className="modalForm">
-              {renderObjectiveForm({ isEdit: true, onSubmit: handleSaveEdit })}
-            </div>
-          </div>
+          <i className="fa fa-rotate-right"></i> Recargar
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="objectivesLoadingState">
+          <span className="loaderDot"></span>
+          <span>Cargando objetivos...</span>
         </div>
+      ) : (
+        <>
+          <ObjectivesDashboard goals={goals} habits={habits} logs={logs} />
+
+          <div className="objectivesContent">
+            <HabitsSection
+              habits={habits}
+              habitCompletionMap={habitCompletionMap}
+              onCreate={openCreateHabitModal}
+              onEdit={openEditHabitModal}
+              onDelete={handleHabitDelete}
+              onToggleToday={handleToggleHabitToday}
+              isHabitUpdating={isHabitUpdating}
+            />
+
+            <GoalsSection
+              goals={goals}
+              onCreate={openCreateGoalModal}
+              onEdit={openEditGoalModal}
+              onDelete={handleGoalDelete}
+            />
+          </div>
+        </>
       )}
+
+      <GoalModal
+        isOpen={isGoalModalOpen}
+        initialData={selectedGoal}
+        onClose={closeGoalModal}
+        onSubmit={handleGoalSubmit}
+        isSubmitting={isSubmittingGoal}
+      />
+
+      <HabitModal
+        isOpen={isHabitModalOpen}
+        initialData={selectedHabit}
+        onClose={closeHabitModal}
+        onSubmit={handleHabitSubmit}
+        isSubmitting={isSubmittingHabit}
+      />
     </div>
   );
 };

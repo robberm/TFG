@@ -1,6 +1,6 @@
 package net.tfg.tfgapp.repos;
 
-import net.tfg.tfgapp.domains.Objectives;
+import net.tfg.tfgapp.domains.Objective;
 import net.tfg.tfgapp.domains.User;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.JpaRepository;

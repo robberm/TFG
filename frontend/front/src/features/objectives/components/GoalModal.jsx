@@ -1,0 +1,232 @@
+import React, { useEffect, useState } from "react";
+import {
+  EMPTY_GOAL_FORM,
+  normalizeGoalForm,
+  toInputNumberValue,
+} from "../utils/objectiveHelpers";
+
+const GoalModal = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  initialData,
+  isSubmitting,
+}) => {
+  const [form, setForm] = useState(EMPTY_GOAL_FORM);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (initialData) {
+      setForm({
+        titulo: initialData.titulo || "",
+        description: initialData.description || "",
+        priority: initialData.priority || "Media",
+        status: initialData.status || "NotStarted",
+        isNumeric: Boolean(initialData.isNumeric),
+        valorProgreso: toInputNumberValue(initialData.valorProgreso),
+        valorObjetivo: toInputNumberValue(initialData.valorObjetivo),
+        active: initialData.active ?? true,
+        notes: "",
+      });
+      return;
+    }
+
+    setForm(EMPTY_GOAL_FORM);
+  }, [initialData, isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleChange = (field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleNumericToggle = (checked) => {
+    setForm((prev) => ({
+      ...prev,
+      isNumeric: checked,
+      valorProgreso: checked ? prev.valorProgreso : "",
+      valorObjetivo: checked ? prev.valorObjetivo : "",
+      notes: checked ? prev.notes : "",
+    }));
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    onSubmit({
+      ...normalizeGoalForm(form),
+      notes: form.notes?.trim() || "",
+    });
+  };
+
+  return (
+    <div className="modalOverlay" onClick={onClose}>
+      <div className="editModal" onClick={(event) => event.stopPropagation()}>
+        <div className="modalHeader">
+          <h3>{initialData ? "Editar goal" : "Crear goal"}</h3>
+          <button className="closeButton" onClick={onClose}>
+            <i className="fa fa-times"></i>
+          </button>
+        </div>
+
+        <div className="modalForm">
+          <form className="objectiveForm" onSubmit={handleSubmit}>
+            <div className="formRow">
+              <div className="formGroup">
+                <label htmlFor="goal-title">Título *</label>
+                <input
+                  id="goal-title"
+                  type="text"
+                  value={form.titulo}
+                  onChange={(event) =>
+                    handleChange("titulo", event.target.value)
+                  }
+                  placeholder="Ej. Terminar TFG"
+                  required
+                />
+              </div>
+
+              <div className="formGroup">
+                <label htmlFor="goal-priority">Prioridad</label>
+                <select
+                  id="goal-priority"
+                  value={form.priority}
+                  onChange={(event) =>
+                    handleChange("priority", event.target.value)
+                  }
+                >
+                  <option value="Alta">Alta</option>
+                  <option value="Media">Media</option>
+                  <option value="Baja">Baja</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="formRow">
+              <div className="formGroup">
+                <label htmlFor="goal-description">Descripción</label>
+                <textarea
+                  id="goal-description"
+                  rows="4"
+                  value={form.description}
+                  onChange={(event) =>
+                    handleChange("description", event.target.value)
+                  }
+                  placeholder="Describe el objetivo"
+                />
+              </div>
+
+              <div className="formGroup">
+                <label htmlFor="goal-status">Estado</label>
+                <select
+                  id="goal-status"
+                  value={form.status}
+                  onChange={(event) =>
+                    handleChange("status", event.target.value)
+                  }
+                >
+                  <option value="NotStarted">Sin empezar</option>
+                  <option value="InProgress">En progreso</option>
+                  <option value="Done">Completado</option>
+                </select>
+
+                <label className="checkboxRow" htmlFor="goal-is-numeric">
+                  <input
+                    id="goal-is-numeric"
+                    type="checkbox"
+                    checked={form.isNumeric}
+                    onChange={(event) =>
+                      handleNumericToggle(event.target.checked)
+                    }
+                  />
+                  Objetivo numérico
+                </label>
+
+                <label className="checkboxRow" htmlFor="goal-active">
+                  <input
+                    id="goal-active"
+                    type="checkbox"
+                    checked={form.active}
+                    onChange={(event) =>
+                      handleChange("active", event.target.checked)
+                    }
+                  />
+                  Activo
+                </label>
+              </div>
+            </div>
+
+            {form.isNumeric && (
+              <>
+                <div className="formRow">
+                  <div className="formGroup">
+                    <label htmlFor="goal-progress">Valor actual</label>
+                    <input
+                      id="goal-progress"
+                      type="number"
+                      step="0.01"
+                      value={form.valorProgreso}
+                      onChange={(event) =>
+                        handleChange("valorProgreso", event.target.value)
+                      }
+                    />
+                  </div>
+
+                  <div className="formGroup">
+                    <label htmlFor="goal-target">Valor objetivo</label>
+                    <input
+                      id="goal-target"
+                      type="number"
+                      step="0.01"
+                      value={form.valorObjetivo}
+                      onChange={(event) =>
+                        handleChange("valorObjetivo", event.target.value)
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="formRow singleColumn">
+                  <div className="formGroup">
+                    <label htmlFor="goal-notes">Nota del progreso</label>
+                    <textarea
+                      id="goal-notes"
+                      rows="3"
+                      value={form.notes}
+                      onChange={(event) =>
+                        handleChange("notes", event.target.value)
+                      }
+                      placeholder="Opcional: se guardará en el log de progreso"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="formActions">
+              <button type="button" className="cancelButton" onClick={onClose}>
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="saveButton"
+                disabled={isSubmitting}
+              >
+                {isSubmitting
+                  ? "Guardando..."
+                  : initialData
+                    ? "Actualizar"
+                    : "Crear"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default GoalModal;
