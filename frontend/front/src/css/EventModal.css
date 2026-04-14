@@ -702,3 +702,22 @@ body.dark .gcal-save-btn:hover {
     justify-content: center;
   }
 }
+.gcal-section-row {
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gcal-label {
+  font-size: 13px;
+  color: var(--text-main);
+}
+
+.gcal-select {
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--bg-main);
+  color: var(--text-main);
+}

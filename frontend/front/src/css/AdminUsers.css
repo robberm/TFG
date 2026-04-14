@@ -1,0 +1,118 @@
+.adminUsersPage {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: var(--text-main);
+}
+
+.adminUsersHeader h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.adminUsersHeader p {
+  margin: 6px 0 0;
+  color: color-mix(in srgb, var(--text-main) 75%, transparent);
+}
+
+.adminUsersCard {
+  background: var(--bg-page);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: var(--panel-shadow);
+}
+
+.adminUsersCard h2 {
+  margin: 0 0 14px;
+  font-size: 18px;
+}
+
+.adminUsersForm {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.adminUsersForm label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.adminUsersForm input {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--panel-border);
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+.adminUsersForm button,
+.adminUsersListHeader button,
+.adminUsersTable button {
+  border: 1px solid var(--panel-border);
+  background: var(--bg-main);
+  color: var(--text-main);
+  border-radius: 8px;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+
+.adminUsersForm button:hover,
+.adminUsersListHeader button:hover,
+.adminUsersTable button:hover {
+  background: var(--bg-hover);
+}
+
+.adminUsersListHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.adminUsersTableWrap {
+  overflow-x: auto;
+}
+
+.adminUsersTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.adminUsersTable th,
+.adminUsersTable td {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.adminUsersTable th {
+  font-size: 13px;
+  color: color-mix(in srgb, var(--text-main) 80%, transparent);
+}
+
+.adminUsersTable button.danger {
+  border-color: #b42318;
+  color: #b42318;
+}
+
+.adminFeedback {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.adminFeedback.error {
+  color: #b42318;
+}
+
+.adminFeedback.success {
+  color: #067647;
+}
+
+.adminUsersStatus {
+  margin: 6px 0;
+}

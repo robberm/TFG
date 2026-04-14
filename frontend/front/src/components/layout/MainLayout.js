@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import UserMenu from "./UserMenu";
 import WindowTitleBar from "./WindowTitleBar";
 import ReminderListener from "./ReminderListener";
+import { getCurrentUserProfile } from "../../api/userApi";
 import "../../css/MainLayout.css";
 
 const isElectronEnvironment =
@@ -100,9 +101,60 @@ const BlockIcon = () => (
   </svg>
 );
 
+const UsersIcon = () => (
+  <svg className="menuIcon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M8.5 11.25C10.1569 11.25 11.5 9.90685 11.5 8.25C11.5 6.59315 10.1569 5.25 8.5 5.25C6.84315 5.25 5.5 6.59315 5.5 8.25C5.5 9.90685 6.84315 11.25 8.5 11.25Z"
+      stroke="currentColor"
+      strokeWidth="1.9"
+    />
+    <path
+      d="M2.75 18.25C2.75 15.6266 4.87665 13.5 7.5 13.5H9.5C12.1234 13.5 14.25 15.6266 14.25 18.25"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+    />
+    <path d="M17.5 8V14" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+    <path d="M14.5 11H20.5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+  </svg>
+);
+
 const MainLayout = ({ children }) => {
   const location = useLocation();
+  const [isAdmin, setIsAdmin] = useState(false);
+
   const showSidebar = location.pathname !== "/";
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token || location.pathname === "/") {
+      setIsAdmin(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadProfile = async () => {
+      try {
+        const profile = await getCurrentUserProfile();
+
+        if (isMounted) {
+          setIsAdmin(profile?.role === "ADMIN");
+        }
+      } catch (_) {
+        if (isMounted) {
+          setIsAdmin(false);
+        }
+      }
+    };
+
+    loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [location.pathname]);
 
   if (!showSidebar) {
     return children;
@@ -135,10 +187,17 @@ const MainLayout = ({ children }) => {
                 <span className="menuLabel">Objectives</span>
               </NavLink>
 
-              <NavLink to="/block">
-                <BlockIcon />
-                <span className="menuLabel">Block</span>
-              </NavLink>
+              {isAdmin ? (
+                <NavLink to="/admin">
+                  <UsersIcon />
+                  <span className="menuLabel">Users</span>
+                </NavLink>
+              ) : (
+                <NavLink to="/block">
+                  <BlockIcon />
+                  <span className="menuLabel">Block</span>
+                </NavLink>
+              )}
             </nav>
           </aside>
 

@@ -15,6 +15,25 @@ const Register = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+
+    const normalizedUsername = registerUsername.trim();
+    const normalizedPassword = registerPw.trim();
+
+    if (!normalizedUsername) {
+      setError("El username es obligatorio.");
+      return;
+    }
+
+    if (normalizedUsername.includes(" ")) {
+      setError("El username no puede contener espacios.");
+      return;
+    }
+
+    if (!normalizedPassword) {
+      setError("La contraseña es obligatoria.");
+      return;
+    }
+
     try {
       const response = await fetch("http://localhost:8080/users/register", {
         method: "POST",
@@ -22,8 +41,8 @@ const Register = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username: registerUsername,
-          password: registerPw,
+          username: normalizedUsername,
+          password: normalizedPassword,
         }), // Enviamos datos para el registro
       });
 
