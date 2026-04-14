@@ -6,9 +6,8 @@ import net.tfg.tfgapp.DTOs.users.UserSummaryResponse;
 import net.tfg.tfgapp.domains.Organization;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.security.TokenService;
-import net.tfg.tfgapp.service.interfaces.IAdminService;
 import net.tfg.tfgapp.service.interfaces.IUserService;
-import org.springframework.format.annotation.DateTimeFormat;
+import net.tfg.tfgapp.service.interfaces.IAdminService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,10 +32,15 @@ public class AdminController {
         this.tokenService = tokenService;
     }
 
+    /**
+     * Recupera los usuarios subordinados al admin autenticado.
+     */
     @GetMapping("/users")
     public ResponseEntity<?> getManagedUsers(@RequestHeader("Authorization") String authHeader) {
         try {
-            String adminUsername = getAdminUsernameFromHeader(authHeader);
+            String token = extractAndVerifyToken(authHeader);
+            String adminUsername = tokenService.extractUsername(token);
+
             List<UserSummaryResponse> users = organizationAdminService.getManagedUsers(adminUsername);
             return ResponseEntity.ok(users);
         } catch (SecurityException e) {
@@ -48,11 +52,16 @@ public class AdminController {
         }
     }
 
+    /**
+     * Alta de usuario personal subordinado.
+     */
     @PostMapping("/users")
     public ResponseEntity<?> createManagedUser(@RequestHeader("Authorization") String authHeader,
                                                @RequestBody AdminCreateUserRequest request) {
         try {
-            String adminUsername = getAdminUsernameFromHeader(authHeader);
+            String token = extractAndVerifyToken(authHeader);
+            String adminUsername = tokenService.extractUsername(token);
+
             UserSummaryResponse createdUser = organizationAdminService.createManagedUser(adminUsername, request);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
         } catch (SecurityException e) {
@@ -64,11 +73,16 @@ public class AdminController {
         }
     }
 
+    /**
+     * Baja de usuario subordinado.
+     */
     @DeleteMapping("/users/{userId}")
     public ResponseEntity<?> deleteManagedUser(@RequestHeader("Authorization") String authHeader,
                                                @PathVariable Long userId) {
         try {
-            String adminUsername = getAdminUsernameFromHeader(authHeader);
+            String token = extractAndVerifyToken(authHeader);
+            String adminUsername = tokenService.extractUsername(token);
+
             organizationAdminService.deleteManagedUser(adminUsername, userId);
             return ResponseEntity.noContent().build();
         } catch (SecurityException e) {
