@@ -80,6 +80,29 @@ const GoalModal = ({
     }));
   };
 
+  const toggleTargetSelection = (value) => {
+    setForm((prev) => {
+      const current = prev.targetUserIds || [];
+
+      if (value === "ALL") {
+        return {
+          ...prev,
+          targetUserIds: current.includes("ALL") ? [] : ["ALL"],
+        };
+      }
+
+      const withoutAll = current.filter((item) => item !== "ALL");
+      const alreadySelected = withoutAll.includes(String(value));
+
+      return {
+        ...prev,
+        targetUserIds: alreadySelected
+          ? withoutAll.filter((item) => item !== String(value))
+          : [...withoutAll, String(value)],
+      };
+    });
+  };
+
   /**
    * Normaliza el formulario antes de enviarlo al componente padre.
    */

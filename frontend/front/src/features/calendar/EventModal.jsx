@@ -254,6 +254,29 @@ const EventModal = ({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const toggleTargetSelection = (value) => {
+    setFormData((prev) => {
+      const current = prev.targetUserIds || [];
+
+      if (value === "ALL") {
+        return {
+          ...prev,
+          targetUserIds: current.includes("ALL") ? [] : ["ALL"],
+        };
+      }
+
+      const withoutAll = current.filter((item) => item !== "ALL");
+      const alreadySelected = withoutAll.includes(String(value));
+
+      return {
+        ...prev,
+        targetUserIds: alreadySelected
+          ? withoutAll.filter((item) => item !== String(value))
+          : [...withoutAll, String(value)],
+      };
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
