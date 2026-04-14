@@ -1344,18 +1344,3 @@ body.dark .tableRow:hover {
     font-size: 0.7rem;
   }
 }
-
-.adminUserSelector {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.adminUserSelector select {
-  min-width: 220px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--panel-border);
-  background: var(--bg-main);
-  color: var(--text-main);
-}

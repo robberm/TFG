@@ -15,19 +15,8 @@ import {
   saveCalendarEvent,
   deleteCalendarEvent,
 } from "../api/eventApi";
-import {
-  createManagedUserEvent,
-  deleteManagedUserEvent,
-  getManagedUserEventsByRange,
-  updateManagedUserEvent,
-} from "../api/adminApi";
 
-const toLocalDateTimeParam = (date) => format(date, "yyyy-MM-dd'T'HH:mm:ss");
-
-const useCalendarEvents = ({
-  isAdmin = false,
-  selectedManagedUserId = "",
-} = {}) => {
+const useCalendarEvents = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState([]);
@@ -57,27 +46,12 @@ const useCalendarEvents = ({
         end = dayEnd;
       }
 
-      if (isAdmin) {
-        if (!selectedManagedUserId) {
-          setEvents([]);
-          return;
-        }
-
-        const data = await getManagedUserEventsByRange(
-          selectedManagedUserId,
-          toLocalDateTimeParam(start),
-          toLocalDateTimeParam(end),
-        );
-        setEvents(Array.isArray(data) ? data : []);
-        return;
-      }
-
       const data = await fetchEventsByRange(start, end);
       setEvents(data);
     } catch (error) {
       console.error("Error fetching events:", error);
     }
-  }, [currentDate, isAdmin, selectedManagedUserId, viewMode]);
+  }, [currentDate, viewMode]);
 
   useEffect(() => {
     fetchEvents();
@@ -129,31 +103,14 @@ const useCalendarEvents = ({
   const handleSaveEvent = useCallback(
     async (eventData) => {
       try {
-        if (isAdmin) {
-          if (!selectedManagedUserId) {
-            throw new Error("Debes seleccionar un usuario subordinado.");
-          }
-
-          if (eventData.id) {
-            await updateManagedUserEvent(
-              selectedManagedUserId,
-              eventData.id,
-              eventData,
-            );
-          } else {
-            await createManagedUserEvent(selectedManagedUserId, eventData);
-          }
-        } else {
-          await saveCalendarEvent(eventData);
-        }
-
+        await saveCalendarEvent(eventData);
         setShowModal(false);
         await fetchEvents();
       } catch (error) {
         console.error("Error saving event:", error);
       }
     },
-    [fetchEvents, isAdmin, selectedManagedUserId],
+    [fetchEvents],
   );
 
   const handleDeleteEvent = useCallback(
@@ -161,35 +118,26 @@ const useCalendarEvents = ({
       if (!eventId) return;
 
       try {
-        if (isAdmin) {
-          if (!selectedManagedUserId) {
-            throw new Error("Debes seleccionar un usuario subordinado.");
-          }
-
-          await deleteManagedUserEvent(selectedManagedUserId, eventId);
-        } else {
-          await deleteCalendarEvent(eventId);
-        }
-
+        await deleteCalendarEvent(eventId);
         setShowModal(false);
         await fetchEvents();
       } catch (error) {
         console.error("Error deleting event:", error);
       }
     },
-    [fetchEvents, isAdmin, selectedManagedUserId],
+    [fetchEvents],
   );
 
-  const handleDayTimeSlotClick = useCallback(
-    (hour) => {
-      const newDate = new Date(currentDate);
-      newDate.setHours(hour, 0, 0, 0);
-      setSelectedDate(newDate);
-      setSelectedEvent(null);
-      setShowModal(true);
-    },
-    [currentDate],
-  );
+ const handleDayTimeSlotClick = useCallback(
+   (hour) => {
+     const newDate = new Date(currentDate);
+     newDate.setHours(hour, 0, 0, 0);
+     setSelectedDate(newDate);
+     setSelectedEvent(null);
+     setShowModal(true);
+   },
+   [currentDate],
+ );
 
   const handleWeekTimeSlotClick = useCallback((day, hour) => {
     const newDate = new Date(day);
@@ -215,9 +163,7 @@ const useCalendarEvents = ({
       return `${format(start, "MMM d", { locale: es })} - ${format(
         end,
         "MMM d, yyyy",
-        {
-          locale: es,
-        },
+        { locale: es },
       )}`;
     }
 

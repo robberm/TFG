@@ -12,10 +12,6 @@ const GoalModal = ({
   onSubmit,
   initialData,
   isSubmitting,
-  isAdmin = false,
-  managedUsers = [],
-  selectedUserId = null,
-  onTargetUserChange = () => {},
 }) => {
   const [form, setForm] = useState(EMPTY_GOAL_FORM);
 
@@ -101,27 +97,6 @@ const GoalModal = ({
 
         <div className="modalForm">
           <form className="objectiveForm" onSubmit={handleSubmit}>
-            {isAdmin && (
-              <div className="formRow singleColumn">
-                <div className="formGroup">
-                  <label htmlFor="goal-managed-user">Usuario subordinado</label>
-                  <select
-                    id="goal-managed-user"
-                    value={selectedUserId || ""}
-                    onChange={(event) => onTargetUserChange(event.target.value)}
-                    required
-                  >
-                    <option value="">Selecciona un usuario</option>
-                    {managedUsers.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.username}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
-
             <div className="formRow">
               <div className="formGroup">
                 <label htmlFor="goal-title">Título</label>
