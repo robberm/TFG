@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import './css/App.css';
 import { useNavigate } from "react-router-dom";
 import PasswordInput from "./components/PasswordInput";
+import { getCurrentUserProfile } from "./api/userApi";
 
 
 const Login = () => {
@@ -34,7 +35,16 @@ const Login = () => {
         const token = data.token.trim(); 
         localStorage.setItem("token", token); 
         localStorage.setItem("username", data.username);
-       
+
+        const profile = await getCurrentUserProfile();
+        const isAdmin = profile?.role === "ADMIN";
+        const hasOrganization = Boolean(profile?.organizationId);
+        const nextPath = isAdmin
+          ? hasOrganization
+            ? "/admin"
+            : "/admin/setup-organization"
+          : "/home";
+
         //Registramos usuario en la sesión 
          await fetch("http://localhost:8080/session/active-user", {
            method: "POST",
@@ -42,9 +52,9 @@ const Login = () => {
              Authorization: `Bearer ${token}`,
            },
          });
-        // Redirige a la home
+        // Redirige según rol
         console.log("Login perfecto");
-        navigate("/home");
+        navigate(nextPath);
       } else {
         const errorMessage = await response.text();
         setError(errorMessage);;

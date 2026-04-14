@@ -52,16 +52,27 @@ public class AccServiceImplements implements AccountService {
      */
     @Override
     public User register(User newUser) {
-        if (newUser == null || newUser.getUsername() == null || newUser.getPassword() == null) {
+        if (newUser == null) {
             throw new IllegalArgumentException("Request inválida.");
         }
 
-        if (userService.existsByUsername(newUser.getUsername())) {
+        if (newUser.getUsername() == null || newUser.getUsername().isBlank()) {
+            throw new IllegalArgumentException("El username es obligatorio.");
+        }
+
+        if (newUser.getPassword() == null || newUser.getPassword().isBlank()) {
+            throw new IllegalArgumentException("La contraseña es obligatoria.");
+        }
+
+        String normalizedUsername = newUser.getUsername().trim();
+
+        if (userService.existsByUsername(normalizedUsername)) {
             throw new IllegalArgumentException("El usuario ya existe");
         }
 
         passwordPolicy.validateOrThrow(newUser.getPassword());
 
+        newUser.setUsername(normalizedUsername);
         newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
         newUser.setTokenVersion(0);
         newUser.setRole(UserRole.PERSONAL);
