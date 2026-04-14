@@ -1,7 +1,9 @@
 package net.tfg.tfgapp.controller;
 
+import net.tfg.tfgapp.DTOs.users.AdminCreateOrganizationRequest;
 import net.tfg.tfgapp.DTOs.users.AdminCreateUserRequest;
 import net.tfg.tfgapp.DTOs.users.UserSummaryResponse;
+import net.tfg.tfgapp.domains.Organization;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.security.TokenService;
 import net.tfg.tfgapp.service.interfaces.IUserService;
@@ -10,7 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RequestMapping("/admin")
 @RestController
@@ -87,6 +91,33 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error al eliminar el usuario subordinado.");
+        }
+    }
+
+    /**
+     * Alta inicial de organización para administradores sin organización asociada.
+     */
+    @PostMapping("/organization")
+    public ResponseEntity<?> createOrganization(@RequestHeader("Authorization") String authHeader,
+                                                @RequestBody AdminCreateOrganizationRequest request) {
+        try {
+            String token = extractAndVerifyToken(authHeader);
+            String adminUsername = tokenService.extractUsername(token);
+
+            Organization organization = organizationAdminService.createOrganizationForAdmin(adminUsername, request);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("organizationId", organization.getId());
+            response.put("organizationName", organization.getName());
+            response.put("message", "Organización creada correctamente.");
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error al crear la organización.");
         }
     }
 
