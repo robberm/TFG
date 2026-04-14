@@ -28,6 +28,30 @@
   font-size: 0.9rem;
 }
 
+.adminScopeSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-width: 320px;
+  padding: 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--card-background);
+}
+
+.adminScopeSelector label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.adminScopeSelector select {
+  border: 1px solid var(--border-color);
+  background: var(--bg-main);
+  color: var(--text-main);
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+}
+
 /* Buttons */
 .refreshButton,
 .addButton,

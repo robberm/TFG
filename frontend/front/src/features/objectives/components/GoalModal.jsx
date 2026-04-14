@@ -12,6 +12,9 @@ const GoalModal = ({
   onSubmit,
   initialData,
   isSubmitting,
+  isAdmin = false,
+  managedUsers = [],
+  defaultManagedUserId = null,
 }) => {
   const [form, setForm] = useState(EMPTY_GOAL_FORM);
 
@@ -40,12 +43,16 @@ const GoalModal = ({
           : "",
         active: initialData.active ?? true,
         notes: "",
+        targetUserId: defaultManagedUserId ?? "",
       });
       return;
     }
 
-    setForm(EMPTY_GOAL_FORM);
-  }, [initialData, isOpen]);
+    setForm({
+      ...EMPTY_GOAL_FORM,
+      targetUserId: defaultManagedUserId ?? "",
+    });
+  }, [defaultManagedUserId, initialData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -82,6 +89,10 @@ const GoalModal = ({
     onSubmit({
       ...normalizeGoalForm(form),
       notes: form.notes?.trim() || "",
+      targetUserId:
+        isAdmin && form.targetUserId !== ""
+          ? Number(form.targetUserId)
+          : null,
     });
   };
 
@@ -98,6 +109,27 @@ const GoalModal = ({
         <div className="modalForm">
           <form className="objectiveForm" onSubmit={handleSubmit}>
             <div className="formRow">
+              {isAdmin && (
+                <div className="formGroup">
+                  <label htmlFor="goal-target-user">Usuario subordinado</label>
+                  <select
+                    id="goal-target-user"
+                    value={form.targetUserId}
+                    onChange={(event) =>
+                      handleChange("targetUserId", event.target.value)
+                    }
+                    required
+                  >
+                    <option value="">Selecciona un usuario</option>
+                    {managedUsers.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.username}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div className="formGroup">
                 <label htmlFor="goal-title">Título</label>
                 <input
