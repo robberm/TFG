@@ -12,6 +12,9 @@ const GoalModal = ({
   onSubmit,
   initialData,
   isSubmitting,
+  isAdmin = false,
+  managedUsers = [],
+  defaultManagedUserId = null,
 }) => {
   const [form, setForm] = useState(EMPTY_GOAL_FORM);
 
@@ -40,12 +43,20 @@ const GoalModal = ({
           : "",
         active: initialData.active ?? true,
         notes: "",
+        targetUserId: defaultManagedUserId ?? "",
+        targetUserIds: defaultManagedUserId ? [String(defaultManagedUserId)] : [],
+        targetAllManaged: defaultManagedUserId === "ALL",
       });
       return;
     }
 
-    setForm(EMPTY_GOAL_FORM);
-  }, [initialData, isOpen]);
+    setForm({
+      ...EMPTY_GOAL_FORM,
+      targetUserId: defaultManagedUserId ?? "",
+      targetUserIds: defaultManagedUserId ? [String(defaultManagedUserId)] : [],
+      targetAllManaged: defaultManagedUserId === "ALL",
+    });
+  }, [defaultManagedUserId, initialData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -73,15 +84,49 @@ const GoalModal = ({
     }));
   };
 
+  const toggleTargetSelection = (value) => {
+    setForm((prev) => {
+      const current = prev.targetUserIds || [];
+
+      if (value === "ALL") {
+        return {
+          ...prev,
+          targetUserIds: current.includes("ALL") ? [] : ["ALL"],
+        };
+      }
+
+      const withoutAll = current.filter((item) => item !== "ALL");
+      const alreadySelected = withoutAll.includes(String(value));
+
+      return {
+        ...prev,
+        targetUserIds: alreadySelected
+          ? withoutAll.filter((item) => item !== String(value))
+          : [...withoutAll, String(value)],
+      };
+    });
+  };
+
   /**
    * Normaliza el formulario antes de enviarlo al componente padre.
    */
   const handleSubmit = (event) => {
     event.preventDefault();
 
+    const hasAllSelected = form.targetUserIds?.includes("ALL");
+    const selectedUserIds = (form.targetUserIds || [])
+      .filter((value) => value !== "ALL")
+      .map((value) => Number(value));
+
     onSubmit({
       ...normalizeGoalForm(form),
       notes: form.notes?.trim() || "",
+      targetUserId:
+        isAdmin && form.targetUserId !== ""
+          ? Number(form.targetUserId)
+          : null,
+      targetUserIds: isAdmin && !initialData ? selectedUserIds : [],
+      targetAllManaged: isAdmin && !initialData ? hasAllSelected : false,
     });
   };
 
@@ -98,6 +143,35 @@ const GoalModal = ({
         <div className="modalForm">
           <form className="objectiveForm" onSubmit={handleSubmit}>
             <div className="formRow">
+              {isAdmin && !initialData && (
+                <div className="formGroup">
+                  <label htmlFor="goal-target-user">Usuarios subordinados</label>
+                  <div id="goal-target-user" className="targetUsersSelector">
+                    <label className="checkboxRow">
+                      <input
+                        type="checkbox"
+                        checked={(form.targetUserIds || []).includes("ALL")}
+                        onChange={() => toggleTargetSelection("ALL")}
+                      />
+                      Todos
+                    </label>
+
+                    {managedUsers.map((user) => (
+                      <label key={user.id} className="checkboxRow">
+                        <input
+                          type="checkbox"
+                          checked={(form.targetUserIds || []).includes(
+                            String(user.id),
+                          )}
+                          onChange={() => toggleTargetSelection(user.id)}
+                        />
+                        {user.username}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="formGroup">
                 <label htmlFor="goal-title">Título</label>
                 <input

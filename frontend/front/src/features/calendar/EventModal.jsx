@@ -149,7 +149,16 @@ const TimeSelector = ({ value, onChange, label }) => {
   );
 };
 
-const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
+const EventModal = ({
+  event,
+  selectedDate,
+  onClose,
+  onSave,
+  onDelete,
+  isAdmin = false,
+  managedUsers = [],
+  defaultManagedUserId = null,
+}) => {
   const [formData, setFormData] = useState({
     id: null,
     title: "",
@@ -160,6 +169,9 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
     location: "",
     category: "",
     isAllDay: false,
+    targetUserId: "",
+    targetUserIds: [],
+    targetAllManaged: false,
   });
   const [reminderMinutesBefore, setReminderMinutesBefore] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -181,6 +193,9 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
         location: event.location || "",
         category: event.category || "",
         isAllDay: event.isAllDay || false,
+        targetUserId: defaultManagedUserId ?? "",
+        targetUserIds: defaultManagedUserId ? [String(defaultManagedUserId)] : [],
+        targetAllManaged: defaultManagedUserId === "ALL",
       });
       setReminderMinutesBefore(event.reminderMinutesBefore ?? null);
       setShowMoreOptions(true);
@@ -201,13 +216,16 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
         location: "",
         category: "",
         isAllDay: false,
+        targetUserId: defaultManagedUserId ?? "",
+        targetUserIds: defaultManagedUserId ? [String(defaultManagedUserId)] : [],
+        targetAllManaged: defaultManagedUserId === "ALL",
       });
       setReminderMinutesBefore(null);
       setShowMoreOptions(false);
     }
 
     setTimeout(() => titleInputRef.current?.focus(), 100);
-  }, [event, selectedDate]);
+  }, [defaultManagedUserId, event, selectedDate]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -242,8 +260,41 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const toggleTargetSelection = (value) => {
+    setFormData((prev) => {
+      const current = prev.targetUserIds || [];
+
+      if (value === "ALL") {
+        return {
+          ...prev,
+          targetUserIds: current.includes("ALL") ? [] : ["ALL"],
+        };
+      }
+
+      const withoutAll = current.filter((item) => item !== "ALL");
+      const alreadySelected = withoutAll.includes(String(value));
+
+      return {
+        ...prev,
+        targetUserIds: alreadySelected
+          ? withoutAll.filter((item) => item !== String(value))
+          : [...withoutAll, String(value)],
+      };
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    const hasAllSelected = formData.targetUserIds?.includes("ALL");
+    const selectedUserIds = (formData.targetUserIds || [])
+      .filter((value) => value !== "ALL")
+      .map((value) => Number(value));
+
+    if (isAdmin && !event && !hasAllSelected && selectedUserIds.length === 0) {
+      window.alert("Debes seleccionar al menos un usuario subordinado.");
+      return;
+    }
 
     const startDateTime = `${formData.date}T${formData.startTime}`;
     const endDateTime = `${formData.date}T${formData.endTime}`;
@@ -258,6 +309,12 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
       category: formData.category,
       isAllDay: formData.isAllDay,
       reminderMinutesBefore,
+      targetUserId:
+        isAdmin && !event && selectedUserIds.length === 1
+          ? selectedUserIds[0]
+          : null,
+      targetUserIds: isAdmin && !event ? selectedUserIds : [],
+      targetAllManaged: isAdmin && !event ? hasAllSelected : false,
     };
 
     onSave(eventData);
@@ -303,6 +360,31 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
 
         <form onSubmit={handleSubmit} className="gcal-form">
           <div className="gcal-title-section">
+            {isAdmin && !event && (
+              <div className="gcal-target-users">
+                <label className="checkboxRow">
+                  <input
+                    type="checkbox"
+                    checked={(formData.targetUserIds || []).includes("ALL")}
+                    onChange={() => toggleTargetSelection("ALL")}
+                  />
+                  Todos
+                </label>
+                {managedUsers.map((user) => (
+                  <label key={user.id} className="checkboxRow">
+                    <input
+                      type="checkbox"
+                      checked={(formData.targetUserIds || []).includes(
+                        String(user.id),
+                      )}
+                      onChange={() => toggleTargetSelection(user.id)}
+                    />
+                    {user.username}
+                  </label>
+                ))}
+              </div>
+            )}
+
             <input
               ref={titleInputRef}
               type="text"

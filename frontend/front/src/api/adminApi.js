@@ -69,3 +69,12 @@ export const createAdminOrganization = async (organizationName) => {
 
   return parseResponse(response);
 };
+
+export const getManagedUserGoals = async (userId) => {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/goals`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+
+  return parseResponse(response);
+};

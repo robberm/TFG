@@ -1,6 +1,7 @@
 package net.tfg.tfgapp.service;
 
 import jakarta.persistence.EntityNotFoundException;
+import net.tfg.tfgapp.DTOs.events.EventRequest;
 import net.tfg.tfgapp.components.SessionStore;
 import net.tfg.tfgapp.domains.Event;
 import net.tfg.tfgapp.repos.EventRepo;
@@ -62,7 +63,7 @@ public class EventService {
      * @param eventDetails datos nuevos del evento
      * @return optional con el evento actualizado si existe
      */
-    public Optional<Event> updateEventById(Long id, Event eventDetails) {
+    public Optional<Event> updateEventById(Long id, EventRequest eventDetails) {
         Optional<Event> eventOptional = getEventById(id);
 
         if (eventOptional.isPresent()) {
