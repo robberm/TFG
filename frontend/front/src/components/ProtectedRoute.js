@@ -2,12 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { getCurrentUserProfile } from "../api/userApi";
 
-const ProtectedRoute = ({
-  children,
-  requireAdmin = false,
-  disallowAdmin = false,
-  allowAdminWithoutOrganization = false,
-}) => {
+const ProtectedRoute = ({ children, requireAdmin = false, disallowAdmin = false }) => {
   const [status, setStatus] = useState("loading");
 
   useEffect(() => {
@@ -24,7 +19,6 @@ const ProtectedRoute = ({
       try {
         const profile = await getCurrentUserProfile();
         const isAdmin = profile?.role === "ADMIN";
-        const hasOrganization = Boolean(profile?.organizationId);
 
         if (requireAdmin && !isAdmin) {
           if (isMounted) setStatus("forbidden");
@@ -33,16 +27,6 @@ const ProtectedRoute = ({
 
         if (disallowAdmin && isAdmin) {
           if (isMounted) setStatus("admin_redirect");
-          return;
-        }
-
-        if (
-          isAdmin &&
-          !hasOrganization &&
-          !allowAdminWithoutOrganization &&
-          requireAdmin
-        ) {
-          if (isMounted) setStatus("setup_org");
           return;
         }
 
@@ -59,7 +43,7 @@ const ProtectedRoute = ({
     return () => {
       isMounted = false;
     };
-  }, [allowAdminWithoutOrganization, disallowAdmin, requireAdmin]);
+  }, [disallowAdmin, requireAdmin]);
 
   if (status === "loading") {
     return null;
@@ -75,10 +59,6 @@ const ProtectedRoute = ({
 
   if (status === "admin_redirect") {
     return <Navigate to="/admin" replace />;
-  }
-
-  if (status === "setup_org") {
-    return <Navigate to="/admin/setup-organization" replace />;
   }
 
   return children;

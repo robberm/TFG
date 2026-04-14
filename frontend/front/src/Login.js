@@ -37,13 +37,7 @@ const Login = () => {
         localStorage.setItem("username", data.username);
 
         const profile = await getCurrentUserProfile();
-        const isAdmin = profile?.role === "ADMIN";
-        const hasOrganization = Boolean(profile?.organizationId);
-        const nextPath = isAdmin
-          ? hasOrganization
-            ? "/admin"
-            : "/admin/setup-organization"
-          : "/home";
+        const nextPath = profile?.role === "ADMIN" ? "/admin" : "/home";
 
         //Registramos usuario en la sesión 
          await fetch("http://localhost:8080/session/active-user", {
