@@ -44,8 +44,6 @@ const GoalModal = ({
         active: initialData.active ?? true,
         notes: "",
         targetUserId: defaultManagedUserId ?? "",
-        targetUserIds: defaultManagedUserId ? [String(defaultManagedUserId)] : [],
-        targetAllManaged: defaultManagedUserId === "__all__",
       });
       return;
     }
@@ -53,8 +51,6 @@ const GoalModal = ({
     setForm({
       ...EMPTY_GOAL_FORM,
       targetUserId: defaultManagedUserId ?? "",
-      targetUserIds: defaultManagedUserId ? [String(defaultManagedUserId)] : [],
-      targetAllManaged: defaultManagedUserId === "__all__",
     });
   }, [defaultManagedUserId, initialData, isOpen]);
 
@@ -102,8 +98,6 @@ const GoalModal = ({
         isAdmin && form.targetUserId !== ""
           ? Number(form.targetUserId)
           : null,
-      targetUserIds: isAdmin && !initialData ? selectedUserIds : [],
-      targetAllManaged: isAdmin && !initialData ? hasAllSelected : false,
     });
   };
 
@@ -120,22 +114,18 @@ const GoalModal = ({
         <div className="modalForm">
           <form className="objectiveForm" onSubmit={handleSubmit}>
             <div className="formRow">
-              {isAdmin && !initialData && (
+              {isAdmin && (
                 <div className="formGroup">
-                  <label htmlFor="goal-target-user">Usuarios subordinados</label>
+                  <label htmlFor="goal-target-user">Usuario subordinado</label>
                   <select
                     id="goal-target-user"
-                    multiple
-                    value={form.targetUserIds || []}
+                    value={form.targetUserId}
                     onChange={(event) =>
-                      handleChange(
-                        "targetUserIds",
-                        Array.from(event.target.selectedOptions, (option) => option.value),
-                      )
+                      handleChange("targetUserId", event.target.value)
                     }
                     required
                   >
-                    <option value="__all__">Todos</option>
+                    <option value="">Selecciona un usuario</option>
                     {managedUsers.map((user) => (
                       <option key={user.id} value={user.id}>
                         {user.username}

@@ -78,15 +78,10 @@ const Calendar = () => {
               value={selectedManagedUserId ?? ""}
               onChange={(event) =>
                 setSelectedManagedUserId(
-                  event.target.value === "ALL"
-                    ? "ALL"
-                    : event.target.value
-                      ? Number(event.target.value)
-                      : null,
+                  event.target.value ? Number(event.target.value) : null,
                 )
               }
             >
-              <option value="ALL">Todos</option>
               {managedUsers.length === 0 && (
                 <option value="">Sin usuarios subordinados</option>
               )}

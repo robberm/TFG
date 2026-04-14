@@ -170,8 +170,6 @@ const EventModal = ({
     category: "",
     isAllDay: false,
     targetUserId: "",
-    targetUserIds: [],
-    targetAllManaged: false,
   });
   const [reminderMinutesBefore, setReminderMinutesBefore] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -194,8 +192,6 @@ const EventModal = ({
         category: event.category || "",
         isAllDay: event.isAllDay || false,
         targetUserId: defaultManagedUserId ?? "",
-        targetUserIds: defaultManagedUserId ? [String(defaultManagedUserId)] : [],
-        targetAllManaged: defaultManagedUserId === "__all__",
       });
       setReminderMinutesBefore(event.reminderMinutesBefore ?? null);
       setShowMoreOptions(true);
@@ -217,8 +213,6 @@ const EventModal = ({
         category: "",
         isAllDay: false,
         targetUserId: defaultManagedUserId ?? "",
-        targetUserIds: defaultManagedUserId ? [String(defaultManagedUserId)] : [],
-        targetAllManaged: defaultManagedUserId === "__all__",
       });
       setReminderMinutesBefore(null);
       setShowMoreOptions(false);
@@ -263,13 +257,8 @@ const EventModal = ({
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const hasAllSelected = formData.targetUserIds?.includes("__all__");
-    const selectedUserIds = (formData.targetUserIds || [])
-      .filter((value) => value !== "__all__")
-      .map((value) => Number(value));
-
-    if (isAdmin && !event && !hasAllSelected && selectedUserIds.length === 0) {
-      window.alert("Debes seleccionar al menos un usuario subordinado.");
+    if (isAdmin && !formData.targetUserId) {
+      window.alert("Debes seleccionar un usuario subordinado.");
       return;
     }
 
@@ -287,11 +276,9 @@ const EventModal = ({
       isAllDay: formData.isAllDay,
       reminderMinutesBefore,
       targetUserId:
-        isAdmin && !event && selectedUserIds.length === 1
-          ? selectedUserIds[0]
+        isAdmin && formData.targetUserId
+          ? Number(formData.targetUserId)
           : null,
-      targetUserIds: isAdmin && !event ? selectedUserIds : [],
-      targetAllManaged: isAdmin && !event ? hasAllSelected : false,
     };
 
     onSave(eventData);
@@ -337,24 +324,15 @@ const EventModal = ({
 
         <form onSubmit={handleSubmit} className="gcal-form">
           <div className="gcal-title-section">
-            {isAdmin && !event && (
+            {isAdmin && (
               <select
-                name="targetUserIds"
+                name="targetUserId"
                 className="gcal-input"
-                multiple
-                value={formData.targetUserIds}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    targetUserIds: Array.from(
-                      e.target.selectedOptions,
-                      (option) => option.value,
-                    ),
-                  }))
-                }
+                value={formData.targetUserId}
+                onChange={handleChange}
                 required
               >
-                <option value="__all__">Todos</option>
+                <option value="">Selecciona usuario subordinado</option>
                 {managedUsers.map((user) => (
                   <option key={user.id} value={user.id}>
                     {user.username}

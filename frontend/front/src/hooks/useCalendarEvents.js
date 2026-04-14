@@ -44,12 +44,11 @@ const useCalendarEvents = () => {
           setSelectedManagedUserId((previousId) => {
             if (
               previousId != null &&
-              previousId !== "ALL" &&
               normalizedUsers.some((user) => user.id === previousId)
             ) {
               return previousId;
             }
-            return "ALL";
+            return normalizedUsers.length > 0 ? normalizedUsers[0].id : null;
           });
           return;
         }
@@ -89,8 +88,7 @@ const useCalendarEvents = () => {
       const data = await fetchEventsByRange(
         start,
         end,
-        isAdmin && selectedManagedUserId !== "ALL" ? selectedManagedUserId : null,
-        isAdmin && selectedManagedUserId === "ALL",
+        isAdmin ? selectedManagedUserId : null,
       );
       setEvents(data);
     } catch (error) {

@@ -81,7 +81,6 @@ public class CalendarController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end,
             @RequestParam(required = false) Long targetUserId,
-            @RequestParam(required = false, defaultValue = "false") boolean targetAllManaged,
             @RequestHeader("Authorization") String token) {
 
         User actor = getActor(token);
@@ -90,16 +89,8 @@ public class CalendarController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario no encontrado.");
         }
 
-        if (actor.getRole() == UserRole.ADMIN && targetAllManaged) {
-            List<Event> allManagedEvents = new ArrayList<>();
-            for (User managedUser : userService.getManagedUsers(actor.getId())) {
-                allManagedEvents.addAll(eventService.findEventsByUserAndDateRange(managedUser.getUsername(), start, end));
-            }
-            allManagedEvents.sort(Comparator.comparing(Event::getStartTime));
-            return ResponseEntity.ok(allManagedEvents);
-        }
-
         User owner;
+
         if (actor.getRole() == UserRole.ADMIN && targetUserId != null) {
             owner = userService.getManagedUser(actor.getId(), targetUserId);
             if (owner == null) {
@@ -123,28 +114,25 @@ public class CalendarController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario no encontrado.");
             }
 
-            List<User> targetUsers = resolveTargetUsers(actor, request);
+            User owner = resolveTargetUser(actor, request.getTargetUserId());
 
-            if (request.getEndTime() == null || request.getStartTime() == null || !request.getEndTime().isAfter(request.getStartTime())) {
+            Event event = new Event();
+            event.setTitle(request.getTitle());
+            event.setDescription(request.getDescription());
+            event.setStartTime(request.getStartTime());
+            event.setEndTime(request.getEndTime());
+            event.setLocation(request.getLocation());
+            event.setCategory(request.getCategory());
+            event.setIsAllDay(request.getIsAllDay());
+            event.setReminderMinutesBefore(request.getReminderMinutesBefore());
+            event.setUser(owner);
+
+            if (event.getEndTime() == null || event.getStartTime() == null || !event.getEndTime().isAfter(event.getStartTime())) {
                 throw new DateTimeException("Date is not correct");
             }
 
-            List<Event> createdEvents = targetUsers.stream().map(owner -> {
-                Event event = new Event();
-                event.setTitle(request.getTitle());
-                event.setDescription(request.getDescription());
-                event.setStartTime(request.getStartTime());
-                event.setEndTime(request.getEndTime());
-                event.setLocation(request.getLocation());
-                event.setCategory(request.getCategory());
-                event.setIsAllDay(request.getIsAllDay());
-                event.setReminderMinutesBefore(request.getReminderMinutesBefore());
-                event.setUser(owner);
-                return eventService.save(event);
-            }).toList();
-
-            response.put("message", "Eventos creados correctamente.");
-            response.put("count", String.valueOf(createdEvents.size()));
+            eventService.save(event);
+            response.put("message", "Event " + event.getTitle() + " created successfully!");
 
             return new ResponseEntity<>(response, HttpStatus.CREATED);
 
@@ -225,38 +213,6 @@ public class CalendarController {
         }
 
         return managedUser;
-    }
-
-    private List<User> resolveTargetUsers(User actor, EventRequest request) {
-        if (actor.getRole() != UserRole.ADMIN) {
-            return List.of(actor);
-        }
-
-        List<User> targets = new ArrayList<>();
-        List<Long> requestedIds = request.getTargetUserIds();
-        boolean targetAllManaged = Boolean.TRUE.equals(request.getTargetAllManaged());
-
-        if (targetAllManaged) {
-            targets.addAll(userService.getManagedUsers(actor.getId()));
-        } else if (requestedIds != null && !requestedIds.isEmpty()) {
-            for (Long userId : new LinkedHashSet<>(requestedIds)) {
-                User managedUser = userService.getManagedUser(actor.getId(), userId);
-                if (managedUser == null) {
-                    throw new SecurityException("No tienes permiso para operar sobre uno de los usuarios seleccionados.");
-                }
-                targets.add(managedUser);
-            }
-        } else if (request.getTargetUserId() != null) {
-            targets.add(resolveTargetUser(actor, request.getTargetUserId()));
-        } else {
-            throw new SecurityException("Debes seleccionar al menos un usuario subordinado.");
-        }
-
-        if (targets.isEmpty()) {
-            throw new SecurityException("No hay usuarios subordinados disponibles para asignar.");
-        }
-
-        return targets;
     }
 
     private boolean canAccessUser(User actor, User owner) {

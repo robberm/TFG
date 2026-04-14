@@ -75,16 +75,9 @@ public class GoalController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario no encontrado.");
             }
 
-            if (actor.getRole() != UserRole.ADMIN) {
-                Goal createdGoal = goalService.createGoal(request, actor);
-                return ResponseEntity.status(HttpStatus.CREATED).body(createdGoal);
-            }
-
-            List<User> targetUsers = resolveTargetUsers(actor, request);
-            List<Goal> createdGoals = targetUsers.stream()
-                    .map(targetUser -> goalService.createGoal(request, targetUser))
-                    .toList();
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdGoals);
+            User targetUser = resolveTargetUser(actor, request.getTargetUserId());
+            Goal createdGoal = goalService.createGoal(request, targetUser);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdGoal);
         } catch (SecurityException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
@@ -165,34 +158,6 @@ public class GoalController {
         }
 
         return managedUser;
-    }
-
-    private List<User> resolveTargetUsers(User actor, GoalRequest request) {
-        List<User> targets = new ArrayList<>();
-        List<Long> requestedIds = request.getTargetUserIds();
-        boolean targetAllManaged = Boolean.TRUE.equals(request.getTargetAllManaged());
-
-        if (targetAllManaged) {
-            targets.addAll(userService.getManagedUsers(actor.getId()));
-        } else if (requestedIds != null && !requestedIds.isEmpty()) {
-            for (Long userId : new LinkedHashSet<>(requestedIds)) {
-                User managedUser = userService.getManagedUser(actor.getId(), userId);
-                if (managedUser == null) {
-                    throw new SecurityException("No tienes permiso para operar sobre uno de los usuarios seleccionados.");
-                }
-                targets.add(managedUser);
-            }
-        } else if (request.getTargetUserId() != null) {
-            targets.add(resolveTargetUser(actor, request.getTargetUserId()));
-        } else {
-            throw new SecurityException("Debes seleccionar al menos un usuario subordinado.");
-        }
-
-        if (targets.isEmpty()) {
-            throw new SecurityException("No hay usuarios subordinados disponibles para asignar.");
-        }
-
-        return targets;
     }
 
     private boolean canAccessUser(User actor, User owner) {

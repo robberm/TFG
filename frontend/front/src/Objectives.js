@@ -203,13 +203,8 @@ const Objectives = () => {
       return;
     }
 
-    if (
-      isAdmin &&
-      !selectedGoal &&
-      !payload.targetAllManaged &&
-      (!Array.isArray(payload.targetUserIds) || payload.targetUserIds.length === 0)
-    ) {
-      setErrorMessage("Debes seleccionar al menos un usuario subordinado.");
+    if (isAdmin && !payload.targetUserId) {
+      setErrorMessage("Debes seleccionar un usuario subordinado.");
       return;
     }
 
@@ -254,12 +249,7 @@ const Objectives = () => {
           valorProgreso: payload.valorProgreso,
           valorObjetivo: payload.valorObjetivo,
           active: payload.active,
-          targetUserId:
-            isAdmin && Array.isArray(payload.targetUserIds) && payload.targetUserIds.length === 1
-              ? payload.targetUserIds[0]
-              : null,
-          targetUserIds: isAdmin ? payload.targetUserIds : [],
-          targetAllManaged: isAdmin ? payload.targetAllManaged : false,
+          targetUserId: isAdmin ? payload.targetUserId : null,
         });
       }
 
