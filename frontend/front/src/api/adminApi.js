@@ -58,3 +58,14 @@ export const deleteManagedUser = async (userId) => {
 
   return parseResponse(response);
 };
+
+
+export const createAdminOrganization = async (organizationName) => {
+  const response = await fetch(`${API_BASE_URL}/organization`, {
+    method: "POST",
+    headers: getAuthHeaders(true),
+    body: JSON.stringify({ organizationName }),
+  });
+
+  return parseResponse(response);
+};

@@ -9,6 +9,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Calendar from "./features/calendar/Calendar";
 import Block from "./Block";
 import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminOrganizationSetupPage from "./pages/AdminOrganizationSetupPage";
 
 const AppRouter = () => {
   return (
@@ -54,6 +55,16 @@ const AppRouter = () => {
         element={
           <ProtectedRoute disallowAdmin>
             <Block />
+          </ProtectedRoute>
+        }
+      />
+
+
+      <Route
+        path="/admin/setup-organization"
+        element={
+          <ProtectedRoute requireAdmin allowAdminWithoutOrganization>
+            <AdminOrganizationSetupPage />
           </ProtectedRoute>
         }
       />
