@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface EventRepo extends JpaRepository<Event, Long> {
@@ -88,6 +89,23 @@ public interface EventRepo extends JpaRepository<Event, Long> {
     boolean existsActiveEventOfCategory(@Param("category") Event.EventCategory category,
                                         @Param("now") LocalDateTime now,
                                         @Param("userId") Long userId);
+
+    @Query("SELECT e FROM Event e WHERE e.user.id = :userId")
+    List<Event> findEventsByUserId(@Param("userId") Long userId);
+
+    @Query("""
+            SELECT e
+            FROM Event e
+            WHERE e.user.id = :userId
+              AND e.startTime >= :start
+              AND e.endTime <= :end
+            """)
+    List<Event> findEventsByUserIdAndDateRange(@Param("userId") Long userId,
+                                               @Param("start") LocalDateTime start,
+                                               @Param("end") LocalDateTime end);
+
+    Optional<Event> findByIdAndUser_Id(Long eventId, Long userId);
+
     /**
      * Obtiene los eventos que todavía no han finalizado y que tienen un reminder
      * configurado, para poder programar sus avisos pendientes.

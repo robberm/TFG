@@ -149,7 +149,17 @@ const TimeSelector = ({ value, onChange, label }) => {
   );
 };
 
-const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
+const EventModal = ({
+  event,
+  selectedDate,
+  onClose,
+  onSave,
+  onDelete,
+  isAdmin = false,
+  managedUsers = [],
+  selectedUserId = "",
+  onTargetUserChange = () => {},
+}) => {
   const [formData, setFormData] = useState({
     id: null,
     title: "",
@@ -302,6 +312,28 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="gcal-form">
+          {isAdmin && (
+            <div className="gcal-section-row">
+              <label className="gcal-label" htmlFor="event-managed-user">
+                Usuario subordinado
+              </label>
+              <select
+                id="event-managed-user"
+                className="gcal-select"
+                value={selectedUserId || ""}
+                onChange={(event) => onTargetUserChange(event.target.value)}
+                required
+              >
+                <option value="">Selecciona un usuario</option>
+                {managedUsers.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.username}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="gcal-title-section">
             <input
               ref={titleInputRef}
