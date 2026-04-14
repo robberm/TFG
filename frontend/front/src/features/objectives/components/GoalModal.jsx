@@ -86,6 +86,11 @@ const GoalModal = ({
   const handleSubmit = (event) => {
     event.preventDefault();
 
+    const hasAllSelected = form.targetUserIds?.includes("__all__");
+    const selectedUserIds = (form.targetUserIds || [])
+      .filter((value) => value !== "__all__")
+      .map((value) => Number(value));
+
     onSubmit({
       ...normalizeGoalForm(form),
       notes: form.notes?.trim() || "",

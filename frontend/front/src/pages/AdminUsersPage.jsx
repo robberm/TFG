@@ -160,7 +160,6 @@ function AdminUsersPage() {
             <table className="adminUsersTable">
               <thead>
                 <tr>
-                  <th>ID</th>
                   <th>Username</th>
                   <th>Organización</th>
                   <th></th>
@@ -169,7 +168,6 @@ function AdminUsersPage() {
               <tbody>
                 {sortedUsers.map((user) => (
                   <tr key={user.id}>
-                    <td>{user.id}</td>
                     <td>{user.username}</td>
                     <td>{user.organizationName || "-"}</td>
                     <td>
