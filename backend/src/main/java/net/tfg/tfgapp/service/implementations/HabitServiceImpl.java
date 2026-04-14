@@ -49,7 +49,6 @@ public class HabitServiceImpl extends ObjectiveServiceBase<Habit, HabitRepo> imp
         Habit habit = new Habit();
         habit.setTitulo(request.getTitulo());
         habit.setDescription(request.getDescription());
-        habit.setPriority(request.getPriority());
         habit.setActive(request.getActive() == null || request.getActive());
         habit.setUser(user);
 
@@ -63,7 +62,6 @@ public class HabitServiceImpl extends ObjectiveServiceBase<Habit, HabitRepo> imp
     public Habit updateHabit(Habit habit, HabitRequest request) {
         habit.setTitulo(request.getTitulo());
         habit.setDescription(request.getDescription());
-        habit.setPriority(request.getPriority());
         habit.setActive(request.getActive() == null || request.getActive());
 
         return habitRepo.save(habit);

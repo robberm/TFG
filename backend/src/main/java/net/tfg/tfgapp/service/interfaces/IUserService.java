@@ -1,6 +1,5 @@
 package net.tfg.tfgapp.service.interfaces;
 
-
 import net.tfg.tfgapp.domains.User;
 
 import java.util.List;
@@ -13,5 +12,13 @@ public interface IUserService {
 
     User getUserByUsername(String username);
 
+    User getUserById(Long id);
+
     boolean existsByUsername(String username);
+
+    List<User> getManagedUsers(Long adminId);
+
+    User getManagedUser(Long adminId, Long userId);
+
+    void delete(User user);
 }

@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import net.tfg.tfgapp.enumerates.GoalStatus;
+import net.tfg.tfgapp.enumerates.ObjectivePriority;
 
 @Getter
 @Setter
@@ -12,6 +13,10 @@ import net.tfg.tfgapp.enumerates.GoalStatus;
 @Table(name = "goals")
 @DiscriminatorValue("GOAL")
 public class Goal extends Objective {
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ObjectivePriority priority = ObjectivePriority.Media;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

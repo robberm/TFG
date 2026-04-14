@@ -27,6 +27,7 @@ import {
   formatIsoDate,
   getEndOfWeek,
   getStartOfWeek,
+  isGoalNumeric,
 } from "./features/objectives/utils/objectiveHelpers";
 
 const Objectives = () => {
@@ -47,38 +48,56 @@ const Objectives = () => {
   const [selectedGoal, setSelectedGoal] = useState(null);
   const [selectedHabit, setSelectedHabit] = useState(null);
 
-  const loadObjectivesData = useCallback(async () => {
-    setIsLoading(true);
+  /**
+   * Carga goals, hábitos y logs semanales.
+   * El showLoader permite reutilizar esta misma función sin mostrar siempre
+   * el estado de carga completo de la pantalla.
+   */
+  const loadObjectivesData = useCallback(
+    async (showLoader = true) => {
+      if (showLoader) {
+        setIsLoading(true);
+      }
 
-    try {
-      const startOfWeek = getStartOfWeek(new Date());
-      const endOfWeek = getEndOfWeek(startOfWeek);
+      try {
+        const startOfWeek = getStartOfWeek(new Date());
+        const endOfWeek = getEndOfWeek(startOfWeek);
 
-      const [goalsResponse, habitsResponse, logsResponse] = await Promise.all([
-        getGoals(),
-        getHabits(),
-        getObjectiveLogsByRange(
-          formatIsoDate(startOfWeek),
-          formatIsoDate(endOfWeek),
-        ),
-      ]);
+        const [goalsResponse, habitsResponse, logsResponse] = await Promise.all(
+          [
+            getGoals(),
+            getHabits(),
+            getObjectiveLogsByRange(
+              formatIsoDate(startOfWeek),
+              formatIsoDate(endOfWeek),
+            ),
+          ],
+        );
 
-      setGoals(Array.isArray(goalsResponse) ? goalsResponse : []);
-      setHabits(Array.isArray(habitsResponse) ? habitsResponse : []);
-      setLogs(Array.isArray(logsResponse) ? logsResponse : []);
-    } catch (error) {
-      setErrorMessage(
-        error.message || "No se pudo cargar la pantalla de objetivos.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [setErrorMessage]);
+        setGoals(Array.isArray(goalsResponse) ? goalsResponse : []);
+        setHabits(Array.isArray(habitsResponse) ? habitsResponse : []);
+        setLogs(Array.isArray(logsResponse) ? logsResponse : []);
+      } catch (error) {
+        setErrorMessage(
+          error.message || "No se pudo cargar la pantalla de objetivos.",
+        );
+      } finally {
+        if (showLoader) {
+          setIsLoading(false);
+        }
+      }
+    },
+    [setErrorMessage],
+  );
 
   React.useEffect(() => {
-    loadObjectivesData();
+    loadObjectivesData(true);
   }, [loadObjectivesData]);
 
+  /**
+   * Mapa auxiliar para consultar rápidamente si un hábito está completado
+   * en una fecha concreta.
+   */
   const habitCompletionMap = useMemo(
     () => buildHabitCompletionMap(logs),
     [logs],
@@ -114,9 +133,14 @@ const Objectives = () => {
     setIsHabitModalOpen(false);
   };
 
+  /**
+   * Guarda un goal nuevo o actualiza uno existente.
+   * Si el goal es numérico y cambia el progreso, registramos también
+   * el cambio en el histórico.
+   */
   const handleGoalSubmit = async (payload) => {
     if (!payload.titulo.trim()) {
-      setErrorMessage("El título del goal es obligatorio.");
+      setErrorMessage("El titulo del goal es obligatorio.");
       return;
     }
 
@@ -124,6 +148,7 @@ const Objectives = () => {
 
     try {
       if (selectedGoal) {
+        const previousWasNumeric = isGoalNumeric(selectedGoal);
         const previousProgress = Number(selectedGoal.valorProgreso ?? 0);
         const nextProgress = payload.isNumeric
           ? Number(payload.valorProgreso ?? 0)
@@ -140,10 +165,14 @@ const Objectives = () => {
           active: payload.active,
         });
 
-        if (payload.isNumeric && previousProgress !== nextProgress) {
+        if (
+          payload.isNumeric &&
+          previousWasNumeric &&
+          previousProgress !== nextProgress
+        ) {
           await updateGoalProgress(selectedGoal.id, {
             valorProgreso: nextProgress,
-            notes: payload.notes || "Actualización de progreso desde frontend.",
+            notes: payload.notes || "Actualizacion de progreso desde frontend.",
           });
         }
       } else {
@@ -160,7 +189,7 @@ const Objectives = () => {
       }
 
       closeGoalModal();
-      await loadObjectivesData();
+      await loadObjectivesData(false);
     } catch (error) {
       setErrorMessage(error.message || "No se pudo guardar el goal.");
     } finally {
@@ -168,9 +197,12 @@ const Objectives = () => {
     }
   };
 
+  /**
+   * Guarda un hábito nuevo o actualiza uno existente.
+   */
   const handleHabitSubmit = async (payload) => {
     if (!payload.titulo.trim()) {
-      setErrorMessage("El título del hábito es obligatorio.");
+      setErrorMessage("El titulo del habito es obligatorio.");
       return;
     }
 
@@ -184,57 +216,112 @@ const Objectives = () => {
       }
 
       closeHabitModal();
-      await loadObjectivesData();
+      await loadObjectivesData(false);
     } catch (error) {
-      setErrorMessage(error.message || "No se pudo guardar el hábito.");
+      setErrorMessage(error.message || "No se pudo guardar el habito.");
     } finally {
       setIsSubmittingHabit(false);
     }
   };
 
+  /**
+   * Elimina un goal tras confirmación del usuario.
+   */
   const handleGoalDelete = async (goal) => {
     const confirmed = window.confirm(
-      `¿Seguro que quieres eliminar "${goal.titulo}"?`,
+      `Seguro que quieres eliminar "${goal.titulo}"?`,
     );
     if (!confirmed) return;
 
     try {
       await deleteGoal(goal.id);
-      await loadObjectivesData();
+      await loadObjectivesData(false);
     } catch (error) {
       setErrorMessage(error.message || "No se pudo eliminar el goal.");
     }
   };
 
+  /**
+   * Elimina un hábito tras confirmación del usuario.
+   */
   const handleHabitDelete = async (habit) => {
     const confirmed = window.confirm(
-      `¿Seguro que quieres eliminar "${habit.titulo}"?`,
+      `Seguro que quieres eliminar "${habit.titulo}"?`,
     );
     if (!confirmed) return;
 
     try {
       await deleteHabit(habit.id);
-      await loadObjectivesData();
+      await loadObjectivesData(false);
     } catch (error) {
-      setErrorMessage(error.message || "No se pudo eliminar el hábito.");
+      setErrorMessage(error.message || "No se pudo eliminar el habito.");
     }
   };
 
+  /**
+   * Marca o desmarca un hábito para hoy.
+   * Primero actualizamos la UI de forma optimista y luego sincronizamos
+   * con backend. Si falla, recargamos el estado real.
+   */
   const handleToggleHabitToday = async (habit, shouldComplete) => {
+    const todayIso = formatIsoDate(new Date());
+
     setIsHabitUpdating(true);
+
+    setLogs((prevLogs) => {
+      const filteredLogs = prevLogs.filter(
+        (log) => !(log.objective?.id === habit.id && log.logDate === todayIso),
+      );
+
+      return [
+        ...filteredLogs,
+        {
+          objective: { id: habit.id },
+          logDate: todayIso,
+          completed: shouldComplete,
+        },
+      ];
+    });
+
+    setHabits((prevHabits) =>
+      prevHabits.map((currentHabit) => {
+        if (currentHabit.id !== habit.id) {
+          return currentHabit;
+        }
+
+        const currentStreak = Number(currentHabit.currentStreak || 0);
+        const bestStreak = Number(currentHabit.bestStreak || 0);
+
+        if (shouldComplete) {
+          const updatedStreak = currentStreak + 1;
+
+          return {
+            ...currentHabit,
+            currentStreak: updatedStreak,
+            bestStreak: Math.max(bestStreak, updatedStreak),
+          };
+        }
+
+        return {
+          ...currentHabit,
+          currentStreak: Math.max(0, currentStreak - 1),
+        };
+      }),
+    );
 
     try {
       await markHabitCompletion(habit.id, {
-        date: formatIsoDate(new Date()),
+        date: todayIso,
         completed: shouldComplete,
         notes: shouldComplete
           ? "Marcado como completado hoy."
           : "Desmarcado desde frontend.",
       });
 
-      await loadObjectivesData();
+      await loadObjectivesData(false);
     } catch (error) {
-      setErrorMessage(error.message || "No se pudo actualizar el hábito.");
+      await loadObjectivesData(false);
+      setErrorMessage(error.message || "No se pudo actualizar el habito.");
     } finally {
       setIsHabitUpdating(false);
     }
@@ -244,17 +331,9 @@ const Objectives = () => {
     <div className="objectivesPage">
       <div className="pageHeader objectivesHeader">
         <div>
-          <h1>Objectives</h1>
-          <p>Goals a largo plazo, hábitos diarios y estadísticas semanales.</p>
+          <h1>Objetivos</h1>
+          <p>Goals a largo plazo, habitos diarios y estadisticas</p>
         </div>
-
-        <button
-          className="refreshButton"
-          onClick={loadObjectivesData}
-          disabled={isLoading}
-        >
-          <i className="fa fa-rotate-right"></i> Recargar
-        </button>
       </div>
 
       {isLoading ? (

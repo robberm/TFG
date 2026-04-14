@@ -1,8 +1,7 @@
 import React, { useMemo } from "react";
 import {
-  GOAL_STATUS_LABELS,
-  buildGoalStatusDistribution,
   buildWeeklyHabitStats,
+  calculateGlobalGoalsProgress,
   formatIsoDate,
   getStartOfWeek,
 } from "../utils/objectiveHelpers";
@@ -10,10 +9,13 @@ import {
 const ObjectivesDashboard = ({ goals, habits, logs }) => {
   const todayIso = formatIsoDate(new Date());
 
+  /**
+   * Calcula todas las métricas que usamos en el dashboard.
+   * Se memoizan para no recalcularlas en cada render si los datos no cambian.
+   */
   const metrics = useMemo(() => {
     const startOfWeek = getStartOfWeek(new Date());
     const weeklyStats = buildWeeklyHabitStats(habits, logs, startOfWeek);
-    const goalDistribution = buildGoalStatusDistribution(goals);
 
     const completedToday = logs.filter(
       (log) => log.logDate === todayIso && log.completed === true,
@@ -39,119 +41,212 @@ const ObjectivesDashboard = ({ goals, habits, logs }) => {
         ? Math.max(...habits.map((habit) => Number(habit.bestStreak || 0)))
         : 0;
 
-    let startAngle = 0;
-    const donutSegments = goalDistribution
-      .filter((segment) => segment.value > 0)
-      .map((segment) => {
-        const endAngle = startAngle + segment.percent * 360;
-        const cssSegment = `${segment.color} ${startAngle}deg ${endAngle}deg`;
-        startAngle = endAngle;
-        return cssSegment;
-      });
+    const activeGoals = goals.filter(
+      (goal) => goal.active !== false && goal.status !== "Done",
+    ).length;
 
-    const donutBackground =
-      donutSegments.length > 0
-        ? `conic-gradient(${donutSegments.join(", ")})`
-        : "conic-gradient(#3b3b3b 0deg 360deg)";
+    const completedGoals = goals.filter(
+      (goal) => goal.status === "Done",
+    ).length;
+
+    const goalsInProgress = goals.filter(
+      (goal) => goal.status === "InProgress",
+    ).length;
+
+    const totalGoals = goals.length;
+
+    const globalGoalsProgress = calculateGlobalGoalsProgress(goals);
+
+    const todayPercent =
+      habits.length > 0
+        ? Math.round((completedToday / habits.length) * 100)
+        : 0;
 
     return {
       completedToday,
       weeklyRate,
       bestHabitStreak,
-      goalDistribution,
       weeklyStats,
-      donutBackground,
+      activeGoals,
+      completedGoals,
+      goalsInProgress,
+      totalGoals,
+      globalGoalsProgress,
+      todayPercent,
     };
   }, [goals, habits, logs, todayIso]);
 
-  const maxWeeklyCompleted = Math.max(
-    ...metrics.weeklyStats.map((item) => item.completed),
-    1,
-  );
+  /**
+   * Renderiza el anillo de progreso reutilizable para las cards superiores.
+   */
+  const renderRing = (percent, color1, color2) => {
+    const radius = 25;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (percent / 100) * circumference;
+
+    return (
+      <div className="summaryRing">
+        <svg viewBox="0 0 60 60">
+          <circle className="ringBg" cx="30" cy="30" r={radius} />
+          <circle
+            className="ringProgress"
+            cx="30"
+            cy="30"
+            r={radius}
+            stroke={`url(#gradient-${color1})`}
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+          />
+          <defs>
+            <linearGradient
+              id={`gradient-${color1}`}
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="100%"
+            >
+              <stop offset="0%" stopColor={color1} />
+              <stop offset="100%" stopColor={color2} />
+            </linearGradient>
+          </defs>
+        </svg>
+        <span className="ringPercent">{percent}%</span>
+      </div>
+    );
+  };
 
   return (
     <section className="objectivesDashboard">
       <div className="summaryCardsGrid">
         <article className="summaryCard">
-          <span className="summaryLabel">Goals activos</span>
-          <strong className="summaryValue">
-            {goals.filter((goal) => goal.active !== false).length}
-          </strong>
+          <div className="summaryCardContent">
+            <div className="summaryTextBlock">
+              <span className="summaryLabel">Avance goals</span>
+              <strong className="summaryValue">
+                {metrics.globalGoalsProgress}%
+              </strong>
+            </div>
+            {renderRing(metrics.globalGoalsProgress, "#667eea", "#764ba2")}
+          </div>
         </article>
 
         <article className="summaryCard">
-          <span className="summaryLabel">Hábitos completados hoy</span>
-          <strong className="summaryValue">
-            {metrics.completedToday}/{habits.length}
-          </strong>
+          <div className="summaryCardContent">
+            <div className="summaryTextBlock">
+              <span className="summaryLabel">Completados hoy</span>
+              <strong className="summaryValue">
+                {metrics.completedToday}/{habits.length}
+              </strong>
+            </div>
+            {renderRing(metrics.todayPercent, "#4facfe", "#00f2fe")}
+          </div>
         </article>
 
         <article className="summaryCard">
-          <span className="summaryLabel">Cumplimiento semanal</span>
-          <strong className="summaryValue">{metrics.weeklyRate}%</strong>
+          <div className="summaryCardContent">
+            <div className="summaryTextBlock">
+              <span className="summaryLabel">Cumplimiento semanal</span>
+              <strong className="summaryValue">{metrics.weeklyRate}%</strong>
+            </div>
+            {renderRing(metrics.weeklyRate, "#43e97b", "#38f9d7")}
+          </div>
         </article>
 
         <article className="summaryCard">
-          <span className="summaryLabel">Mejor racha</span>
-          <strong className="summaryValue">
-            {metrics.bestHabitStreak} días
-          </strong>
+          <div className="summaryCardContent">
+            <div className="summaryTextBlock">
+              <span className="summaryLabel">Mejor racha</span>
+              <strong className="summaryValue">
+                {metrics.bestHabitStreak}
+              </strong>
+            </div>
+          </div>
         </article>
       </div>
 
       <div className="dashboardGrid">
         <article className="dashboardCard">
           <div className="cardHeader">
-            <h3>Distribución de goals</h3>
+            <h3>Resumen de Goals</h3>
           </div>
 
-          <div className="donutChartLayout">
-            <div
-              className="goalsDonut"
-              style={{ background: metrics.donutBackground }}
-            >
-              <div className="goalsDonutCenter">
-                <span>{goals.length}</span>
-                <small>Goals</small>
+          <div className="goalsSummaryPanel">
+            <div className="goalsSummaryTop">
+              <div className="goalsSummaryMainMetric">
+                <span className="goalsSummaryLabel">Avance global</span>
+                <strong className="goalsSummaryBigValue">
+                  {metrics.globalGoalsProgress}%
+                </strong>
               </div>
             </div>
 
-            <div className="donutLegend">
-              {metrics.goalDistribution.map((segment) => (
-                <div key={segment.key} className="legendItem">
-                  <span
-                    className="legendColor"
-                    style={{ backgroundColor: segment.color }}
-                  ></span>
-                  <span className="legendText">
-                    {GOAL_STATUS_LABELS[segment.key]} ({segment.value})
-                  </span>
-                </div>
-              ))}
+            <div className="goalsSummaryProgressBlock">
+              <div className="progressBarContainer goalsSummaryProgressBar">
+                <div
+                  className="progressBarFill"
+                  style={{ width: `${metrics.globalGoalsProgress}%` }}
+                ></div>
+              </div>
+              <span className="progressText">
+                Progreso medio de los goals activos
+              </span>
+            </div>
+
+            <div className="goalsMetricsGrid">
+              <div className="goalsMetricCard">
+                <span className="goalsMetricLabel">Activos</span>
+                <strong className="goalsMetricValue">
+                  {metrics.activeGoals}
+                </strong>
+              </div>
+
+              <div className="goalsMetricCard">
+                <span className="goalsMetricLabel">En progreso</span>
+                <strong className="goalsMetricValue">
+                  {metrics.goalsInProgress}
+                </strong>
+              </div>
+
+              <div className="goalsMetricCard">
+                <span className="goalsMetricLabel">Completados</span>
+                <strong className="goalsMetricValue">
+                  {metrics.completedGoals}
+                </strong>
+              </div>
+
+              <div className="goalsMetricCard">
+                <span className="goalsMetricLabel">Total</span>
+                <strong className="goalsMetricValue">
+                  {metrics.totalGoals}
+                </strong>
+              </div>
             </div>
           </div>
         </article>
 
         <article className="dashboardCard">
           <div className="cardHeader">
-            <h3>Hábitos completados esta semana</h3>
+            <h3>Actividad Semanal</h3>
           </div>
 
           <div className="weeklyBars">
-            {metrics.weeklyStats.map((day) => (
-              <div key={day.isoDate} className="weeklyBarItem">
-                <div className="weeklyBarTrack">
-                  <div
-                    className="weeklyBarFill"
-                    style={{
-                      height: `${(day.completed / maxWeeklyCompleted) * 100}%`,
-                    }}
-                  ></div>
+            {metrics.weeklyStats.map((day, index) => {
+              const heightPercent =
+                habits.length > 0 ? (day.completed / habits.length) * 100 : 0;
+
+              return (
+                <div key={day.isoDate} className="weeklyBarItem">
+                  <div className="weeklyBarTrack">
+                    <div
+                      className={`weeklyBarFill day${index}`}
+                      style={{ height: `${Math.max(heightPercent, 5)}%` }}
+                    ></div>
+                  </div>
+                  <span className="weeklyBarValue">{day.completed}</span>
+                  <span className="weeklyBarLabel">{day.label}</span>
                 </div>
-                <span className="weeklyBarValue">{day.completed}</span>
-                <span className="weeklyBarLabel">{day.label}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </article>
       </div>

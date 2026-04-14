@@ -3,10 +3,9 @@ package net.tfg.tfgapp.service.interfaces;
 import net.tfg.tfgapp.DTOs.users.ChangePasswordRequest;
 import net.tfg.tfgapp.DTOs.users.ChangeUsernameRequest;
 import net.tfg.tfgapp.DTOs.users.LoginRequest;
+import net.tfg.tfgapp.DTOs.users.UserProfileResponse;
 import net.tfg.tfgapp.domains.User;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.Map;
 
 public interface AccountService {
 
@@ -22,5 +21,5 @@ public interface AccountService {
 
     User removeProfileImage(String tokenUsername);
 
-    Map<String, Object> getProfileData(String tokenUsername);
+    UserProfileResponse getProfileData(String tokenUsername);
 }

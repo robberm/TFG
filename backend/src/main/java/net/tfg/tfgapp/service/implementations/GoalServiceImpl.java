@@ -6,6 +6,7 @@ import net.tfg.tfgapp.domains.Goal;
 import net.tfg.tfgapp.domains.ObjectiveLog;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.enumerates.GoalStatus;
+import net.tfg.tfgapp.enumerates.ObjectivePriority;
 import net.tfg.tfgapp.repos.GoalRepo;
 import net.tfg.tfgapp.repos.ObjectiveLogRepo;
 import net.tfg.tfgapp.service.interfaces.IGoalService;
@@ -42,7 +43,7 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
         Goal goal = new Goal();
         goal.setTitulo(request.getTitulo());
         goal.setDescription(request.getDescription());
-        goal.setPriority(request.getPriority());
+        goal.setPriority(request.getPriority() != null ? request.getPriority() : ObjectivePriority.Media);
         goal.setStatus(request.getStatus() != null ? request.getStatus() : GoalStatus.NotStarted);
         goal.setNumeric(request.isNumeric());
         goal.setActive(request.getActive() == null || request.getActive());
@@ -77,7 +78,7 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
     public Goal updateGoal(Goal existingGoal, GoalRequest request) {
         existingGoal.setTitulo(request.getTitulo());
         existingGoal.setDescription(request.getDescription());
-        existingGoal.setPriority(request.getPriority());
+        existingGoal.setPriority(request.getPriority() != null ? request.getPriority() : existingGoal.getPriority());
         existingGoal.setStatus(request.getStatus() != null ? request.getStatus() : existingGoal.getStatus());
         existingGoal.setNumeric(request.isNumeric());
         existingGoal.setActive(request.getActive() == null || request.getActive());

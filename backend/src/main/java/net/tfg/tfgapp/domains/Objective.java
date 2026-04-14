@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import net.tfg.tfgapp.enumerates.ObjectivePriority;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -29,10 +28,6 @@ public abstract class Objective {
 
     @Column(nullable = false)
     private String description;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private ObjectivePriority priority;
 
     @Column(nullable = false)
     private Boolean active = true;

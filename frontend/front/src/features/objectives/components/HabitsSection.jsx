@@ -1,5 +1,5 @@
 import React from "react";
-import { formatIsoDate, getPriorityColor } from "../utils/objectiveHelpers";
+import { formatIsoDate } from "../utils/objectiveHelpers";
 
 const HabitsSection = ({
   habits,
@@ -17,11 +17,11 @@ const HabitsSection = ({
       <div className="sectionHeader">
         <div>
           <h2>Hábitos</h2>
-          <p>Tareas repetibles con check diario y rachas.</p>
+          <p>Seguimiento diario con rachas y estadísticas</p>
         </div>
 
         <button className="addButton" onClick={onCreate}>
-          <i className="fa fa-plus"></i> Añadir hábito
+          <i className="fa fa-plus"></i> Nuevo Hábito
         </button>
       </div>
 
@@ -31,15 +31,14 @@ const HabitsSection = ({
             <div className="tableCell">Hoy</div>
             <div className="tableCell">Título</div>
             <div className="tableCell">Descripción</div>
-            <div className="tableCell">Prioridad</div>
-            <div className="tableCell">Racha actual</div>
-            <div className="tableCell">Mejor racha</div>
+            <div className="tableCell">Racha</div>
+            <div className="tableCell">Mejor</div>
             <div className="tableCell">Acciones</div>
           </div>
 
           {habits.length === 0 ? (
             <div className="emptyState">
-              <p>No hay hábitos todavía.</p>
+              <p>No hay hábitos creados. Comienza añadiendo uno.</p>
             </div>
           ) : (
             habits.map((habit) => {
@@ -72,18 +71,7 @@ const HabitsSection = ({
 
                   <div className="tableCell">
                     <span className={isCompletedToday ? "completedText" : ""}>
-                      {habit.description || "Sin descripción"}
-                    </span>
-                  </div>
-
-                  <div className="tableCell">
-                    <span
-                      className="priorityBadge"
-                      style={{
-                        backgroundColor: getPriorityColor(habit.priority),
-                      }}
-                    >
-                      {habit.priority}
+                      {habit.description || "—"}
                     </span>
                   </div>
 
@@ -103,6 +91,7 @@ const HabitsSection = ({
                     <button
                       className="actionButton editButton"
                       onClick={() => onEdit(habit)}
+                      title="Editar"
                     >
                       <i className="fa fa-edit"></i>
                     </button>
@@ -110,6 +99,7 @@ const HabitsSection = ({
                     <button
                       className="actionButton deleteButton"
                       onClick={() => onDelete(habit)}
+                      title="Eliminar"
                     >
                       <i className="fa fa-trash"></i>
                     </button>

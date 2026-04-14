@@ -77,7 +77,7 @@ function UserMenu() {
     localStorage.removeItem("profileImage");
 
     setProfileImage("");
-    navigate("/login");
+    navigate("/", { replace: true });
   };
 
   return (

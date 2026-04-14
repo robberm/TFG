@@ -67,6 +67,8 @@ const TimeSelector = ({ value, onChange, label }) => {
   const [search, setSearch] = useState("");
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
+  const optionsRef = useRef(null);
+  const selectedOptionRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -79,6 +81,12 @@ const TimeSelector = ({ value, onChange, label }) => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (isOpen && selectedOptionRef.current && optionsRef.current) {
+      selectedOptionRef.current.scrollIntoView({ block: "center" });
+    }
+  }, [isOpen]);
 
   const filteredOptions = TIME_OPTIONS.filter((opt) =>
     opt.label.includes(search),
@@ -123,10 +131,11 @@ const TimeSelector = ({ value, onChange, label }) => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <div className="time-options">
+          <div className="time-options" ref={optionsRef}>
             {filteredOptions.map((opt) => (
               <div
                 key={opt.value}
+                ref={value === opt.value ? selectedOptionRef : null}
                 className={`time-option ${value === opt.value ? "selected" : ""}`}
                 onClick={() => handleSelect(opt.value)}
               >

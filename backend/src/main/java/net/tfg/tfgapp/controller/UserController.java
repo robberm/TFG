@@ -3,10 +3,11 @@ package net.tfg.tfgapp.controller;
 import net.tfg.tfgapp.DTOs.users.ChangePasswordRequest;
 import net.tfg.tfgapp.DTOs.users.ChangeUsernameRequest;
 import net.tfg.tfgapp.DTOs.users.LoginRequest;
+import net.tfg.tfgapp.DTOs.users.UserProfileResponse;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.security.TokenService;
-import net.tfg.tfgapp.service.interfaces.IUserService;
 import net.tfg.tfgapp.service.interfaces.AccountService;
+import net.tfg.tfgapp.service.interfaces.IUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RequestMapping("/users")
@@ -33,12 +33,6 @@ public class UserController {
         this.accountService = accountService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = userService.findAll();
-        return ResponseEntity.ok(users);
-    }
-
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody LoginRequest request) {
         boolean authenticated = accountService.authenticate(request);
@@ -51,14 +45,20 @@ public class UserController {
         User user = userService.getUserByUsername(request.getUsername());
         String token = tokenService.generateToken(user.getUsername(), user.getTokenVersion());
 
-        Map<String, String> response = new HashMap<>();
+        Map<String, Object> response = new HashMap<>();
         response.put("token", token);
         response.put("username", user.getUsername());
+        response.put("role", user.getRole().name());
+        response.put("organizationId", user.getOrganization() != null ? user.getOrganization().getId() : null);
+        response.put("organizationName", user.getOrganization() != null ? user.getOrganization().getName() : null);
         response.put("message", "Log-in correcto!");
 
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Registro público para usuarios personales.
+     */
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody User newUser) {
         try {
@@ -66,9 +66,12 @@ public class UserController {
 
             String token = tokenService.generateToken(user.getUsername(), user.getTokenVersion());
 
-            Map<String, String> response = new HashMap<>();
+            Map<String, Object> response = new HashMap<>();
             response.put("token", token);
             response.put("username", user.getUsername());
+            response.put("role", user.getRole().name());
+            response.put("organizationId", null);
+            response.put("organizationName", null);
             response.put("message", "Usuario registrado correctamente.");
 
             return ResponseEntity.ok(response);
@@ -89,10 +92,13 @@ public class UserController {
             User updatedUser = accountService.changePassword(usernameFromToken, request);
             String newToken = tokenService.generateToken(updatedUser.getUsername(), updatedUser.getTokenVersion());
 
-            Map<String, String> response = new HashMap<>();
+            Map<String, Object> response = new HashMap<>();
             response.put("message", "Contraseña actualizada correctamente.");
             response.put("token", newToken);
             response.put("username", updatedUser.getUsername());
+            response.put("role", updatedUser.getRole().name());
+            response.put("organizationId", updatedUser.getOrganization() != null ? updatedUser.getOrganization().getId() : null);
+            response.put("organizationName", updatedUser.getOrganization() != null ? updatedUser.getOrganization().getName() : null);
 
             return ResponseEntity.ok(response);
         } catch (SecurityException e) {
@@ -114,10 +120,13 @@ public class UserController {
             User updatedUser = accountService.changeUsername(usernameFromToken, request);
             String newToken = tokenService.generateToken(updatedUser.getUsername(), updatedUser.getTokenVersion());
 
-            Map<String, String> response = new HashMap<>();
+            Map<String, Object> response = new HashMap<>();
             response.put("message", "Username actualizado correctamente.");
             response.put("token", newToken);
             response.put("username", updatedUser.getUsername());
+            response.put("role", updatedUser.getRole().name());
+            response.put("organizationId", updatedUser.getOrganization() != null ? updatedUser.getOrganization().getId() : null);
+            response.put("organizationName", updatedUser.getOrganization() != null ? updatedUser.getOrganization().getName() : null);
 
             return ResponseEntity.ok(response);
         } catch (SecurityException e) {
@@ -135,7 +144,8 @@ public class UserController {
             String token = extractAndVerifyToken(authHeader);
             String usernameFromToken = tokenService.extractUsername(token);
 
-            return ResponseEntity.ok(accountService.getProfileData(usernameFromToken));
+            UserProfileResponse response = accountService.getProfileData(usernameFromToken);
+            return ResponseEntity.ok(response);
         } catch (SecurityException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         } catch (IllegalArgumentException e) {

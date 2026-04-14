@@ -1,32 +1,25 @@
 package net.tfg.tfgapp.service;
 
-
 import net.tfg.tfgapp.DTOs.users.ChangePasswordRequest;
 import net.tfg.tfgapp.DTOs.users.ChangeUsernameRequest;
 import net.tfg.tfgapp.DTOs.users.LoginRequest;
+import net.tfg.tfgapp.DTOs.users.UserProfileResponse;
 import net.tfg.tfgapp.domains.User;
+import net.tfg.tfgapp.enumerates.UserRole;
 import net.tfg.tfgapp.service.interfaces.AccountService;
 import net.tfg.tfgapp.service.interfaces.IStorageService;
 import net.tfg.tfgapp.service.interfaces.IUserService;
 import net.tfg.tfgapp.validation.PasswordPolicy;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 @Service
 public class AccServiceImplements implements AccountService {
 
-    @Autowired
     private final IUserService userService;
-    @Autowired
     private final PasswordEncoder passwordEncoder;
-    @Autowired
     private final PasswordPolicy passwordPolicy;
-    @Autowired
     private final IStorageService storageService;
 
     public AccServiceImplements(IUserService userService,
@@ -53,6 +46,10 @@ public class AccServiceImplements implements AccountService {
         return passwordEncoder.matches(loginRequest.getPassword(), user.getPassword());
     }
 
+    /**
+     * Registro público.
+     * Todo usuario que se registre aquí nace como PERSONAL y sin organización.
+     */
     @Override
     public User register(User newUser) {
         if (newUser == null || newUser.getUsername() == null || newUser.getPassword() == null) {
@@ -64,8 +61,12 @@ public class AccServiceImplements implements AccountService {
         }
 
         passwordPolicy.validateOrThrow(newUser.getPassword());
+
         newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
         newUser.setTokenVersion(0);
+        newUser.setRole(UserRole.PERSONAL);
+        newUser.setOrganization(null);
+        newUser.setCreatedByAdmin(null);
 
         return userService.save(newUser);
     }
@@ -152,7 +153,7 @@ public class AccServiceImplements implements AccountService {
             throw new IllegalArgumentException("El username ya existe.");
         }
 
-        user.setUsername(request.getNewUsername());
+        user.setUsername(request.getNewUsername().trim());
         user.setTokenVersion(user.getTokenVersion() + 1);
 
         return userService.save(user);
@@ -200,7 +201,7 @@ public class AccServiceImplements implements AccountService {
     }
 
     @Override
-    public Map<String, Object> getProfileData(String tokenUsername) {
+    public UserProfileResponse getProfileData(String tokenUsername) {
         if (tokenUsername == null || tokenUsername.isBlank()) {
             throw new IllegalArgumentException("Token inválido.");
         }
@@ -210,9 +211,17 @@ public class AccServiceImplements implements AccountService {
             throw new IllegalArgumentException("Usuario no encontrado.");
         }
 
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("username", user.getUsername());
-        response.put("profileImagePath", user.getProfileImagePath());
+        UserProfileResponse response = new UserProfileResponse();
+        response.setId(user.getId());
+        response.setUsername(user.getUsername());
+        response.setRole(user.getRole().name());
+        response.setProfileImagePath(user.getProfileImagePath());
+        response.setHasAdminView(user.getRole() == UserRole.ADMIN);
+
+        if (user.getOrganization() != null) {
+            response.setOrganizationId(user.getOrganization().getId());
+            response.setOrganizationName(user.getOrganization().getName());
+        }
 
         return response;
     }

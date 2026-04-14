@@ -1,6 +1,5 @@
 package net.tfg.tfgapp.service;
 
-
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.repos.UserRepo;
 import net.tfg.tfgapp.service.interfaces.IUserService;
@@ -36,12 +35,32 @@ public class UserService implements IUserService {
     }
 
     @Override
+    public User getUserById(Long id) {
+        return uRepo.findById(id).orElse(null);
+    }
+
+    @Override
     public boolean existsByUsername(String username) {
         try {
-            return uRepo.findByUsername(username) != null;
+            return uRepo.existsByUsername(username);
         } catch (Exception e) {
             LOG.warning("Error al comprobar unicidad de usuario");
             return true;
         }
+    }
+
+    @Override
+    public List<User> getManagedUsers(Long adminId) {
+        return uRepo.findByCreatedByAdmin_Id(adminId);
+    }
+
+    @Override
+    public User getManagedUser(Long adminId, Long userId) {
+        return uRepo.findByIdAndCreatedByAdmin_Id(userId, adminId).orElse(null);
+    }
+
+    @Override
+    public void delete(User user) {
+        uRepo.delete(user);
     }
 }

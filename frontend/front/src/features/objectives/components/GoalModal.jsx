@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   EMPTY_GOAL_FORM,
+  isGoalNumeric,
   normalizeGoalForm,
   toInputNumberValue,
 } from "../utils/objectiveHelpers";
@@ -14,18 +15,29 @@ const GoalModal = ({
 }) => {
   const [form, setForm] = useState(EMPTY_GOAL_FORM);
 
+  /**
+   * Cuando abrimos el modal en modo edición, cargamos los datos del goal.
+   * Ojo con isNumeric, porque puede venir serializado de distintas formas
+   * y por eso utilizamos el helper isGoalNumeric().
+   */
   useEffect(() => {
     if (!isOpen) return;
 
     if (initialData) {
+      const numericGoal = isGoalNumeric(initialData);
+
       setForm({
         titulo: initialData.titulo || "",
         description: initialData.description || "",
         priority: initialData.priority || "Media",
         status: initialData.status || "NotStarted",
-        isNumeric: Boolean(initialData.isNumeric),
-        valorProgreso: toInputNumberValue(initialData.valorProgreso),
-        valorObjetivo: toInputNumberValue(initialData.valorObjetivo),
+        isNumeric: numericGoal,
+        valorProgreso: numericGoal
+          ? toInputNumberValue(initialData.valorProgreso)
+          : "",
+        valorObjetivo: numericGoal
+          ? toInputNumberValue(initialData.valorObjetivo)
+          : "",
         active: initialData.active ?? true,
         notes: "",
       });
@@ -37,6 +49,9 @@ const GoalModal = ({
 
   if (!isOpen) return null;
 
+  /**
+   * Actualiza un campo concreto del formulario.
+   */
   const handleChange = (field, value) => {
     setForm((prev) => ({
       ...prev,
@@ -44,6 +59,10 @@ const GoalModal = ({
     }));
   };
 
+  /**
+   * Si activamos o desactivamos el modo numérico,
+   * mostramos u ocultamos los campos asociados.
+   */
   const handleNumericToggle = (checked) => {
     setForm((prev) => ({
       ...prev,
@@ -54,8 +73,12 @@ const GoalModal = ({
     }));
   };
 
+  /**
+   * Normaliza el formulario antes de enviarlo al componente padre.
+   */
   const handleSubmit = (event) => {
     event.preventDefault();
+
     onSubmit({
       ...normalizeGoalForm(form),
       notes: form.notes?.trim() || "",
@@ -66,8 +89,8 @@ const GoalModal = ({
     <div className="modalOverlay" onClick={onClose}>
       <div className="editModal" onClick={(event) => event.stopPropagation()}>
         <div className="modalHeader">
-          <h3>{initialData ? "Editar goal" : "Crear goal"}</h3>
-          <button className="closeButton" onClick={onClose}>
+          <h3>{initialData ? "Editar Goal" : "Nuevo Goal"}</h3>
+          <button type="button" className="closeButton" onClick={onClose}>
             <i className="fa fa-times"></i>
           </button>
         </div>
@@ -76,7 +99,7 @@ const GoalModal = ({
           <form className="objectiveForm" onSubmit={handleSubmit}>
             <div className="formRow">
               <div className="formGroup">
-                <label htmlFor="goal-title">Título *</label>
+                <label htmlFor="goal-title">Título</label>
                 <input
                   id="goal-title"
                   type="text"
@@ -84,7 +107,7 @@ const GoalModal = ({
                   onChange={(event) =>
                     handleChange("titulo", event.target.value)
                   }
-                  placeholder="Ej. Terminar TFG"
+                  placeholder="Ej. Terminar proyecto"
                   required
                 />
               </div>
@@ -110,12 +133,12 @@ const GoalModal = ({
                 <label htmlFor="goal-description">Descripción</label>
                 <textarea
                   id="goal-description"
-                  rows="4"
+                  rows="3"
                   value={form.description}
                   onChange={(event) =>
                     handleChange("description", event.target.value)
                   }
-                  placeholder="Describe el objetivo"
+                  placeholder="Describe tu objetivo..."
                 />
               </div>
 
@@ -172,6 +195,7 @@ const GoalModal = ({
                       onChange={(event) =>
                         handleChange("valorProgreso", event.target.value)
                       }
+                      placeholder="0"
                     />
                   </div>
 
@@ -185,6 +209,7 @@ const GoalModal = ({
                       onChange={(event) =>
                         handleChange("valorObjetivo", event.target.value)
                       }
+                      placeholder="100"
                     />
                   </div>
                 </div>
@@ -194,12 +219,12 @@ const GoalModal = ({
                     <label htmlFor="goal-notes">Nota del progreso</label>
                     <textarea
                       id="goal-notes"
-                      rows="3"
+                      rows="2"
                       value={form.notes}
                       onChange={(event) =>
                         handleChange("notes", event.target.value)
                       }
-                      placeholder="Opcional: se guardará en el log de progreso"
+                      placeholder="Opcional: nota para el historial de progreso"
                     />
                   </div>
                 </div>
@@ -219,7 +244,7 @@ const GoalModal = ({
                   ? "Guardando..."
                   : initialData
                     ? "Actualizar"
-                    : "Crear"}
+                    : "Crear Goal"}
               </button>
             </div>
           </form>

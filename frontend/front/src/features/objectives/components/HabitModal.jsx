@@ -20,7 +20,6 @@ const HabitModal = ({
       setForm({
         titulo: initialData.titulo || "",
         description: initialData.description || "",
-        priority: initialData.priority || "Media",
         active: initialData.active ?? true,
       });
       return;
@@ -50,7 +49,7 @@ const HabitModal = ({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="modalHeader">
-          <h3>{initialData ? "Editar hábito" : "Crear hábito"}</h3>
+          <h3>{initialData ? "Editar Hábito" : "Nuevo Hábito"}</h3>
           <button className="closeButton" onClick={onClose}>
             <i className="fa fa-times"></i>
           </button>
@@ -58,9 +57,9 @@ const HabitModal = ({
 
         <div className="modalForm">
           <form className="objectiveForm" onSubmit={handleSubmit}>
-            <div className="formRow">
+            <div className="formRow singleColumn">
               <div className="formGroup">
-                <label htmlFor="habit-title">Título *</label>
+                <label htmlFor="habit-title">Título</label>
                 <input
                   id="habit-title"
                   type="text"
@@ -68,24 +67,9 @@ const HabitModal = ({
                   onChange={(event) =>
                     handleChange("titulo", event.target.value)
                   }
-                  placeholder="Ej. Estudiar 1h"
+                  placeholder="Ej. Leer 30 minutos"
                   required
                 />
-              </div>
-
-              <div className="formGroup">
-                <label htmlFor="habit-priority">Prioridad</label>
-                <select
-                  id="habit-priority"
-                  value={form.priority}
-                  onChange={(event) =>
-                    handleChange("priority", event.target.value)
-                  }
-                >
-                  <option value="Alta">Alta</option>
-                  <option value="Media">Media</option>
-                  <option value="Baja">Baja</option>
-                </select>
               </div>
             </div>
 
@@ -94,12 +78,12 @@ const HabitModal = ({
                 <label htmlFor="habit-description">Descripción</label>
                 <textarea
                   id="habit-description"
-                  rows="4"
+                  rows="3"
                   value={form.description}
                   onChange={(event) =>
                     handleChange("description", event.target.value)
                   }
-                  placeholder="Describe el hábito"
+                  placeholder="Describe tu hábito..."
                 />
               </div>
 
@@ -131,7 +115,7 @@ const HabitModal = ({
                   ? "Guardando..."
                   : initialData
                     ? "Actualizar"
-                    : "Crear"}
+                    : "Crear Hábito"}
               </button>
             </div>
           </form>

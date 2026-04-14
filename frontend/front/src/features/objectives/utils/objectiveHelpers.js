@@ -6,14 +6,32 @@ export const GOAL_STATUS_LABELS = {
 
 export const GOAL_STATUS_COLORS = {
   NotStarted: "#6c757d",
-  InProgress: "#ffb347",
-  Done: "#5ad18a",
+  InProgress: "#f5a623",
+  Done: "#43e97b",
 };
 
 export const PRIORITY_COLORS = {
-  Alta: "#ff5f6d",
-  Media: "#ffb347",
-  Baja: "#5ad18a",
+  Alta: "#f5576c",
+  Media: "#f5a623",
+  Baja: "#43e97b",
+};
+
+export const PRIORITY_ORDER = {
+  Alta: 0,
+  Media: 1,
+  Baja: 2,
+};
+
+export const GOAL_STATUS_PROGRESS = {
+  NotStarted: 0,
+  InProgress: 50,
+  Done: 100,
+};
+
+export const GOAL_STATUS_ORDER = {
+  InProgress: 0,
+  NotStarted: 1,
+  Done: 2,
 };
 
 export const EMPTY_GOAL_FORM = {
@@ -31,12 +49,14 @@ export const EMPTY_GOAL_FORM = {
 export const EMPTY_HABIT_FORM = {
   titulo: "",
   description: "",
-  priority: "Media",
   active: true,
 };
 
 export const toInputNumberValue = (value) =>
   value === null || value === undefined ? "" : value;
+
+export const isGoalNumeric = (goal) =>
+  Boolean(goal?.isNumeric ?? goal?.numeric ?? false);
 
 export const normalizeGoalForm = (form) => ({
   titulo: form.titulo.trim(),
@@ -58,7 +78,6 @@ export const normalizeGoalForm = (form) => ({
 export const normalizeHabitForm = (form) => ({
   titulo: form.titulo.trim(),
   description: form.description.trim(),
-  priority: form.priority,
   active: Boolean(form.active),
 });
 
@@ -66,12 +85,62 @@ export const getPriorityColor = (priority) =>
   PRIORITY_COLORS[priority] || "#7c7c7c";
 
 export const calculateGoalProgressPercent = (goal) => {
-  if (!goal?.isNumeric) return 0;
+  if (!isGoalNumeric(goal)) return 0;
   if (!goal?.valorObjetivo || goal.valorObjetivo <= 0) return 0;
 
   const rawPercent =
     (Number(goal.valorProgreso || 0) * 100) / Number(goal.valorObjetivo);
   return Math.max(0, Math.min(100, rawPercent));
+};
+
+export const getGoalTrackingPercent = (goal) => {
+  if (!goal) return 0;
+
+  if (isGoalNumeric(goal)) {
+    return Math.round(calculateGoalProgressPercent(goal));
+  }
+
+  return GOAL_STATUS_PROGRESS[goal.status] ?? 0;
+};
+
+export const calculateGlobalGoalsProgress = (goals) => {
+  const trackedGoals = goals.filter(
+    (goal) => goal.active !== false && goal.status !== "Done",
+  );
+
+  if (trackedGoals.length === 0) {
+    return 0;
+  }
+
+  const totalProgress = trackedGoals.reduce(
+    (acc, goal) => acc + getGoalTrackingPercent(goal),
+    0,
+  );
+
+  return Math.round(totalProgress / trackedGoals.length);
+};
+
+export const sortGoalsByPriority = (goals) => {
+  return [...goals].sort((leftGoal, rightGoal) => {
+    const leftPriority = PRIORITY_ORDER[leftGoal.priority] ?? 99;
+    const rightPriority = PRIORITY_ORDER[rightGoal.priority] ?? 99;
+
+    if (leftPriority !== rightPriority) {
+      return leftPriority - rightPriority;
+    }
+
+    const leftStatus = GOAL_STATUS_ORDER[leftGoal.status] ?? 99;
+    const rightStatus = GOAL_STATUS_ORDER[rightGoal.status] ?? 99;
+
+    if (leftStatus !== rightStatus) {
+      return leftStatus - rightStatus;
+    }
+
+    const leftDate = leftGoal.createdAt ? new Date(leftGoal.createdAt) : 0;
+    const rightDate = rightGoal.createdAt ? new Date(rightGoal.createdAt) : 0;
+
+    return rightDate - leftDate;
+  });
 };
 
 export const formatIsoDate = (date) => {
