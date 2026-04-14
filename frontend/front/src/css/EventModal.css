@@ -89,18 +89,6 @@
   background: var(--calendar-bg-color, #fff);
 }
 
-.gcal-target-users {
-  margin-bottom: 12px;
-  border: 1px solid var(--input-border-color, #dadce0);
-  border-radius: 10px;
-  padding: 10px 12px;
-  max-height: 150px;
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
 .gcal-title-input {
   width: 100%;
   border: none;

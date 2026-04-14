@@ -44,8 +44,6 @@ const GoalModal = ({
         active: initialData.active ?? true,
         notes: "",
         targetUserId: defaultManagedUserId ?? "",
-        targetUserIds: defaultManagedUserId ? [String(defaultManagedUserId)] : [],
-        targetAllManaged: defaultManagedUserId === "ALL",
       });
       return;
     }
@@ -53,8 +51,6 @@ const GoalModal = ({
     setForm({
       ...EMPTY_GOAL_FORM,
       targetUserId: defaultManagedUserId ?? "",
-      targetUserIds: defaultManagedUserId ? [String(defaultManagedUserId)] : [],
-      targetAllManaged: defaultManagedUserId === "ALL",
     });
   }, [defaultManagedUserId, initialData, isOpen]);
 
@@ -113,9 +109,9 @@ const GoalModal = ({
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    const hasAllSelected = form.targetUserIds?.includes("ALL");
+    const hasAllSelected = form.targetUserIds?.includes("__all__");
     const selectedUserIds = (form.targetUserIds || [])
-      .filter((value) => value !== "ALL")
+      .filter((value) => value !== "__all__")
       .map((value) => Number(value));
 
     onSubmit({
@@ -125,8 +121,6 @@ const GoalModal = ({
         isAdmin && form.targetUserId !== ""
           ? Number(form.targetUserId)
           : null,
-      targetUserIds: isAdmin && !initialData ? selectedUserIds : [],
-      targetAllManaged: isAdmin && !initialData ? hasAllSelected : false,
     });
   };
 
@@ -143,32 +137,24 @@ const GoalModal = ({
         <div className="modalForm">
           <form className="objectiveForm" onSubmit={handleSubmit}>
             <div className="formRow">
-              {isAdmin && !initialData && (
+              {isAdmin && (
                 <div className="formGroup">
-                  <label htmlFor="goal-target-user">Usuarios subordinados</label>
-                  <div id="goal-target-user" className="targetUsersSelector">
-                    <label className="checkboxRow">
-                      <input
-                        type="checkbox"
-                        checked={(form.targetUserIds || []).includes("ALL")}
-                        onChange={() => toggleTargetSelection("ALL")}
-                      />
-                      Todos
-                    </label>
-
+                  <label htmlFor="goal-target-user">Usuario subordinado</label>
+                  <select
+                    id="goal-target-user"
+                    value={form.targetUserId}
+                    onChange={(event) =>
+                      handleChange("targetUserId", event.target.value)
+                    }
+                    required
+                  >
+                    <option value="">Selecciona un usuario</option>
                     {managedUsers.map((user) => (
-                      <label key={user.id} className="checkboxRow">
-                        <input
-                          type="checkbox"
-                          checked={(form.targetUserIds || []).includes(
-                            String(user.id),
-                          )}
-                          onChange={() => toggleTargetSelection(user.id)}
-                        />
+                      <option key={user.id} value={user.id}>
                         {user.username}
-                      </label>
+                      </option>
                     ))}
-                  </div>
+                  </select>
                 </div>
               )}
 
