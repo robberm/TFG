@@ -845,3 +845,7 @@ body.dark .day.disabled {
     font-size: 10px;
   }
 }
+.adminCalendarSelector {
+  max-width: 280px;
+  margin-bottom: 14px;
+}

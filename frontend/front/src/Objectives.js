@@ -15,6 +15,14 @@ import {
   updateGoalProgress,
   updateHabit,
 } from "./api/objectivesApi";
+import {
+  createManagedUserGoal,
+  deleteManagedUserGoal,
+  getManagedUserGoals,
+  getManagedUsers,
+  updateManagedUserGoal,
+} from "./api/adminApi";
+import { getCurrentUserProfile } from "./api/userApi";
 
 import GoalModal from "./features/objectives/components/GoalModal";
 import HabitModal from "./features/objectives/components/HabitModal";
@@ -37,6 +45,10 @@ const Objectives = () => {
   const [habits, setHabits] = useState([]);
   const [logs, setLogs] = useState([]);
 
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [managedUsers, setManagedUsers] = useState([]);
+  const [selectedManagedUserId, setSelectedManagedUserId] = useState("");
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmittingGoal, setIsSubmittingGoal] = useState(false);
   const [isSubmittingHabit, setIsSubmittingHabit] = useState(false);
@@ -48,31 +60,55 @@ const Objectives = () => {
   const [selectedGoal, setSelectedGoal] = useState(null);
   const [selectedHabit, setSelectedHabit] = useState(null);
 
-  /**
-   * Carga goals, hábitos y logs semanales.
-   * El showLoader permite reutilizar esta misma función sin mostrar siempre
-   * el estado de carga completo de la pantalla.
-   */
   const loadObjectivesData = useCallback(
-    async (showLoader = true) => {
+    async (showLoader = true, forcedManagedUserId = null) => {
       if (showLoader) {
         setIsLoading(true);
       }
 
       try {
+        const profile = await getCurrentUserProfile();
+        const adminMode = profile?.role === "ADMIN";
+        setIsAdmin(adminMode);
+
+        if (adminMode) {
+          const users = await getManagedUsers();
+          const normalizedUsers = Array.isArray(users) ? users : [];
+          setManagedUsers(normalizedUsers);
+
+          if (normalizedUsers.length === 0) {
+            setSelectedManagedUserId("");
+            setGoals([]);
+            setHabits([]);
+            setLogs([]);
+            return;
+          }
+
+          const targetUserId =
+            forcedManagedUserId ||
+            selectedManagedUserId ||
+            String(normalizedUsers[0].id);
+
+          setSelectedManagedUserId(String(targetUserId));
+
+          const goalsResponse = await getManagedUserGoals(targetUserId);
+          setGoals(Array.isArray(goalsResponse) ? goalsResponse : []);
+          setHabits([]);
+          setLogs([]);
+          return;
+        }
+
         const startOfWeek = getStartOfWeek(new Date());
         const endOfWeek = getEndOfWeek(startOfWeek);
 
-        const [goalsResponse, habitsResponse, logsResponse] = await Promise.all(
-          [
-            getGoals(),
-            getHabits(),
-            getObjectiveLogsByRange(
-              formatIsoDate(startOfWeek),
-              formatIsoDate(endOfWeek),
-            ),
-          ],
-        );
+        const [goalsResponse, habitsResponse, logsResponse] = await Promise.all([
+          getGoals(),
+          getHabits(),
+          getObjectiveLogsByRange(
+            formatIsoDate(startOfWeek),
+            formatIsoDate(endOfWeek),
+          ),
+        ]);
 
         setGoals(Array.isArray(goalsResponse) ? goalsResponse : []);
         setHabits(Array.isArray(habitsResponse) ? habitsResponse : []);
@@ -87,17 +123,13 @@ const Objectives = () => {
         }
       }
     },
-    [setErrorMessage],
+    [selectedManagedUserId, setErrorMessage],
   );
 
   React.useEffect(() => {
     loadObjectivesData(true);
   }, [loadObjectivesData]);
 
-  /**
-   * Mapa auxiliar para consultar rápidamente si un hábito está completado
-   * en una fecha concreta.
-   */
   const habitCompletionMap = useMemo(
     () => buildHabitCompletionMap(logs),
     [logs],
@@ -133,21 +165,45 @@ const Objectives = () => {
     setIsHabitModalOpen(false);
   };
 
-  /**
-   * Guarda un goal nuevo o actualiza uno existente.
-   * Si el goal es numérico y cambia el progreso, registramos también
-   * el cambio en el histórico.
-   */
   const handleGoalSubmit = async (payload) => {
     if (!payload.titulo.trim()) {
       setErrorMessage("El titulo del goal es obligatorio.");
       return;
     }
 
+    if (isAdmin && !selectedManagedUserId) {
+      setErrorMessage("Debes seleccionar un usuario subordinado.");
+      return;
+    }
+
     setIsSubmittingGoal(true);
 
     try {
-      if (selectedGoal) {
+      if (isAdmin) {
+        if (selectedGoal) {
+          await updateManagedUserGoal(selectedManagedUserId, selectedGoal.id, {
+            titulo: payload.titulo,
+            description: payload.description,
+            priority: payload.priority,
+            status: payload.status,
+            isNumeric: payload.isNumeric,
+            valorProgreso: payload.valorProgreso,
+            valorObjetivo: payload.valorObjetivo,
+            active: payload.active,
+          });
+        } else {
+          await createManagedUserGoal(selectedManagedUserId, {
+            titulo: payload.titulo,
+            description: payload.description,
+            priority: payload.priority,
+            status: payload.status,
+            isNumeric: payload.isNumeric,
+            valorProgreso: payload.valorProgreso,
+            valorObjetivo: payload.valorObjetivo,
+            active: payload.active,
+          });
+        }
+      } else if (selectedGoal) {
         const previousWasNumeric = isGoalNumeric(selectedGoal);
         const previousProgress = Number(selectedGoal.valorProgreso ?? 0);
         const nextProgress = payload.isNumeric
@@ -197,9 +253,6 @@ const Objectives = () => {
     }
   };
 
-  /**
-   * Guarda un hábito nuevo o actualiza uno existente.
-   */
   const handleHabitSubmit = async (payload) => {
     if (!payload.titulo.trim()) {
       setErrorMessage("El titulo del habito es obligatorio.");
@@ -224,30 +277,30 @@ const Objectives = () => {
     }
   };
 
-  /**
-   * Elimina un goal tras confirmación del usuario.
-   */
   const handleGoalDelete = async (goal) => {
-    const confirmed = window.confirm(
-      `Seguro que quieres eliminar "${goal.titulo}"?`,
-    );
+    const confirmed = window.confirm(`Seguro que quieres eliminar "${goal.titulo}"?`);
     if (!confirmed) return;
 
     try {
-      await deleteGoal(goal.id);
+      if (isAdmin) {
+        if (!selectedManagedUserId) {
+          setErrorMessage("Debes seleccionar un usuario subordinado.");
+          return;
+        }
+
+        await deleteManagedUserGoal(selectedManagedUserId, goal.id);
+      } else {
+        await deleteGoal(goal.id);
+      }
+
       await loadObjectivesData(false);
     } catch (error) {
       setErrorMessage(error.message || "No se pudo eliminar el goal.");
     }
   };
 
-  /**
-   * Elimina un hábito tras confirmación del usuario.
-   */
   const handleHabitDelete = async (habit) => {
-    const confirmed = window.confirm(
-      `Seguro que quieres eliminar "${habit.titulo}"?`,
-    );
+    const confirmed = window.confirm(`Seguro que quieres eliminar "${habit.titulo}"?`);
     if (!confirmed) return;
 
     try {
@@ -258,11 +311,6 @@ const Objectives = () => {
     }
   };
 
-  /**
-   * Marca o desmarca un hábito para hoy.
-   * Primero actualizamos la UI de forma optimista y luego sincronizamos
-   * con backend. Si falla, recargamos el estado real.
-   */
   const handleToggleHabitToday = async (habit, shouldComplete) => {
     const todayIso = formatIsoDate(new Date());
 
@@ -283,39 +331,10 @@ const Objectives = () => {
       ];
     });
 
-    setHabits((prevHabits) =>
-      prevHabits.map((currentHabit) => {
-        if (currentHabit.id !== habit.id) {
-          return currentHabit;
-        }
-
-        const currentStreak = Number(currentHabit.currentStreak || 0);
-        const bestStreak = Number(currentHabit.bestStreak || 0);
-
-        if (shouldComplete) {
-          const updatedStreak = currentStreak + 1;
-
-          return {
-            ...currentHabit,
-            currentStreak: updatedStreak,
-            bestStreak: Math.max(bestStreak, updatedStreak),
-          };
-        }
-
-        return {
-          ...currentHabit,
-          currentStreak: Math.max(0, currentStreak - 1),
-        };
-      }),
-    );
-
     try {
       await markHabitCompletion(habit.id, {
         date: todayIso,
         completed: shouldComplete,
-        notes: shouldComplete
-          ? "Marcado como completado hoy."
-          : "Desmarcado desde frontend.",
       });
 
       await loadObjectivesData(false);
@@ -332,14 +351,46 @@ const Objectives = () => {
       <div className="pageHeader objectivesHeader">
         <div>
           <h1>Objetivos</h1>
-          <p>Goals a largo plazo, habitos diarios y estadisticas</p>
+          <p>
+            {isAdmin
+              ? "Asignación y seguimiento de goals de usuarios subordinados"
+              : "Goals a largo plazo, habitos diarios y estadisticas"}
+          </p>
         </div>
+
+        {isAdmin && (
+          <div className="adminUserSelector">
+            <label htmlFor="objectives-managed-user">Usuario subordinado</label>
+            <select
+              id="objectives-managed-user"
+              value={selectedManagedUserId}
+              onChange={(event) =>
+                loadObjectivesData(false, event.target.value)
+              }
+            >
+              {managedUsers.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.username}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {isLoading ? (
         <div className="objectivesLoadingState">
           <span className="loaderDot"></span>
           <span>Cargando objetivos...</span>
+        </div>
+      ) : isAdmin ? (
+        <div className="objectivesContent">
+          <GoalsSection
+            goals={goals}
+            onCreate={openCreateGoalModal}
+            onEdit={openEditGoalModal}
+            onDelete={handleGoalDelete}
+          />
         </div>
       ) : (
         <>
@@ -372,15 +423,21 @@ const Objectives = () => {
         onClose={closeGoalModal}
         onSubmit={handleGoalSubmit}
         isSubmitting={isSubmittingGoal}
+        isAdmin={isAdmin}
+        managedUsers={managedUsers}
+        selectedUserId={selectedManagedUserId}
+        onTargetUserChange={(userId) => setSelectedManagedUserId(userId)}
       />
 
-      <HabitModal
-        isOpen={isHabitModalOpen}
-        initialData={selectedHabit}
-        onClose={closeHabitModal}
-        onSubmit={handleHabitSubmit}
-        isSubmitting={isSubmittingHabit}
-      />
+      {!isAdmin && (
+        <HabitModal
+          isOpen={isHabitModalOpen}
+          initialData={selectedHabit}
+          onClose={closeHabitModal}
+          onSubmit={handleHabitSubmit}
+          isSubmitting={isSubmittingHabit}
+        />
+      )}
     </div>
   );
 };
