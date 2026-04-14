@@ -12,6 +12,9 @@ const GoalModal = ({
   onSubmit,
   initialData,
   isSubmitting,
+  isAdmin = false,
+  managedUsers = [],
+  defaultManagedUserId = null,
 }) => {
   const [form, setForm] = useState(EMPTY_GOAL_FORM);
 
@@ -40,12 +43,20 @@ const GoalModal = ({
           : "",
         active: initialData.active ?? true,
         notes: "",
+        targetUserId: defaultManagedUserId ?? "",
+        targetUserIds: defaultManagedUserId ? [String(defaultManagedUserId)] : [],
+        targetAllManaged: defaultManagedUserId === "__all__",
       });
       return;
     }
 
-    setForm(EMPTY_GOAL_FORM);
-  }, [initialData, isOpen]);
+    setForm({
+      ...EMPTY_GOAL_FORM,
+      targetUserId: defaultManagedUserId ?? "",
+      targetUserIds: defaultManagedUserId ? [String(defaultManagedUserId)] : [],
+      targetAllManaged: defaultManagedUserId === "__all__",
+    });
+  }, [defaultManagedUserId, initialData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -79,9 +90,20 @@ const GoalModal = ({
   const handleSubmit = (event) => {
     event.preventDefault();
 
+    const hasAllSelected = form.targetUserIds?.includes("__all__");
+    const selectedUserIds = (form.targetUserIds || [])
+      .filter((value) => value !== "__all__")
+      .map((value) => Number(value));
+
     onSubmit({
       ...normalizeGoalForm(form),
       notes: form.notes?.trim() || "",
+      targetUserId:
+        isAdmin && form.targetUserId !== ""
+          ? Number(form.targetUserId)
+          : null,
+      targetUserIds: isAdmin && !initialData ? selectedUserIds : [],
+      targetAllManaged: isAdmin && !initialData ? hasAllSelected : false,
     });
   };
 
@@ -98,6 +120,31 @@ const GoalModal = ({
         <div className="modalForm">
           <form className="objectiveForm" onSubmit={handleSubmit}>
             <div className="formRow">
+              {isAdmin && !initialData && (
+                <div className="formGroup">
+                  <label htmlFor="goal-target-user">Usuarios subordinados</label>
+                  <select
+                    id="goal-target-user"
+                    multiple
+                    value={form.targetUserIds || []}
+                    onChange={(event) =>
+                      handleChange(
+                        "targetUserIds",
+                        Array.from(event.target.selectedOptions, (option) => option.value),
+                      )
+                    }
+                    required
+                  >
+                    <option value="__all__">Todos</option>
+                    {managedUsers.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.username}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div className="formGroup">
                 <label htmlFor="goal-title">Título</label>
                 <input

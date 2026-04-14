@@ -26,6 +26,29 @@ body.dark {
   overflow: hidden;
 }
 
+.adminCalendarScopeSelector {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-page);
+  color: var(--text-main);
+}
+
+.adminCalendarScopeSelector label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.adminCalendarScopeSelector select {
+  border: 1px solid var(--border-color);
+  background: var(--bg-main);
+  color: var(--text-main);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+}
+
 .calendar-header {
   align-items: center;
   border-bottom: 1px solid var(--border-color);

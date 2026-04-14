@@ -74,12 +74,22 @@ const mapEventDates = (event) => ({
   endTime: safeParseDate(event.endTime),
 });
 
-export const fetchEventsByRange = async (startDate, endDate) => {
+export const fetchEventsByRange = async (
+  startDate,
+  endDate,
+  targetUserId = null,
+  targetAllManaged = false,
+) => {
   const start = encodeURIComponent(toLocalDateTimeParam(startDate));
   const end = encodeURIComponent(toLocalDateTimeParam(endDate));
+  const targetParam =
+    targetUserId != null
+      ? `&targetUserId=${encodeURIComponent(targetUserId)}`
+      : "";
+  const allParam = targetAllManaged ? "&targetAllManaged=true" : "";
 
   const response = await fetch(
-    `${EVENTS_BASE_URL}/range?start=${start}&end=${end}`,
+    `${EVENTS_BASE_URL}/range?start=${start}&end=${end}${targetParam}${allParam}`,
     {
       headers: getAuthHeaders(),
     },

@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import net.tfg.tfgapp.enumerates.GoalStatus;
 import net.tfg.tfgapp.enumerates.ObjectivePriority;
+import java.util.List;
 
 @Getter
 @Setter
@@ -21,4 +22,7 @@ public class GoalRequest {
     private Double valorProgreso;
     private Double valorObjetivo;
     private Boolean active;
+    private Long targetUserId;
+    private List<Long> targetUserIds;
+    private Boolean targetAllManaged;
 }

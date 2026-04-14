@@ -149,7 +149,16 @@ const TimeSelector = ({ value, onChange, label }) => {
   );
 };
 
-const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
+const EventModal = ({
+  event,
+  selectedDate,
+  onClose,
+  onSave,
+  onDelete,
+  isAdmin = false,
+  managedUsers = [],
+  defaultManagedUserId = null,
+}) => {
   const [formData, setFormData] = useState({
     id: null,
     title: "",
@@ -160,6 +169,9 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
     location: "",
     category: "",
     isAllDay: false,
+    targetUserId: "",
+    targetUserIds: [],
+    targetAllManaged: false,
   });
   const [reminderMinutesBefore, setReminderMinutesBefore] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -181,6 +193,9 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
         location: event.location || "",
         category: event.category || "",
         isAllDay: event.isAllDay || false,
+        targetUserId: defaultManagedUserId ?? "",
+        targetUserIds: defaultManagedUserId ? [String(defaultManagedUserId)] : [],
+        targetAllManaged: defaultManagedUserId === "__all__",
       });
       setReminderMinutesBefore(event.reminderMinutesBefore ?? null);
       setShowMoreOptions(true);
@@ -201,13 +216,16 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
         location: "",
         category: "",
         isAllDay: false,
+        targetUserId: defaultManagedUserId ?? "",
+        targetUserIds: defaultManagedUserId ? [String(defaultManagedUserId)] : [],
+        targetAllManaged: defaultManagedUserId === "__all__",
       });
       setReminderMinutesBefore(null);
       setShowMoreOptions(false);
     }
 
     setTimeout(() => titleInputRef.current?.focus(), 100);
-  }, [event, selectedDate]);
+  }, [defaultManagedUserId, event, selectedDate]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -245,6 +263,16 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    const hasAllSelected = formData.targetUserIds?.includes("__all__");
+    const selectedUserIds = (formData.targetUserIds || [])
+      .filter((value) => value !== "__all__")
+      .map((value) => Number(value));
+
+    if (isAdmin && !event && !hasAllSelected && selectedUserIds.length === 0) {
+      window.alert("Debes seleccionar al menos un usuario subordinado.");
+      return;
+    }
+
     const startDateTime = `${formData.date}T${formData.startTime}`;
     const endDateTime = `${formData.date}T${formData.endTime}`;
 
@@ -258,6 +286,12 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
       category: formData.category,
       isAllDay: formData.isAllDay,
       reminderMinutesBefore,
+      targetUserId:
+        isAdmin && !event && selectedUserIds.length === 1
+          ? selectedUserIds[0]
+          : null,
+      targetUserIds: isAdmin && !event ? selectedUserIds : [],
+      targetAllManaged: isAdmin && !event ? hasAllSelected : false,
     };
 
     onSave(eventData);
@@ -303,6 +337,32 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
 
         <form onSubmit={handleSubmit} className="gcal-form">
           <div className="gcal-title-section">
+            {isAdmin && !event && (
+              <select
+                name="targetUserIds"
+                className="gcal-input"
+                multiple
+                value={formData.targetUserIds}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    targetUserIds: Array.from(
+                      e.target.selectedOptions,
+                      (option) => option.value,
+                    ),
+                  }))
+                }
+                required
+              >
+                <option value="__all__">Todos</option>
+                {managedUsers.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.username}
+                  </option>
+                ))}
+              </select>
+            )}
+
             <input
               ref={titleInputRef}
               type="text"

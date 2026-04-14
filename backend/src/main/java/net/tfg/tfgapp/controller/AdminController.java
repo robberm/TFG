@@ -3,6 +3,7 @@ package net.tfg.tfgapp.controller;
 import net.tfg.tfgapp.DTOs.users.AdminCreateOrganizationRequest;
 import net.tfg.tfgapp.DTOs.users.AdminCreateUserRequest;
 import net.tfg.tfgapp.DTOs.users.UserSummaryResponse;
+import net.tfg.tfgapp.domains.Goal;
 import net.tfg.tfgapp.domains.Organization;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.security.TokenService;
@@ -118,6 +119,24 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error al crear la organización.");
+        }
+    }
+
+    @GetMapping("/users/{userId}/goals")
+    public ResponseEntity<?> getManagedUserGoals(@RequestHeader("Authorization") String authHeader,
+                                                 @PathVariable Long userId) {
+        try {
+            String token = extractAndVerifyToken(authHeader);
+            String adminUsername = tokenService.extractUsername(token);
+
+            List<Goal> goals = organizationAdminService.getManagedUserGoals(adminUsername, userId);
+            return ResponseEntity.ok(goals);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error al recuperar los goals del usuario subordinado.");
         }
     }
 

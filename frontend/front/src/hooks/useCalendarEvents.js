@@ -15,6 +15,8 @@ import {
   saveCalendarEvent,
   deleteCalendarEvent,
 } from "../api/eventApi";
+import { getCurrentUserProfile } from "../api/userApi";
+import { getManagedUsers } from "../api/adminApi";
 
 const useCalendarEvents = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -23,6 +25,44 @@ const useCalendarEvents = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [viewMode, setViewMode] = useState("month");
+  const [profile, setProfile] = useState(null);
+  const [managedUsers, setManagedUsers] = useState([]);
+  const [selectedManagedUserId, setSelectedManagedUserId] = useState(null);
+
+  const isAdmin = profile?.role === "ADMIN";
+
+  useEffect(() => {
+    const loadScope = async () => {
+      try {
+        const currentProfile = await getCurrentUserProfile();
+        setProfile(currentProfile);
+
+        if (currentProfile?.role === "ADMIN") {
+          const users = await getManagedUsers();
+          const normalizedUsers = Array.isArray(users) ? users : [];
+          setManagedUsers(normalizedUsers);
+          setSelectedManagedUserId((previousId) => {
+            if (
+              previousId != null &&
+              previousId !== "ALL" &&
+              normalizedUsers.some((user) => user.id === previousId)
+            ) {
+              return previousId;
+            }
+            return "ALL";
+          });
+          return;
+        }
+
+        setManagedUsers([]);
+        setSelectedManagedUserId(null);
+      } catch (error) {
+        console.error("Error loading calendar scope:", error);
+      }
+    };
+
+    loadScope();
+  }, []);
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -46,12 +86,17 @@ const useCalendarEvents = () => {
         end = dayEnd;
       }
 
-      const data = await fetchEventsByRange(start, end);
+      const data = await fetchEventsByRange(
+        start,
+        end,
+        isAdmin && selectedManagedUserId !== "ALL" ? selectedManagedUserId : null,
+        isAdmin && selectedManagedUserId === "ALL",
+      );
       setEvents(data);
     } catch (error) {
       console.error("Error fetching events:", error);
     }
-  }, [currentDate, viewMode]);
+  }, [currentDate, isAdmin, selectedManagedUserId, viewMode]);
 
   useEffect(() => {
     fetchEvents();
@@ -174,6 +219,11 @@ const useCalendarEvents = () => {
     currentDate,
     selectedDate,
     events,
+    profile,
+    isAdmin,
+    managedUsers,
+    selectedManagedUserId,
+    setSelectedManagedUserId,
     showModal,
     selectedEvent,
     viewMode,
