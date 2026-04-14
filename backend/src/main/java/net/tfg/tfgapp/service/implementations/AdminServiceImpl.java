@@ -1,6 +1,5 @@
 package net.tfg.tfgapp.service;
 
-import net.tfg.tfgapp.DTOs.objectives.GoalRequest;
 import net.tfg.tfgapp.DTOs.users.AdminCreateOrganizationRequest;
 import net.tfg.tfgapp.DTOs.users.AdminCreateUserRequest;
 import net.tfg.tfgapp.DTOs.users.UserSummaryResponse;
@@ -11,9 +10,8 @@ import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.enumerates.GoalStatus;
 import net.tfg.tfgapp.enumerates.ObjectivePriority;
 import net.tfg.tfgapp.enumerates.UserRole;
-import net.tfg.tfgapp.repos.EventRepo;
-import net.tfg.tfgapp.repos.GoalRepo;
 import net.tfg.tfgapp.repos.OrganizationRepo;
+import net.tfg.tfgapp.service.interfaces.IUserService;
 import net.tfg.tfgapp.service.interfaces.IAdminService;
 import net.tfg.tfgapp.service.interfaces.IUserService;
 import net.tfg.tfgapp.validation.PasswordPolicy;
@@ -30,21 +28,15 @@ public class AdminServiceImpl implements IAdminService {
     private final PasswordEncoder passwordEncoder;
     private final PasswordPolicy passwordPolicy;
     private final OrganizationRepo organizationRepo;
-    private final GoalRepo goalRepo;
-    private final EventRepo eventRepo;
 
     public AdminServiceImpl(IUserService userService,
                             PasswordEncoder passwordEncoder,
                             PasswordPolicy passwordPolicy,
-                            OrganizationRepo organizationRepo,
-                            GoalRepo goalRepo,
-                            EventRepo eventRepo) {
+                            OrganizationRepo organizationRepo) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.passwordPolicy = passwordPolicy;
         this.organizationRepo = organizationRepo;
-        this.goalRepo = goalRepo;
-        this.eventRepo = eventRepo;
     }
 
     @Override
@@ -314,5 +306,46 @@ public class AdminServiceImpl implements IAdminService {
         }
 
         return managedUser;
+    }
+
+    @Override
+    public Organization createOrganizationForAdmin(String adminUsername, AdminCreateOrganizationRequest request) {
+        if (adminUsername == null || adminUsername.isBlank()) {
+            throw new IllegalArgumentException("Admin inválido.");
+        }
+
+        if (request == null || request.getOrganizationName() == null || request.getOrganizationName().isBlank()) {
+            throw new IllegalArgumentException("El nombre de la organización es obligatorio.");
+        }
+
+        User admin = userService.getUserByUsername(adminUsername);
+        if (admin == null) {
+            throw new IllegalArgumentException("Admin no encontrado.");
+        }
+
+        if (admin.getRole() != UserRole.ADMIN) {
+            throw new SecurityException("No tienes permisos de administrador.");
+        }
+
+        if (admin.getOrganization() != null) {
+            throw new IllegalStateException("El administrador ya tiene una organización asociada.");
+        }
+
+        String organizationName = request.getOrganizationName().trim();
+
+        if (organizationRepo.existsByNameIgnoreCase(organizationName)) {
+            throw new IllegalArgumentException("Ya existe una organización con ese nombre.");
+        }
+
+        Organization organization = new Organization();
+        organization.setName(organizationName);
+        organization.setAdmin(admin);
+
+        Organization savedOrganization = organizationRepo.save(organization);
+
+        admin.setOrganization(savedOrganization);
+        userService.save(admin);
+
+        return savedOrganization;
     }
 }
