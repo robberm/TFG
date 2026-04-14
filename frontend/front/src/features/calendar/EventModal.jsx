@@ -149,7 +149,16 @@ const TimeSelector = ({ value, onChange, label }) => {
   );
 };
 
-const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
+const EventModal = ({
+  event,
+  selectedDate,
+  onClose,
+  onSave,
+  onDelete,
+  isAdmin = false,
+  managedUsers = [],
+  defaultManagedUserId = null,
+}) => {
   const [formData, setFormData] = useState({
     id: null,
     title: "",
@@ -160,6 +169,7 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
     location: "",
     category: "",
     isAllDay: false,
+    targetUserId: "",
   });
   const [reminderMinutesBefore, setReminderMinutesBefore] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -181,6 +191,7 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
         location: event.location || "",
         category: event.category || "",
         isAllDay: event.isAllDay || false,
+        targetUserId: defaultManagedUserId ?? "",
       });
       setReminderMinutesBefore(event.reminderMinutesBefore ?? null);
       setShowMoreOptions(true);
@@ -201,13 +212,14 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
         location: "",
         category: "",
         isAllDay: false,
+        targetUserId: defaultManagedUserId ?? "",
       });
       setReminderMinutesBefore(null);
       setShowMoreOptions(false);
     }
 
     setTimeout(() => titleInputRef.current?.focus(), 100);
-  }, [event, selectedDate]);
+  }, [defaultManagedUserId, event, selectedDate]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -245,6 +257,11 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    if (isAdmin && !formData.targetUserId) {
+      window.alert("Debes seleccionar un usuario subordinado.");
+      return;
+    }
+
     const startDateTime = `${formData.date}T${formData.startTime}`;
     const endDateTime = `${formData.date}T${formData.endTime}`;
 
@@ -258,6 +275,10 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
       category: formData.category,
       isAllDay: formData.isAllDay,
       reminderMinutesBefore,
+      targetUserId:
+        isAdmin && formData.targetUserId
+          ? Number(formData.targetUserId)
+          : null,
     };
 
     onSave(eventData);
@@ -303,6 +324,23 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
 
         <form onSubmit={handleSubmit} className="gcal-form">
           <div className="gcal-title-section">
+            {isAdmin && (
+              <select
+                name="targetUserId"
+                className="gcal-input"
+                value={formData.targetUserId}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Selecciona usuario subordinado</option>
+                {managedUsers.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.username}
+                  </option>
+                ))}
+              </select>
+            )}
+
             <input
               ref={titleInputRef}
               type="text"

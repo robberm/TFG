@@ -4,6 +4,7 @@ import net.tfg.tfgapp.DTOs.objectives.GoalProgressRequest;
 import net.tfg.tfgapp.DTOs.objectives.GoalRequest;
 import net.tfg.tfgapp.domains.Goal;
 import net.tfg.tfgapp.domains.User;
+import net.tfg.tfgapp.enumerates.UserRole;
 import net.tfg.tfgapp.security.JwtUtil;
 import net.tfg.tfgapp.service.interfaces.IGoalService;
 import net.tfg.tfgapp.service.interfaces.IUserService;
@@ -26,21 +27,35 @@ public class GoalController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getMyGoals(@RequestHeader("Authorization") String token) {
-        String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
-        return ResponseEntity.ok(goalService.getByUsername(username));
+    public ResponseEntity<?> getMyGoals(@RequestHeader("Authorization") String token,
+                                        @RequestParam(required = false) Long targetUserId) {
+        User actor = getActor(token);
+
+        if (actor == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario no encontrado.");
+        }
+
+        if (actor.getRole() == UserRole.ADMIN && targetUserId != null) {
+            User managedUser = userService.getManagedUser(actor.getId(), targetUserId);
+            if (managedUser == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso sobre ese usuario.");
+            }
+            return ResponseEntity.ok(goalService.getByUsername(managedUser.getUsername()));
+        }
+
+        return ResponseEntity.ok(goalService.getByUsername(actor.getUsername()));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getGoalById(@RequestHeader("Authorization") String token, @PathVariable Integer id) {
-        String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
+        User actor = getActor(token);
         Goal goal = goalService.findById(id);
 
         if (goal == null) {
             return ResponseEntity.notFound().build();
         }
 
-        if (!goal.getUser().getUsername().equals(username)) {
+        if (actor == null || !canAccessUser(actor, goal.getUser())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso para acceder a este objetivo.");
         }
 
@@ -50,15 +65,17 @@ public class GoalController {
     @PostMapping
     public ResponseEntity<?> createGoal(@RequestHeader("Authorization") String token, @RequestBody GoalRequest request) {
         try {
-            String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
-            User user = userService.getUserByUsername(username);
+            User actor = getActor(token);
 
-            if (user == null) {
+            if (actor == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario no encontrado.");
             }
 
-            Goal createdGoal = goalService.createGoal(request, user);
+            User targetUser = resolveTargetUser(actor, request.getTargetUserId());
+            Goal createdGoal = goalService.createGoal(request, targetUser);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdGoal);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Hubo un fallo al crear el objetivo: " + e.getMessage());
         }
@@ -68,14 +85,14 @@ public class GoalController {
     public ResponseEntity<?> updateGoal(@RequestHeader("Authorization") String token,
                                         @PathVariable Integer id,
                                         @RequestBody GoalRequest request) {
-        String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
+        User actor = getActor(token);
         Goal existingGoal = goalService.findById(id);
 
         if (existingGoal == null) {
             return ResponseEntity.notFound().build();
         }
 
-        if (!existingGoal.getUser().getUsername().equals(username)) {
+        if (actor == null || !canAccessUser(actor, existingGoal.getUser())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -86,14 +103,14 @@ public class GoalController {
     public ResponseEntity<?> updateGoalProgress(@RequestHeader("Authorization") String token,
                                                 @PathVariable Integer id,
                                                 @RequestBody GoalProgressRequest request) {
-        String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
+        User actor = getActor(token);
         Goal goal = goalService.findById(id);
 
         if (goal == null) {
             return ResponseEntity.notFound().build();
         }
 
-        if (!goal.getUser().getUsername().equals(username)) {
+        if (actor == null || !canAccessUser(actor, goal.getUser())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -102,18 +119,53 @@ public class GoalController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteGoal(@RequestHeader("Authorization") String token, @PathVariable Integer id) {
-        String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
+        User actor = getActor(token);
         Goal goal = goalService.findById(id);
 
         if (goal == null) {
             return ResponseEntity.notFound().build();
         }
 
-        if (!goal.getUser().getUsername().equals(username)) {
+        if (actor == null || !canAccessUser(actor, goal.getUser())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         goalService.deleteById(id);
         return ResponseEntity.ok("Objetivo eliminado correctamente.");
+    }
+
+    private User getActor(String token) {
+        String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
+        return userService.getUserByUsername(username);
+    }
+
+    private User resolveTargetUser(User actor, Long targetUserId) {
+        if (actor.getRole() != UserRole.ADMIN) {
+            return actor;
+        }
+
+        if (targetUserId == null) {
+            throw new SecurityException("Debes seleccionar un usuario subordinado.");
+        }
+
+        User managedUser = userService.getManagedUser(actor.getId(), targetUserId);
+        if (managedUser == null) {
+            throw new SecurityException("No tienes permiso para operar sobre ese usuario.");
+        }
+
+        return managedUser;
+    }
+
+    private boolean canAccessUser(User actor, User owner) {
+        if (owner == null) {
+            return false;
+        }
+
+        if (owner.getId().equals(actor.getId())) {
+            return true;
+        }
+
+        return actor.getRole() == UserRole.ADMIN
+                && userService.getManagedUser(actor.getId(), owner.getId()) != null;
     }
 }

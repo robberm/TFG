@@ -21,4 +21,5 @@ public class GoalRequest {
     private Double valorProgreso;
     private Double valorObjetivo;
     private Boolean active;
+    private Long targetUserId;
 }
