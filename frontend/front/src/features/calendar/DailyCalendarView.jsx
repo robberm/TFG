@@ -179,6 +179,9 @@ const DailyCalendarView = ({
               >
                 <div className="day-event-time">{formatEventTime(event)}</div>
                 <div className="day-event-title">{event.title}</div>
+                {event.assignedByAdmin && (
+                  <div className="day-event-assigned">Asignado</div>
+                )}
                 {event.location && (
                   <div className="day-event-location">📍 {event.location}</div>
                 )}
@@ -265,6 +268,9 @@ const DailyCalendarView = ({
                 >
                   <div className="day-event-time">{formatEventTime(event)}</div>
                   <div className="day-event-title">{event.title}</div>
+                {event.assignedByAdmin && (
+                  <div className="day-event-assigned">Asignado</div>
+                )}
                   {event.location && (
                     <div className="day-event-location">
                       📍 {event.location}

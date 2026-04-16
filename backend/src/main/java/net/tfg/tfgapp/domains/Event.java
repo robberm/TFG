@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
 
@@ -62,6 +63,18 @@ private User assignedByAdmin;
     }
 
     public Event() {
+    }
+
+
+
+    @JsonProperty("assignedByAdmin")
+    public boolean isAssignedByAdmin() {
+        return assignedByAdmin != null;
+    }
+
+    @JsonProperty("assignedByAdminUsername")
+    public String getAssignedByAdminUsername() {
+        return assignedByAdmin != null ? assignedByAdmin.getUsername() : null;
     }
 
     public enum EventCategory {

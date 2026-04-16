@@ -52,12 +52,21 @@ const GoalsSection = ({ goals, onCreate, onEdit, onDelete }) => {
           <div className="tableCell">
             <strong className={goal.status === "Done" ? "completedText" : ""}>
               {goal.titulo}
+              {goal.assignedByAdmin && (
+                <span className="ownerTag assigned">Asignado</span>
+              )}
             </strong>
           </div>
 
           <div className="tableCell">
             <span className={goal.status === "Done" ? "completedText" : ""}>
               {goal.description || "—"}
+              {goal.assignedByAdmin && goal.assignedByAdminUsername && (
+                <div className="goalMetaText">Por: {goal.assignedByAdminUsername}</div>
+              )}
+              {!goal.assignedByAdmin && (
+                <div className="goalMetaText">Creado por ti</div>
+              )}
             </span>
           </div>
 

@@ -222,6 +222,9 @@ const WeekView = ({ currentDate, events, onTimeSlotClick, onEventClick }) => {
                             {formatEventTime(event)}
                           </div>
                           <div className="week-event-title">{event.title}</div>
+                          {event.assignedByAdmin && (
+                            <div className="week-event-assigned">Asignado</div>
+                          )}
                         </div>
                       );
                     })}
