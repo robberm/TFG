@@ -5,6 +5,7 @@ import lombok.Setter;
 import net.tfg.tfgapp.domains.Event;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -20,4 +21,6 @@ public class EventRequest {
     private Boolean isAllDay;
     private Integer reminderMinutesBefore;
     private Long targetUserId;
+    private List<Long> targetUserIds;
+    private Boolean assignToAllUsers;
 }

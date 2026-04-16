@@ -48,7 +48,7 @@ const useCalendarEvents = () => {
             ) {
               return previousId;
             }
-            return normalizedUsers.length > 0 ? normalizedUsers[0].id : null;
+            return previousId ?? null;
           });
           return;
         }

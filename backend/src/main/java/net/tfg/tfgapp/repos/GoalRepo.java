@@ -10,4 +10,10 @@ import java.util.List;
 public interface GoalRepo extends JpaRepository<Goal, Integer> {
 
     List<Goal> findByUserUsername(String username);
+
+    List<Goal> findByAssignedByAdmin_Id(Long adminId);
+
+    List<Goal> findByAssignedByAdmin_IdAndUser_Id(Long adminId, Long userId);
+
+    List<Goal> findByAssignmentGroupIdAndAssignedByAdmin_Id(String assignmentGroupId, Long adminId);
 }

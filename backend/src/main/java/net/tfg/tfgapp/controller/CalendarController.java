@@ -14,13 +14,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("events")
@@ -46,11 +41,14 @@ public class CalendarController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario no encontrado.");
         }
 
-        if (!canAccessUser(actor, owner)) {
+        List<Event> eventsList;
+        if (actor.getId().equals(owner.getId())) {
+            eventsList = eventService.getEventsByUsername(username);
+        } else if (canAccessManagedUser(actor, owner)) {
+            eventsList = eventService.getAssignedEventsForAdminAndUser(actor.getId(), owner.getId());
+        } else {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso para consultar estos eventos.");
         }
-
-        List<Event> eventsList = eventService.getEventsByUsername(username);
 
         if (eventsList.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).body("No events found for user: " + username);
@@ -69,7 +67,7 @@ public class CalendarController {
             return ResponseEntity.notFound().build();
         }
 
-        if (actor == null || !canAccessUser(actor, event.get().getUser())) {
+        if (actor == null || !canAccessEvent(actor, event.get())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso para acceder a este evento.");
         }
 
@@ -89,52 +87,47 @@ public class CalendarController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario no encontrado.");
         }
 
-        User owner;
-
-        if (actor.getRole() == UserRole.ADMIN && targetUserId != null) {
-            owner = userService.getManagedUser(actor.getId(), targetUserId);
-            if (owner == null) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso sobre ese usuario.");
+        if (actor.getRole() == UserRole.ADMIN) {
+            if (targetUserId != null) {
+                User target = userService.getUserById(targetUserId);
+                if (!canAccessManagedUser(actor, target)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso sobre ese usuario.");
+                }
+                return ResponseEntity.ok(eventService.findAssignedEventsForAdminAndUserInRange(actor.getId(), targetUserId, start, end));
             }
-        } else {
-            owner = actor;
+            return ResponseEntity.ok(eventService.findAssignedEventsForAdminInRange(actor.getId(), start, end));
         }
 
-        return ResponseEntity.ok(eventService.findEventsByUserAndDateRange(owner.getUsername(), start, end));
+        return ResponseEntity.ok(eventService.findEventsByUserAndDateRange(actor.getUsername(), start, end));
     }
 
     @PostMapping
     public ResponseEntity<?> createEvent(@RequestBody EventRequest request,
                                          @RequestHeader("Authorization") String token) {
         try {
-            Map<String, String> response = new HashMap<>();
             User actor = getActor(token);
 
             if (actor == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario no encontrado.");
             }
 
-            User owner = resolveTargetUser(actor, request.getTargetUserId());
+            validateEventDates(request);
+            List<User> targets = resolveTargetUsers(actor, request);
+            String assignmentGroupId = actor.getRole() == UserRole.ADMIN ? UUID.randomUUID().toString() : null;
 
-            Event event = new Event();
-            event.setTitle(request.getTitle());
-            event.setDescription(request.getDescription());
-            event.setStartTime(request.getStartTime());
-            event.setEndTime(request.getEndTime());
-            event.setLocation(request.getLocation());
-            event.setCategory(request.getCategory());
-            event.setIsAllDay(request.getIsAllDay());
-            event.setReminderMinutesBefore(request.getReminderMinutesBefore());
-            event.setUser(owner);
-
-            if (event.getEndTime() == null || event.getStartTime() == null || !event.getEndTime().isAfter(event.getStartTime())) {
-                throw new DateTimeException("Date is not correct");
+            List<Event> saved = new ArrayList<>();
+            for (User target : targets) {
+                Event event = new Event();
+                eventService.applyEventDetails(event, request);
+                event.setUser(target);
+                if (actor.getRole() == UserRole.ADMIN) {
+                    event.setAssignedByAdmin(actor);
+                    event.setAssignmentGroupId(assignmentGroupId);
+                }
+                saved.add(eventService.save(event));
             }
 
-            eventService.save(event);
-            response.put("message", "Event " + event.getTitle() + " created successfully!");
-
-            return new ResponseEntity<>(response, HttpStatus.CREATED);
+            return new ResponseEntity<>(saved, HttpStatus.CREATED);
 
         } catch (SecurityException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
@@ -154,13 +147,27 @@ public class CalendarController {
             return ResponseEntity.notFound().build();
         }
 
-        if (actor == null || !canAccessUser(actor, existingEvent.get().getUser())) {
+        if (actor == null || !canAccessEvent(actor, existingEvent.get())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso para actualizar este evento.");
         }
 
-        Optional<Event> updatedEvent = eventService.updateEventById(id, eventDetails);
-        return updatedEvent.<ResponseEntity<?>>map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        try {
+            validateEventDates(eventDetails);
+
+            if (actor.getRole() == UserRole.ADMIN && existingEvent.get().getAssignedByAdmin() != null) {
+                List<User> targets = resolveTargetUsers(actor, eventDetails, existingEvent.get().getUser());
+                Event updatedReference = upsertAssignmentGroup(existingEvent.get(), eventDetails, actor, targets);
+                return ResponseEntity.ok(updatedReference);
+            }
+
+            Optional<Event> updatedEvent = eventService.updateEventById(id, eventDetails);
+            return updatedEvent.<ResponseEntity<?>>map(ResponseEntity::ok)
+                    .orElseGet(() -> ResponseEntity.notFound().build());
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (DateTimeException e) {
+            return ResponseEntity.badRequest().body("Hubo un fallo al actualizar el evento: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
@@ -173,8 +180,15 @@ public class CalendarController {
             return ResponseEntity.notFound().build();
         }
 
-        if (actor == null || !canAccessUser(actor, existingEvent.get().getUser())) {
+        if (actor == null || !canAccessEvent(actor, existingEvent.get())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso para eliminar este evento.");
+        }
+
+        if (actor.getRole() == UserRole.ADMIN
+                && existingEvent.get().getAssignedByAdmin() != null
+                && existingEvent.get().getAssignmentGroupId() != null) {
+            eventService.deleteAll(eventService.getEventsByAssignmentGroup(existingEvent.get().getAssignmentGroupId(), actor.getId()));
+            return ResponseEntity.noContent().build();
         }
 
         eventService.deleteEventById(id);
@@ -192,39 +206,113 @@ public class CalendarController {
         }
     }
 
+    private Event upsertAssignmentGroup(Event existing,
+                                        EventRequest details,
+                                        User admin,
+                                        List<User> targets) {
+        String groupId = existing.getAssignmentGroupId() != null ? existing.getAssignmentGroupId() : UUID.randomUUID().toString();
+        List<Event> grouped = eventService.getEventsByAssignmentGroup(groupId, admin.getId());
+        if (grouped.isEmpty()) {
+            existing.setAssignmentGroupId(groupId);
+            grouped = List.of(existing);
+        }
+
+        Map<Long, Event> byUserId = grouped.stream().collect(Collectors.toMap(e -> e.getUser().getId(), e -> e, (a, b) -> a));
+        Set<Long> targetIds = targets.stream().map(User::getId).collect(Collectors.toSet());
+
+        List<Event> toDelete = grouped.stream()
+                .filter(event -> !targetIds.contains(event.getUser().getId()))
+                .toList();
+        if (!toDelete.isEmpty()) {
+            eventService.deleteAll(toDelete);
+        }
+
+        Event reference = null;
+        for (User target : targets) {
+            Event event = byUserId.get(target.getId());
+            if (event == null) {
+                event = new Event();
+                event.setUser(target);
+                event.setAssignedByAdmin(admin);
+                event.setAssignmentGroupId(groupId);
+            }
+            eventService.applyEventDetails(event, details);
+            Event saved = eventService.save(event);
+            if (reference == null || saved.getId().equals(existing.getId())) {
+                reference = saved;
+            }
+        }
+
+        return reference;
+    }
+
+    private void validateEventDates(EventRequest request) {
+        if (request.getEndTime() == null || request.getStartTime() == null || !request.getEndTime().isAfter(request.getStartTime())) {
+            throw new DateTimeException("Date is not correct");
+        }
+    }
+
     private User getActor(String token) {
         String tokenF = token.replace("Bearer ", "").trim();
         String username = jwtUtil.extractUsername(tokenF);
         return userService.getUserByUsername(username);
     }
 
-    private User resolveTargetUser(User actor, Long targetUserId) {
-        if (actor.getRole() != UserRole.ADMIN) {
-            return actor;
-        }
-
-        if (targetUserId == null) {
-            throw new SecurityException("Debes seleccionar un usuario subordinado.");
-        }
-
-        User managedUser = userService.getManagedUser(actor.getId(), targetUserId);
-        if (managedUser == null) {
-            throw new SecurityException("No tienes permiso para operar sobre ese usuario.");
-        }
-
-        return managedUser;
+    private List<User> resolveTargetUsers(User actor, EventRequest request) {
+        return resolveTargetUsers(actor, request, actor);
     }
 
-    private boolean canAccessUser(User actor, User owner) {
-        if (owner == null) {
-            return false;
+    private List<User> resolveTargetUsers(User actor, EventRequest request, User fallbackDefault) {
+        if (actor.getRole() != UserRole.ADMIN) {
+            return List.of(actor);
         }
 
-        if (owner.getId().equals(actor.getId())) {
+        if (Boolean.TRUE.equals(request.getAssignToAllUsers())) {
+            List<User> allUsers = userService.getUsersInAdminScope(actor);
+            if (allUsers.isEmpty()) {
+                throw new SecurityException("No hay usuarios subordinados para asignar.");
+            }
+            return allUsers;
+        }
+
+        if (request.getTargetUserIds() != null && !request.getTargetUserIds().isEmpty()) {
+            return request.getTargetUserIds().stream()
+                    .map(userService::getUserById)
+                    .peek(user -> {
+                        if (!canAccessManagedUser(actor, user)) {
+                            throw new SecurityException("No tienes permiso para operar sobre uno de los usuarios seleccionados.");
+                        }
+                    })
+                    .distinct()
+                    .toList();
+        }
+
+        if (request.getTargetUserId() != null) {
+            User managedUser = userService.getUserById(request.getTargetUserId());
+            if (!canAccessManagedUser(actor, managedUser)) {
+                throw new SecurityException("No tienes permiso para operar sobre ese usuario.");
+            }
+            return List.of(managedUser);
+        }
+
+        return List.of(fallbackDefault);
+    }
+
+    private boolean canAccessManagedUser(User actor, User owner) {
+        if (owner == null || actor.getRole() != UserRole.ADMIN) {
+            return false;
+        }
+        return userService.getUsersInAdminScope(actor).stream().anyMatch(user -> user.getId().equals(owner.getId()));
+    }
+
+    private boolean canAccessEvent(User actor, Event event) {
+        if (event.getUser().getId().equals(actor.getId())) {
             return true;
         }
 
         return actor.getRole() == UserRole.ADMIN
-                && userService.getManagedUser(actor.getId(), owner.getId()) != null;
+                && event.getAssignedByAdmin() != null
+                && event.getAssignedByAdmin().getId().equals(actor.getId())
+                && canAccessManagedUser(actor, event.getUser());
     }
 }

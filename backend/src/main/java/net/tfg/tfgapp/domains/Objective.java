@@ -40,6 +40,16 @@ public abstract class Objective {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_by_admin_id")
+    private User assignedByAdmin;
+
+    @Column(name = "assignment_group_id")
+    private String assignmentGroupId;
+
     @JsonIgnore
     @OneToMany(mappedBy = "objective", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ObjectiveLog> logs = new ArrayList<>();

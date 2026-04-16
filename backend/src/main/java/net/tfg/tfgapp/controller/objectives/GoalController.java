@@ -12,9 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/goals")
@@ -39,12 +38,15 @@ public class GoalController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario no encontrado.");
         }
 
-        if (actor.getRole() == UserRole.ADMIN && targetUserId != null) {
-            User managedUser = userService.getManagedUser(actor.getId(), targetUserId);
-            if (managedUser == null) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso sobre ese usuario.");
+        if (actor.getRole() == UserRole.ADMIN) {
+            if (targetUserId != null) {
+                User managedUser = userService.getUserById(targetUserId);
+                if (!canAccessManagedUser(actor, managedUser)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso sobre ese usuario.");
+                }
+                return ResponseEntity.ok(goalService.getAssignedGoalsForAdminAndUser(actor.getId(), managedUser.getId()));
             }
-            return ResponseEntity.ok(goalService.getByUsername(managedUser.getUsername()));
+            return ResponseEntity.ok(goalService.getAssignedGoalsForAdmin(actor.getId()));
         }
 
         return ResponseEntity.ok(goalService.getByUsername(actor.getUsername()));
@@ -59,7 +61,7 @@ public class GoalController {
             return ResponseEntity.notFound().build();
         }
 
-        if (actor == null || !canAccessUser(actor, goal.getUser())) {
+        if (actor == null || !canAccessGoal(actor, goal)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso para acceder a este objetivo.");
         }
 
@@ -75,9 +77,21 @@ public class GoalController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario no encontrado.");
             }
 
-            User targetUser = resolveTargetUser(actor, request.getTargetUserId());
-            Goal createdGoal = goalService.createGoal(request, targetUser);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdGoal);
+            List<User> targets = resolveTargetUsers(actor, request, actor);
+            String assignmentGroupId = actor.getRole() == UserRole.ADMIN ? UUID.randomUUID().toString() : null;
+            List<Goal> createdGoals = new ArrayList<>();
+
+            for (User target : targets) {
+                Goal createdGoal = goalService.createGoal(request, target);
+                if (actor.getRole() == UserRole.ADMIN) {
+                    createdGoal.setAssignedByAdmin(actor);
+                    createdGoal.setAssignmentGroupId(assignmentGroupId);
+                    createdGoal = goalService.updateGoal(createdGoal, request);
+                }
+                createdGoals.add(createdGoal);
+            }
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdGoals);
         } catch (SecurityException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
@@ -96,8 +110,14 @@ public class GoalController {
             return ResponseEntity.notFound().build();
         }
 
-        if (actor == null || !canAccessUser(actor, existingGoal.getUser())) {
+        if (actor == null || !canAccessGoal(actor, existingGoal)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        if (actor.getRole() == UserRole.ADMIN && existingGoal.getAssignedByAdmin() != null) {
+            List<User> targets = resolveTargetUsers(actor, request, existingGoal.getUser());
+            Goal result = upsertAssignmentGroup(existingGoal, request, actor, targets);
+            return ResponseEntity.ok(result);
         }
 
         return ResponseEntity.ok(goalService.updateGoal(existingGoal, request));
@@ -114,7 +134,7 @@ public class GoalController {
             return ResponseEntity.notFound().build();
         }
 
-        if (actor == null || !canAccessUser(actor, goal.getUser())) {
+        if (actor == null || !canAccessGoal(actor, goal)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -130,12 +150,57 @@ public class GoalController {
             return ResponseEntity.notFound().build();
         }
 
-        if (actor == null || !canAccessUser(actor, goal.getUser())) {
+        if (actor == null || !canAccessGoal(actor, goal)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        if (actor.getRole() == UserRole.ADMIN && goal.getAssignedByAdmin() != null && goal.getAssignmentGroupId() != null) {
+            goalService.deleteGoals(goalService.getGoalsByAssignmentGroup(goal.getAssignmentGroupId(), actor.getId()));
+            return ResponseEntity.ok("Objetivo eliminado correctamente.");
         }
 
         goalService.deleteById(id);
         return ResponseEntity.ok("Objetivo eliminado correctamente.");
+    }
+
+    private Goal upsertAssignmentGroup(Goal existing,
+                                       GoalRequest request,
+                                       User admin,
+                                       List<User> targets) {
+        String groupId = existing.getAssignmentGroupId() != null ? existing.getAssignmentGroupId() : UUID.randomUUID().toString();
+        List<Goal> grouped = goalService.getGoalsByAssignmentGroup(groupId, admin.getId());
+        if (grouped.isEmpty()) {
+            existing.setAssignmentGroupId(groupId);
+            grouped = List.of(existing);
+        }
+
+        Map<Long, Goal> byUserId = grouped.stream().collect(Collectors.toMap(goal -> goal.getUser().getId(), goal -> goal, (a, b) -> a));
+        Set<Long> targetIds = targets.stream().map(User::getId).collect(Collectors.toSet());
+
+        List<Goal> toDelete = grouped.stream().filter(goal -> !targetIds.contains(goal.getUser().getId())).toList();
+        if (!toDelete.isEmpty()) {
+            goalService.deleteGoals(toDelete);
+        }
+
+        Goal reference = null;
+        for (User target : targets) {
+            Goal goal = byUserId.get(target.getId());
+            if (goal == null) {
+                goal = new Goal();
+                goal.setUser(target);
+                goal.setAssignedByAdmin(admin);
+                goal.setAssignmentGroupId(groupId);
+            }
+            goalService.applyGoalDetails(goal, request);
+            goal.setAssignedByAdmin(admin);
+            goal.setAssignmentGroupId(groupId);
+            Goal saved = goalService.updateGoal(goal, request);
+            if (reference == null || saved.getId().equals(existing.getId())) {
+                reference = saved;
+            }
+        }
+
+        return reference;
     }
 
     private User getActor(String token) {
@@ -143,33 +208,59 @@ public class GoalController {
         return userService.getUserByUsername(username);
     }
 
-    private User resolveTargetUser(User actor, Long targetUserId) {
+    private List<User> resolveTargetUsers(User actor, GoalRequest request, User fallbackDefault) {
         if (actor.getRole() != UserRole.ADMIN) {
-            return actor;
+            return List.of(actor);
         }
 
-        if (targetUserId == null) {
-            throw new SecurityException("Debes seleccionar un usuario subordinado.");
+        if (Boolean.TRUE.equals(request.getAssignToAllUsers())) {
+            List<User> users = userService.getUsersInAdminScope(actor);
+            if (users.isEmpty()) {
+                throw new SecurityException("No hay usuarios subordinados para asignar.");
+            }
+            return users;
         }
 
-        User managedUser = userService.getManagedUser(actor.getId(), targetUserId);
-        if (managedUser == null) {
-            throw new SecurityException("No tienes permiso para operar sobre ese usuario.");
+        if (request.getTargetUserIds() != null && !request.getTargetUserIds().isEmpty()) {
+            return request.getTargetUserIds().stream()
+                    .map(userService::getUserById)
+                    .peek(user -> {
+                        if (!canAccessManagedUser(actor, user)) {
+                            throw new SecurityException("No tienes permiso para operar sobre uno de los usuarios seleccionados.");
+                        }
+                    })
+                    .distinct()
+                    .toList();
         }
 
-        return managedUser;
+        if (request.getTargetUserId() != null) {
+            User managedUser = userService.getUserById(request.getTargetUserId());
+            if (!canAccessManagedUser(actor, managedUser)) {
+                throw new SecurityException("No tienes permiso para operar sobre ese usuario.");
+            }
+            return List.of(managedUser);
+        }
+
+        return List.of(fallbackDefault);
     }
 
-    private boolean canAccessUser(User actor, User owner) {
-        if (owner == null) {
+
+    private boolean canAccessManagedUser(User actor, User target) {
+        if (actor == null || actor.getRole() != UserRole.ADMIN || target == null) {
             return false;
         }
 
-        if (owner.getId().equals(actor.getId())) {
+        return userService.getUsersInAdminScope(actor).stream()
+                .anyMatch(user -> user.getId().equals(target.getId()));
+    }
+
+    private boolean canAccessGoal(User actor, Goal goal) {
+        if (goal.getUser().getId().equals(actor.getId())) {
             return true;
         }
 
         return actor.getRole() == UserRole.ADMIN
-                && userService.getManagedUser(actor.getId(), owner.getId()) != null;
+                && goal.getAssignedByAdmin() != null
+                && goal.getAssignedByAdmin().getId().equals(actor.getId());
     }
 }

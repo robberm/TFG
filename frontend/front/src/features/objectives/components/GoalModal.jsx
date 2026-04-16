@@ -44,6 +44,8 @@ const GoalModal = ({
         active: initialData.active ?? true,
         notes: "",
         targetUserId: defaultManagedUserId ?? "",
+        targetUserIds: defaultManagedUserId != null ? [String(defaultManagedUserId)] : [],
+        assignmentMode: "single",
       });
       return;
     }
@@ -51,6 +53,8 @@ const GoalModal = ({
     setForm({
       ...EMPTY_GOAL_FORM,
       targetUserId: defaultManagedUserId ?? "",
+      targetUserIds: defaultManagedUserId != null ? [String(defaultManagedUserId)] : [],
+      assignmentMode: "single",
     });
   }, [defaultManagedUserId, initialData, isOpen]);
 
@@ -83,22 +87,13 @@ const GoalModal = ({
   const toggleTargetSelection = (value) => {
     setForm((prev) => {
       const current = prev.targetUserIds || [];
-
-      if (value === "ALL") {
-        return {
-          ...prev,
-          targetUserIds: current.includes("ALL") ? [] : ["ALL"],
-        };
-      }
-
-      const withoutAll = current.filter((item) => item !== "ALL");
-      const alreadySelected = withoutAll.includes(String(value));
+      const alreadySelected = current.includes(String(value));
 
       return {
         ...prev,
         targetUserIds: alreadySelected
-          ? withoutAll.filter((item) => item !== String(value))
-          : [...withoutAll, String(value)],
+          ? current.filter((item) => item !== String(value))
+          : [...current, String(value)],
       };
     });
   };
@@ -109,18 +104,21 @@ const GoalModal = ({
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    const hasAllSelected = form.targetUserIds?.includes("__all__");
     const selectedUserIds = (form.targetUserIds || [])
-      .filter((value) => value !== "__all__")
-      .map((value) => Number(value));
+            .map((value) => Number(value));
 
     onSubmit({
       ...normalizeGoalForm(form),
       notes: form.notes?.trim() || "",
       targetUserId:
-        isAdmin && form.targetUserId !== ""
+        isAdmin && form.assignmentMode === "single" && form.targetUserId !== ""
           ? Number(form.targetUserId)
           : null,
+      targetUserIds:
+        isAdmin && form.assignmentMode === "multiple"
+          ? selectedUserIds
+          : null,
+      assignToAllUsers: isAdmin && form.assignmentMode === "all",
     });
   };
 
@@ -139,22 +137,51 @@ const GoalModal = ({
             <div className="formRow">
               {isAdmin && (
                 <div className="formGroup">
-                  <label htmlFor="goal-target-user">Usuario subordinado</label>
+                  <label htmlFor="goal-assignment-mode">Asignación</label>
                   <select
-                    id="goal-target-user"
-                    value={form.targetUserId}
+                    id="goal-assignment-mode"
+                    value={form.assignmentMode}
                     onChange={(event) =>
-                      handleChange("targetUserId", event.target.value)
+                      handleChange("assignmentMode", event.target.value)
                     }
-                    required
                   >
-                    <option value="">Selecciona un usuario</option>
-                    {managedUsers.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.username}
-                      </option>
-                    ))}
+                    <option value="single">Usuario</option>
+                    <option value="multiple">Varios usuarios</option>
+                    <option value="all">Todos (organización)</option>
                   </select>
+
+                  {form.assignmentMode === "single" && (
+                    <select
+                      id="goal-target-user"
+                      value={form.targetUserId}
+                      onChange={(event) =>
+                        handleChange("targetUserId", event.target.value)
+                      }
+                      required
+                    >
+                      <option value="">Selecciona un usuario</option>
+                      {managedUsers.map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.username}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
+                  {form.assignmentMode === "multiple" && (
+                    <div className="gcal-multi-targets">
+                      {managedUsers.map((user) => (
+                        <label key={user.id}>
+                          <input
+                            type="checkbox"
+                            checked={form.targetUserIds?.includes(String(user.id))}
+                            onChange={() => toggleTargetSelection(user.id)}
+                          />
+                          {user.username}
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -82,6 +82,7 @@ const Calendar = () => {
                 )
               }
             >
+              <option value="">Todos los asignados</option>
               {managedUsers.length === 0 && (
                 <option value="">Sin usuarios subordinados</option>
               )}

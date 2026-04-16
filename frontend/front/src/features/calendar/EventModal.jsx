@@ -170,6 +170,8 @@ const EventModal = ({
     category: "",
     isAllDay: false,
     targetUserId: "",
+    targetUserIds: [],
+    assignmentMode: "single",
   });
   const [reminderMinutesBefore, setReminderMinutesBefore] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -192,6 +194,8 @@ const EventModal = ({
         category: event.category || "",
         isAllDay: event.isAllDay || false,
         targetUserId: defaultManagedUserId ?? "",
+        targetUserIds: defaultManagedUserId != null ? [String(defaultManagedUserId)] : [],
+        assignmentMode: "single",
       });
       setReminderMinutesBefore(event.reminderMinutesBefore ?? null);
       setShowMoreOptions(true);
@@ -213,6 +217,8 @@ const EventModal = ({
         category: "",
         isAllDay: false,
         targetUserId: defaultManagedUserId ?? "",
+        targetUserIds: defaultManagedUserId != null ? [String(defaultManagedUserId)] : [],
+        assignmentMode: "single",
       });
       setReminderMinutesBefore(null);
       setShowMoreOptions(false);
@@ -257,22 +263,13 @@ const EventModal = ({
   const toggleTargetSelection = (value) => {
     setFormData((prev) => {
       const current = prev.targetUserIds || [];
-
-      if (value === "ALL") {
-        return {
-          ...prev,
-          targetUserIds: current.includes("ALL") ? [] : ["ALL"],
-        };
-      }
-
-      const withoutAll = current.filter((item) => item !== "ALL");
-      const alreadySelected = withoutAll.includes(String(value));
+      const alreadySelected = current.includes(String(value));
 
       return {
         ...prev,
         targetUserIds: alreadySelected
-          ? withoutAll.filter((item) => item !== String(value))
-          : [...withoutAll, String(value)],
+          ? current.filter((item) => item !== String(value))
+          : [...current, String(value)],
       };
     });
   };
@@ -280,10 +277,6 @@ const EventModal = ({
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (isAdmin && !formData.targetUserId) {
-      window.alert("Debes seleccionar un usuario subordinado.");
-      return;
-    }
 
     const startDateTime = `${formData.date}T${formData.startTime}`;
     const endDateTime = `${formData.date}T${formData.endTime}`;
@@ -299,9 +292,15 @@ const EventModal = ({
       isAllDay: formData.isAllDay,
       reminderMinutesBefore,
       targetUserId:
-        isAdmin && formData.targetUserId
+        isAdmin && formData.assignmentMode === "single" && formData.targetUserId
           ? Number(formData.targetUserId)
           : null,
+      targetUserIds:
+        isAdmin && formData.assignmentMode === "multiple"
+          ? formData.targetUserIds
+                            .map((value) => Number(value))
+          : null,
+      assignToAllUsers: isAdmin && formData.assignmentMode === "all",
     };
 
     onSave(eventData);
@@ -348,20 +347,50 @@ const EventModal = ({
         <form onSubmit={handleSubmit} className="gcal-form">
           <div className="gcal-title-section">
             {isAdmin && (
-              <select
-                name="targetUserId"
-                className="gcal-input"
-                value={formData.targetUserId}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Selecciona usuario subordinado</option>
-                {managedUsers.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.username}
-                  </option>
-                ))}
-              </select>
+              <div className="gcal-admin-assignment">
+                <select
+                  name="assignmentMode"
+                  className="gcal-input"
+                  value={formData.assignmentMode}
+                  onChange={handleChange}
+                >
+                  <option value="single">Usuario</option>
+                  <option value="multiple">Varios usuarios</option>
+                  <option value="all">Todos (organización)</option>
+                </select>
+
+                {formData.assignmentMode === "single" && (
+                  <select
+                    name="targetUserId"
+                    className="gcal-input"
+                    value={formData.targetUserId}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Selecciona usuario subordinado</option>
+                    {managedUsers.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.username}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                {formData.assignmentMode === "multiple" && (
+                  <div className="gcal-multi-targets">
+                    {managedUsers.map((user) => (
+                      <label key={user.id}>
+                        <input
+                          type="checkbox"
+                          checked={formData.targetUserIds?.includes(String(user.id))}
+                          onChange={() => toggleTargetSelection(user.id)}
+                        />
+                        {user.username}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
 
             <input
