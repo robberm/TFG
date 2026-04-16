@@ -75,8 +75,8 @@ public class EventService {
         target.setStartTime(details.getStartTime());
         target.setEndTime(details.getEndTime());
         target.setLocation(details.getLocation());
-        target.setCategory(details.getCategory());
-        target.setIsAllDay(details.getIsAllDay());
+        target.setCategory(details.getCategory() != null ? details.getCategory() : Event.EventCategory.PERSONAL);
+        target.setIsAllDay(details.getIsAllDay() != null ? details.getIsAllDay() : false);
         target.setReminderMinutesBefore(details.getReminderMinutesBefore());
     }
 

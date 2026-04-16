@@ -2,14 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 
 import "../../css/UserMenu.css";
-import { getCurrentUserProfile, clearCurrentUserProfileCache } from "../../api/userApi";
 
 function UserMenu() {
   const [userMenuIsOpen, setUserMenuIsOpen] = useState(false);
   const [username, setUsername] = useState(
     localStorage.getItem("username") || "User",
   );
-  const [profileImage, setProfileImage] = useState("");
+  const [profileImage, setProfileImage] = useState(localStorage.getItem("profileImage") || "");
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,23 +31,14 @@ function UserMenu() {
       return;
     }
 
-    try {
-      const data = await getCurrentUserProfile();
+    const usernameFromStorage = localStorage.getItem("username");
+    const profileImageFromStorage = localStorage.getItem("profileImage");
 
-      if (data?.username) {
-        setUsername(data.username);
-        localStorage.setItem("username", data.username);
-      }
-
-      if (data?.profileImagePath) {
-        setProfileImage(`http://localhost:8080/uploads/${data.profileImagePath}`);
-      } else {
-        setProfileImage("");
-      }
-    } catch (error) {
-      console.warn("No se pudo cargar la información del perfil.", error);
-      setProfileImage("");
+    if (usernameFromStorage) {
+      setUsername(usernameFromStorage);
     }
+
+    setProfileImage(profileImageFromStorage || "");
   };
 
   const handleLogout = async () => {
@@ -63,7 +53,8 @@ function UserMenu() {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
     localStorage.removeItem("profileImage");
-    clearCurrentUserProfileCache();
+    localStorage.removeItem("role");
+    localStorage.removeItem("organizationId");
 
     setProfileImage("");
     navigate("/", { replace: true });

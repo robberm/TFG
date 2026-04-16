@@ -2,8 +2,6 @@ import { format, parse, parseISO, isValid } from "date-fns";
 
 const EVENTS_BASE_URL = "http://localhost:8080/events";
 
-const inFlightRangeRequests = new Map();
-
 
 const getAuthHeaders = (includeJson = false) => {
   const token = localStorage.getItem("token");
@@ -85,29 +83,19 @@ export const fetchEventsByRange = async (startDate, endDate, targetUserId = null
       ? `&targetUserId=${encodeURIComponent(targetUserId)}`
       : "";
 
-  const url = `${EVENTS_BASE_URL}/range?start=${start}&end=${end}${targetParam}`;
+  const response = await fetch(
+    `${EVENTS_BASE_URL}/range?start=${start}&end=${end}${targetParam}`,
+    {
+      headers: getAuthHeaders(),
+    },
+  );
 
-  if (inFlightRangeRequests.has(url)) {
-    return inFlightRangeRequests.get(url);
+  if (!response.ok) {
+    throw new Error(`HTTP error! Status: ${response.status}`);
   }
 
-  const requestPromise = fetch(url, {
-    headers: getAuthHeaders(),
-  })
-    .then(async (response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.map(mapEventDates);
-    })
-    .finally(() => {
-      inFlightRangeRequests.delete(url);
-    });
-
-  inFlightRangeRequests.set(url, requestPromise);
-  return requestPromise;
+  const data = await response.json();
+  return data.map(mapEventDates);
 };
 
 export const saveCalendarEvent = async (eventData) => {

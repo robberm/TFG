@@ -3,7 +3,6 @@ import { NavLink, useLocation } from "react-router-dom";
 import UserMenu from "./UserMenu";
 import WindowTitleBar from "./WindowTitleBar";
 import ReminderListener from "./ReminderListener";
-import { getCurrentUserProfile } from "../../api/userApi";
 import "../../css/MainLayout.css";
 
 const isElectronEnvironment =
@@ -133,27 +132,7 @@ const MainLayout = ({ children }) => {
       return;
     }
 
-    let isMounted = true;
-
-    const loadProfile = async () => {
-      try {
-        const profile = await getCurrentUserProfile();
-
-        if (isMounted) {
-          setIsAdmin(profile?.role === "ADMIN");
-        }
-      } catch (_) {
-        if (isMounted) {
-          setIsAdmin(false);
-        }
-      }
-    };
-
-    loadProfile();
-
-    return () => {
-      isMounted = false;
-    };
+    setIsAdmin(localStorage.getItem("role") === "ADMIN");
   }, [location.pathname]);
 
   if (!showSidebar) {
