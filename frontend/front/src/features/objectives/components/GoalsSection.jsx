@@ -64,9 +64,6 @@ const GoalsSection = ({ goals, onCreate, onEdit, onDelete }) => {
               {goal.assignedByAdmin && goal.assignedByAdminUsername && (
                 <div className="goalMetaText">Por: {goal.assignedByAdminUsername}</div>
               )}
-              {!goal.assignedByAdmin && (
-                <div className="goalMetaText">Creado por ti</div>
-              )}
             </span>
           </div>
 
