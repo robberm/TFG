@@ -54,10 +54,6 @@ public class EventService {
         return eventRepo.findAssignedEventsForAdminAndUser(adminId, userId);
     }
 
-    public List<Event> getEventsByAssignmentGroup(String assignmentGroupId, Long adminId) {
-        return eventRepo.findByAssignmentGroupIdAndAssignedByAdmin_Id(assignmentGroupId, adminId);
-    }
-
     public Optional<Event> updateEventById(Long id, EventRequest eventDetails) {
         Optional<Event> eventOptional = getEventById(id);
 
@@ -99,24 +95,15 @@ public class EventService {
         eventRepo.deleteById(id);
     }
 
-    public void deleteAll(List<Event> events) {
-        events.forEach(event -> reminderScheduler.cancelReminder(event.getId()));
-        eventRepo.deleteAll(events);
-    }
-
-    public List<Event> findAll() {
-        return eventRepo.findAll();
+    public List<String> getCategories() {
+        return Arrays.stream(Event.EventCategory.values())
+                .map(Enum::name)
+                .toList();
     }
 
     private boolean isEventCategoryActive(String category, Long userId) {
         Event.EventCategory eventCategory = Event.EventCategory.valueOf(category);
         return eventRepo.existsActiveEventOfCategory(eventCategory, LocalDateTime.now(), userId);
-    }
-
-    public List<String> getCategories() {
-        return Arrays.stream(Event.EventCategory.values())
-                .map(Enum::name)
-                .toList();
     }
 
     @Scheduled(fixedDelay = 5000)

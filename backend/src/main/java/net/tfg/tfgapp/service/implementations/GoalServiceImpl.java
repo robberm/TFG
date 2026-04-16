@@ -100,14 +100,4 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
     public List<Goal> getAssignedGoalsForAdminAndUser(Long adminId, Long userId) {
         return goalRepo.findByAssignedByAdmin_IdAndUser_Id(adminId, userId);
     }
-
-    @Override
-    public List<Goal> getGoalsByAssignmentGroup(String assignmentGroupId, Long adminId) {
-        return goalRepo.findByAssignmentGroupIdAndAssignedByAdmin_Id(assignmentGroupId, adminId);
-    }
-
-    @Override
-    public void deleteGoals(List<Goal> goals) {
-        goalRepo.deleteAll(goals);
-    }
 }

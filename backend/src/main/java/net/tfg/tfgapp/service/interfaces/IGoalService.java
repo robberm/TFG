@@ -20,8 +20,4 @@ public interface IGoalService extends IObjectiveService<Goal> {
     List<Goal> getAssignedGoalsForAdmin(Long adminId);
 
     List<Goal> getAssignedGoalsForAdminAndUser(Long adminId, Long userId);
-
-    List<Goal> getGoalsByAssignmentGroup(String assignmentGroupId, Long adminId);
-
-    void deleteGoals(List<Goal> goals);
 }

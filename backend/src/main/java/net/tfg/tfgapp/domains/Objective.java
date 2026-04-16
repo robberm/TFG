@@ -47,8 +47,6 @@ public abstract class Objective {
     @JoinColumn(name = "assigned_by_admin_id")
     private User assignedByAdmin;
 
-    @Column(name = "assignment_group_id")
-    private String assignmentGroupId;
 
     @JsonIgnore
     @OneToMany(mappedBy = "objective", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -20,8 +20,8 @@ public interface EventRepo extends JpaRepository<Event, Long> {
             SELECT e
             FROM Event e
             WHERE e.user.username = :username
-              AND e.startTime >= :start
-              AND e.endTime <= :end
+              AND e.startTime < :end
+              AND e.endTime > :start
             """)
     List<Event> findEventsByUserAndDateRange(@Param("username") String username,
                                              @Param("start") LocalDateTime start,
@@ -35,8 +35,8 @@ public interface EventRepo extends JpaRepository<Event, Long> {
             FROM Event e
             WHERE e.assignedByAdmin.id = :adminId
               AND e.user.id = :userId
-              AND e.startTime >= :start
-              AND e.endTime <= :end
+              AND e.startTime < :end
+              AND e.endTime > :start
             """)
     List<Event> findAssignedEventsForAdminAndUserInRange(@Param("adminId") Long adminId,
                                                           @Param("userId") Long userId,
@@ -47,8 +47,8 @@ public interface EventRepo extends JpaRepository<Event, Long> {
             SELECT e
             FROM Event e
             WHERE e.assignedByAdmin.id = :adminId
-              AND e.startTime >= :start
-              AND e.endTime <= :end
+              AND e.startTime < :end
+              AND e.endTime > :start
             """)
     List<Event> findAssignedEventsForAdminInRange(@Param("adminId") Long adminId,
                                                    @Param("start") LocalDateTime start,
@@ -57,8 +57,6 @@ public interface EventRepo extends JpaRepository<Event, Long> {
     @Query("SELECT e FROM Event e WHERE e.assignedByAdmin.id = :adminId AND e.user.id = :userId")
     List<Event> findAssignedEventsForAdminAndUser(@Param("adminId") Long adminId,
                                                    @Param("userId") Long userId);
-
-    List<Event> findByAssignmentGroupIdAndAssignedByAdmin_Id(String assignmentGroupId, Long adminId);
 
     @Query("SELECT e FROM Event e WHERE FUNCTION('DATE', e.startTime) = FUNCTION('DATE', :date)")
     List<Event> findByStartDate(@Param("date") LocalDateTime date);

@@ -47,8 +47,6 @@ private User user;
 @JsonIgnore
 private User assignedByAdmin;
 
-@Column(name = "assignment_group_id")
-private String assignmentGroupId;
 
     public Event(Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime, String location, EventCategory category, Boolean isAllDay, Integer reminderMinutesBefore, User user) {
         this.id = id;
