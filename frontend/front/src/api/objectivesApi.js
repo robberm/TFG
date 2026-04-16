@@ -1,5 +1,14 @@
 const API_BASE_URL = "http://localhost:8080";
 
+const inFlightGetRequests = new Map();
+
+const buildRequestKey = (path, options = {}) => {
+  const method = (options.method || "GET").toUpperCase();
+  const body = options.body || "";
+  return `${method}:${path}:${body}`;
+};
+
+
 const getToken = () => localStorage.getItem("token");
 
 const buildHeaders = (extraHeaders = {}) => {
@@ -41,12 +50,24 @@ const parseResponse = async (response) => {
 };
 
 const request = async (path, options = {}) => {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const method = (options.method || "GET").toUpperCase();
+  const key = buildRequestKey(path, options);
+
+  if (method === "GET" && inFlightGetRequests.has(key)) {
+    return inFlightGetRequests.get(key);
+  }
+
+  const fetchPromise = fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: buildHeaders(options.headers),
-  });
+  }).then(parseResponse);
 
-  return parseResponse(response);
+  if (method === "GET") {
+    inFlightGetRequests.set(key, fetchPromise);
+    fetchPromise.finally(() => inFlightGetRequests.delete(key));
+  }
+
+  return fetchPromise;
 };
 
 /* Goals */

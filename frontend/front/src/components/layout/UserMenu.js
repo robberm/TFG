@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 
 import "../../css/UserMenu.css";
+import { getCurrentUserProfile, clearCurrentUserProfileCache } from "../../api/userApi";
 
 function UserMenu() {
   const [userMenuIsOpen, setUserMenuIsOpen] = useState(false);
@@ -32,18 +33,7 @@ function UserMenu() {
     }
 
     try {
-      const response = await fetch("http://localhost:8080/users/me", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        throw new Error(data?.message || "No se pudo cargar el perfil.");
-      }
+      const data = await getCurrentUserProfile();
 
       if (data?.username) {
         setUsername(data.username);
@@ -51,9 +41,7 @@ function UserMenu() {
       }
 
       if (data?.profileImagePath) {
-        setProfileImage(
-          `http://localhost:8080/uploads/${data.profileImagePath}`,
-        );
+        setProfileImage(`http://localhost:8080/uploads/${data.profileImagePath}`);
       } else {
         setProfileImage("");
       }
@@ -75,6 +63,7 @@ function UserMenu() {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
     localStorage.removeItem("profileImage");
+    clearCurrentUserProfileCache();
 
     setProfileImage("");
     navigate("/", { replace: true });
