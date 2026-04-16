@@ -868,3 +868,17 @@ body.dark .day.disabled {
     font-size: 10px;
   }
 }
+
+
+.eventOwnerTag,
+.week-event-assigned,
+.day-event-assigned {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(66, 153, 225, 0.16);
+  color: #1d4f91;
+}

@@ -94,13 +94,6 @@ const Objectives = () => {
         const endOfWeek = getEndOfWeek(startOfWeek);
 
         if (isAdmin) {
-          if (selectedManagedUserId == null) {
-            setGoals([]);
-            setHabits([]);
-            setLogs([]);
-            return;
-          }
-
           const goalsResponse = await getGoals(selectedManagedUserId);
           setGoals(Array.isArray(goalsResponse) ? goalsResponse : []);
           setHabits([]);
@@ -203,9 +196,12 @@ const Objectives = () => {
       return;
     }
 
-    if (isAdmin && !payload.targetUserId) {
-      setErrorMessage("Debes seleccionar un usuario subordinado.");
-      return;
+    if (isAdmin) {
+      const invalidSingle = !payload.assignToAllUsers && (!payload.targetUserIds || payload.targetUserIds.length === 0) && !payload.targetUserId;
+      if (invalidSingle) {
+        setErrorMessage("Debes seleccionar al menos un usuario subordinado.");
+        return;
+      }
     }
 
     setIsSubmittingGoal(true);
@@ -250,6 +246,8 @@ const Objectives = () => {
           valorObjetivo: payload.valorObjetivo,
           active: payload.active,
           targetUserId: isAdmin ? payload.targetUserId : null,
+          targetUserIds: isAdmin ? payload.targetUserIds : null,
+          assignToAllUsers: isAdmin ? payload.assignToAllUsers : false,
         });
       }
 
@@ -417,6 +415,7 @@ const Objectives = () => {
               )
             }
           >
+            <option value="">Todos los asignados</option>
             {managedUsers.length === 0 && (
               <option value="">Sin usuarios subordinados</option>
             )}
@@ -458,6 +457,7 @@ const Objectives = () => {
               onCreate={openCreateGoalModal}
               onEdit={openEditGoalModal}
               onDelete={handleGoalDelete}
+              isAdmin={isAdmin}
             />
           </div>
         </>

@@ -6,6 +6,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.LocalDateTime;
 
 @Getter
@@ -40,6 +43,12 @@ private Integer reminderMinutesBefore;
 @JoinColumn(name = "user_id")
 private User user;
 
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "assigned_by_admin_id")
+@JsonIgnore
+private User assignedByAdmin;
+
+
     public Event(Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime, String location, EventCategory category, Boolean isAllDay, Integer reminderMinutesBefore, User user) {
         this.id = id;
         this.title = title;
@@ -54,6 +63,18 @@ private User user;
     }
 
     public Event() {
+    }
+
+
+
+    @JsonProperty("assignedByAdmin")
+    public boolean isAssignedByAdmin() {
+        return assignedByAdmin != null;
+    }
+
+    @JsonProperty("assignedByAdminUsername")
+    public String getAssignedByAdminUsername() {
+        return assignedByAdmin != null ? assignedByAdmin.getUsername() : null;
     }
 
     public enum EventCategory {

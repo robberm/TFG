@@ -34,48 +34,32 @@ public class EventService {
         return savedEvent;
     }
 
-    /**
-     * Obtiene los eventos de un usuario que se solapan con el rango indicado.
-     *
-     * @param username username del usuario
-     * @param start fecha de inicio del rango
-     * @param end fecha de fin del rango
-     * @return lista de eventos del usuario para dicho rango
-     */
     public List<Event> findEventsByUserAndDateRange(String username, LocalDateTime start, LocalDateTime end) {
         return eventRepo.findEventsByUserAndDateRange(username, start, end);
     }
 
-    /**
-     * Obtiene todos los eventos de un usuario.
-     *
-     * @param username username del usuario
-     * @return lista de eventos del usuario
-     */
+    public List<Event> findAssignedEventsForAdminInRange(Long adminId, LocalDateTime start, LocalDateTime end) {
+        return eventRepo.findAssignedEventsForAdminInRange(adminId, start, end);
+    }
+
+    public List<Event> findAssignedEventsForAdminAndUserInRange(Long adminId, Long userId, LocalDateTime start, LocalDateTime end) {
+        return eventRepo.findAssignedEventsForAdminAndUserInRange(adminId, userId, start, end);
+    }
+
     public List<Event> getEventsByUsername(String username) {
         return eventRepo.findEventsByUser(username);
     }
 
-    /**
-     * Actualiza un evento existente por su identificador.
-     *
-     * @param id id del evento a actualizar
-     * @param eventDetails datos nuevos del evento
-     * @return optional con el evento actualizado si existe
-     */
+    public List<Event> getAssignedEventsForAdminAndUser(Long adminId, Long userId) {
+        return eventRepo.findAssignedEventsForAdminAndUser(adminId, userId);
+    }
+
     public Optional<Event> updateEventById(Long id, EventRequest eventDetails) {
         Optional<Event> eventOptional = getEventById(id);
 
         if (eventOptional.isPresent()) {
             Event existingEvent = eventOptional.get();
-            existingEvent.setTitle(eventDetails.getTitle());
-            existingEvent.setDescription(eventDetails.getDescription());
-            existingEvent.setStartTime(eventDetails.getStartTime());
-            existingEvent.setEndTime(eventDetails.getEndTime());
-            existingEvent.setLocation(eventDetails.getLocation());
-            existingEvent.setCategory(eventDetails.getCategory());
-            existingEvent.setIsAllDay(eventDetails.getIsAllDay());
-            existingEvent.setReminderMinutesBefore(eventDetails.getReminderMinutesBefore());
+            applyEventDetails(existingEvent, eventDetails);
 
             Event updatedEvent = eventRepo.save(existingEvent);
             reminderScheduler.rescheduleReminder(updatedEvent);
@@ -85,21 +69,21 @@ public class EventService {
         return Optional.empty();
     }
 
-    /**
-     * Obtiene un evento por su id.
-     *
-     * @param id id del evento
-     * @return optional con el evento si existe
-     */
+    public void applyEventDetails(Event target, EventRequest details) {
+        target.setTitle(details.getTitle());
+        target.setDescription(details.getDescription());
+        target.setStartTime(details.getStartTime());
+        target.setEndTime(details.getEndTime());
+        target.setLocation(details.getLocation());
+        target.setCategory(details.getCategory() != null ? details.getCategory() : Event.EventCategory.PERSONAL);
+        target.setIsAllDay(details.getIsAllDay() != null ? details.getIsAllDay() : false);
+        target.setReminderMinutesBefore(details.getReminderMinutesBefore());
+    }
+
     public Optional<Event> getEventById(Long id) {
         return eventRepo.findById(id);
     }
 
-    /**
-     * Elimina un evento por su id.
-     *
-     * @param id id del evento a eliminar
-     */
     public void deleteEventById(Long id) {
         Optional<Event> eventOptional = eventRepo.findById(id);
 
@@ -111,42 +95,17 @@ public class EventService {
         eventRepo.deleteById(id);
     }
 
-    /**
-     * Obtiene todos los eventos registrados.
-     *
-     * @return lista completa de eventos
-     */
-    public List<Event> findAll() {
-        return eventRepo.findAll();
-    }
-
-    /**
-     * Comprueba si un usuario tiene actualmente activa una categoría de evento.
-     *
-     * @param category nombre de la categoría
-     * @param userId id del usuario autenticado
-     * @return true si la categoría está activa ahora mismo
-     */
-    private boolean isEventCategoryActive(String category, Long userId) {
-        Event.EventCategory eventCategory = Event.EventCategory.valueOf(category);
-        return eventRepo.existsActiveEventOfCategory(eventCategory, LocalDateTime.now(), userId);
-    }
-
-    /**
-     * Devuelve todas las categorías disponibles del enumerado de eventos.
-     *
-     * @return lista de nombres de categoría
-     */
     public List<String> getCategories() {
         return Arrays.stream(Event.EventCategory.values())
                 .map(Enum::name)
                 .toList();
     }
 
-    /**
-     * Revisa periódicamente si el usuario actual tiene activa una categoría bloqueante
-     * y, en ese caso, fuerza el apagado del sistema.
-     */
+    private boolean isEventCategoryActive(String category, Long userId) {
+        Event.EventCategory eventCategory = Event.EventCategory.valueOf(category);
+        return eventRepo.existsActiveEventOfCategory(eventCategory, LocalDateTime.now(), userId);
+    }
+
     @Scheduled(fixedDelay = 5000)
     public void isEnforceShutdownCategory() {
         if (sessionStore == null) {

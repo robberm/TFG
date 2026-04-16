@@ -23,4 +23,6 @@ public class GoalRequest {
     private Double valorObjetivo;
     private Boolean active;
     private Long targetUserId;
+    private List<Long> targetUserIds;
+    private Boolean assignToAllUsers;
 }

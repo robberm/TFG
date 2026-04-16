@@ -215,6 +215,6 @@ public class AdminServiceImpl implements IAdminService {
             throw new SecurityException("No tienes acceso a ese usuario subordinado.");
         }
 
-        return goalService.getByUsername(managedUser.getUsername());
+        return goalService.getAssignedGoalsForAdminAndUser(admin.getId(), managedUser.getId());
     }
 }

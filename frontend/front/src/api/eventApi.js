@@ -2,6 +2,7 @@ import { format, parse, parseISO, isValid } from "date-fns";
 
 const EVENTS_BASE_URL = "http://localhost:8080/events";
 
+
 const getAuthHeaders = (includeJson = false) => {
   const token = localStorage.getItem("token");
 

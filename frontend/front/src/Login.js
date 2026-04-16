@@ -35,10 +35,12 @@ const Login = () => {
         const token = data.token.trim(); 
         localStorage.setItem("token", token); 
         localStorage.setItem("username", data.username);
+        localStorage.setItem("role", data.role || "PERSONAL");
+        localStorage.setItem("organizationId", data.organizationId ?? "");
 
-        const profile = await getCurrentUserProfile();
-        const isAdmin = profile?.role === "ADMIN";
-        const hasOrganization = Boolean(profile?.organizationId);
+        const profile = await getCurrentUserProfile({ forceRefresh: true });
+        const isAdmin = (data.role || profile?.role) === "ADMIN";
+        const hasOrganization = Boolean((data.organizationId ?? profile?.organizationId));
         const nextPath = isAdmin
           ? hasOrganization
             ? "/admin"
