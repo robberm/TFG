@@ -7,7 +7,7 @@ import {
   sortGoalsByPriority,
 } from "../utils/objectiveHelpers";
 
-const GoalsSection = ({ goals, onCreate, onEdit, onDelete }) => {
+const GoalsSection = ({ goals, onCreate, onEdit, onDelete, isAdmin = false }) => {
   const [showCompleted, setShowCompleted] = useState(false);
 
   /**
@@ -115,13 +115,15 @@ const GoalsSection = ({ goals, onCreate, onEdit, onDelete }) => {
               <i className="fa fa-edit"></i>
             </button>
 
-            <button
-              className="actionButton deleteButton"
-              onClick={() => onDelete(goal)}
-              title="Eliminar"
-            >
-              <i className="fa fa-trash"></i>
-            </button>
+            {(isAdmin || !goal.assignedByAdmin) && (
+              <button
+                className="actionButton deleteButton"
+                onClick={() => onDelete(goal)}
+                title="Eliminar"
+              >
+                <i className="fa fa-trash"></i>
+              </button>
+            )}
           </div>
         </div>
       );

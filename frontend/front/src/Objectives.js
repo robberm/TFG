@@ -457,6 +457,7 @@ const Objectives = () => {
               onCreate={openCreateGoalModal}
               onEdit={openEditGoalModal}
               onDelete={handleGoalDelete}
+              isAdmin={isAdmin}
             />
           </div>
         </>

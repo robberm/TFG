@@ -133,6 +133,11 @@ public class CalendarController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso para eliminar este evento.");
         }
 
+        if (actor.getRole() != UserRole.ADMIN && existingEvent.get().getAssignedByAdmin() != null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("No puedes eliminar eventos asignados por administrador.");
+        }
+
         eventService.deleteEventById(id);
         return ResponseEntity.noContent().build();
     }

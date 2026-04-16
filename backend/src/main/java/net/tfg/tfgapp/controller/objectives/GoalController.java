@@ -146,6 +146,11 @@ public class GoalController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
+        if (actor.getRole() != UserRole.ADMIN && goal.isAssignedByAdmin()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("No puedes eliminar objetivos asignados por administrador.");
+        }
+
         goalService.deleteById(id);
         return ResponseEntity.ok("Objetivo eliminado correctamente.");
     }

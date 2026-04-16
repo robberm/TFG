@@ -321,6 +321,8 @@ const EventModal = ({
     return colors[cat?.toLowerCase()] || "#6264a7";
   };
 
+  const canDeleteEvent = !event?.assignedByAdmin || isAdmin;
+
   const formatDisplayDate = () => {
     if (!formData.date) return "";
     const date = new Date(`${formData.date}T00:00:00`);
@@ -580,7 +582,7 @@ const EventModal = ({
           )}
 
           <div className="gcal-modal-footer">
-            {event && (
+            {event && canDeleteEvent && (
               <button
                 type="button"
                 className="gcal-delete-btn"
