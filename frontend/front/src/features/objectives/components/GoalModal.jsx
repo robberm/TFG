@@ -107,8 +107,12 @@ const GoalModal = ({
     const selectedUserIds = (form.targetUserIds || [])
             .map((value) => Number(value));
 
+    const isNewGoalFromAdmin = isAdmin && !initialData;
+    const normalizedForm = normalizeGoalForm(form);
+
     onSubmit({
-      ...normalizeGoalForm(form),
+      ...normalizedForm,
+      status: isAdmin ? (initialData?.status || "NotStarted") : normalizedForm.status,
       notes: form.notes?.trim() || "",
       targetUserId:
         isAdmin && form.assignmentMode === "single" && form.targetUserId !== ""
@@ -119,6 +123,10 @@ const GoalModal = ({
           ? selectedUserIds
           : null,
       assignToAllUsers: isAdmin && form.assignmentMode === "all",
+      valorProgreso:
+        isNewGoalFromAdmin && normalizedForm.isNumeric
+          ? 0
+          : normalizedForm.valorProgreso,
     });
   };
 
@@ -231,17 +239,27 @@ const GoalModal = ({
 
               <div className="formGroup">
                 <label htmlFor="goal-status">Estado</label>
-                <select
-                  id="goal-status"
-                  value={form.status}
-                  onChange={(event) =>
-                    handleChange("status", event.target.value)
-                  }
-                >
-                  <option value="NotStarted">Sin empezar</option>
-                  <option value="InProgress">En progreso</option>
-                  <option value="Done">Completado</option>
-                </select>
+                {isAdmin ? (
+                  <input
+                    id="goal-status"
+                    type="text"
+                    value={initialData?.status === "Done" ? "Completado" : initialData?.status === "InProgress" ? "En progreso" : "Sin empezar"}
+                    readOnly
+                    disabled
+                  />
+                ) : (
+                  <select
+                    id="goal-status"
+                    value={form.status}
+                    onChange={(event) =>
+                      handleChange("status", event.target.value)
+                    }
+                  >
+                    <option value="NotStarted">Sin empezar</option>
+                    <option value="InProgress">En progreso</option>
+                    <option value="Done">Completado</option>
+                  </select>
+                )}
 
                 <label className="checkboxRow" htmlFor="goal-is-numeric">
                   <input
