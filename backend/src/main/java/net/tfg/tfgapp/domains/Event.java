@@ -85,6 +85,11 @@ private User assignedByAdmin;
         return user != null ? user.getUsername() : null;
     }
 
+    @JsonProperty("assignedToUserId")
+    public Long getAssignedToUserId() {
+        return user != null ? user.getId() : null;
+    }
+
     public enum EventCategory {
         WORK("Work"),
         PERSONAL("Personal"),
@@ -106,5 +111,4 @@ private User assignedByAdmin;
         }
     }
 }
-
 

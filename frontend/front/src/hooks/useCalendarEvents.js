@@ -48,6 +48,8 @@ const useCalendarEvents = () => {
           ...event,
           assignedUsersCount: 1,
           assignedToUsername: event.assignedToUsername || null,
+          assignedUserIds:
+            event.assignedToUserId != null ? [event.assignedToUserId] : [],
         });
         return;
       }
@@ -57,6 +59,10 @@ const useCalendarEvents = () => {
         ...current,
         assignedUsersCount: (current.assignedUsersCount || 1) + 1,
         assignedToUsername: "Varios usuarios",
+        assignedUserIds: [
+          ...(current.assignedUserIds || []),
+          ...(event.assignedToUserId != null ? [event.assignedToUserId] : []),
+        ],
       });
     });
 

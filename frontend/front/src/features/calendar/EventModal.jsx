@@ -184,6 +184,27 @@ const EventModal = ({
     if (event) {
       const startDate = parseCalendarDate(event.startTime);
       const endDate = parseCalendarDate(event.endTime);
+      const assignedUserIds = Array.isArray(event.assignedUserIds)
+        ? event.assignedUserIds.map((userId) => String(userId))
+        : event.assignedToUserId != null
+          ? [String(event.assignedToUserId)]
+          : [];
+
+      const isAllManagedUsersSelected =
+        managedUsers.length > 0 &&
+        assignedUserIds.length === managedUsers.length &&
+        managedUsers.every((user) =>
+          assignedUserIds.includes(String(user.id)),
+        );
+
+      const inferredAssignmentMode = isAllManagedUsersSelected
+        ? "all"
+        : assignedUserIds.length > 1
+          ? "multiple"
+          : "single";
+      const defaultSingleUserId =
+        assignedUserIds[0] ??
+        (defaultManagedUserId != null ? String(defaultManagedUserId) : "");
 
       setFormData({
         id: event.id,
@@ -195,9 +216,9 @@ const EventModal = ({
         location: event.location || "",
         category: event.category || "",
         isAllDay: event.isAllDay || false,
-        targetUserId: defaultManagedUserId ?? "",
-        targetUserIds: defaultManagedUserId != null ? [String(defaultManagedUserId)] : [],
-        assignmentMode: "single",
+        targetUserId: defaultSingleUserId,
+        targetUserIds: assignedUserIds,
+        assignmentMode: inferredAssignmentMode,
       });
       setReminderMinutesBefore(event.reminderMinutesBefore ?? null);
       setShowMoreOptions(true);
@@ -227,7 +248,7 @@ const EventModal = ({
     }
 
     setTimeout(() => titleInputRef.current?.focus(), 100);
-  }, [defaultManagedUserId, event, selectedDate]);
+  }, [defaultManagedUserId, event, managedUsers, selectedDate]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -328,7 +349,6 @@ const EventModal = ({
 
   const canDeleteEvent = !event?.assignedByAdmin || isAdmin;
   const isAssignedEventReadOnly = Boolean(event?.assignedByAdmin) && !isAdmin;
-  const isEditing = Boolean(event?.id);
 
   const formatDisplayDate = () => {
     if (!formData.date) return "";
@@ -355,7 +375,7 @@ const EventModal = ({
 
         <form onSubmit={handleSubmit} className="gcal-form">
           <div className="gcal-title-section">
-            {isAdmin && !isEditing && (
+            {isAdmin && (
               <div className="gcal-admin-assignment">
                 <select
                   name="assignmentMode"
@@ -399,21 +419,6 @@ const EventModal = ({
                     ))}
                   </div>
                 )}
-              </div>
-            )}
-
-            {isAdmin && isEditing && (
-              <div className="gcal-admin-assignment">
-                <input
-                  className="gcal-input"
-                  type="text"
-                  readOnly
-                  value={
-                    event?.assignedUsersCount > 1
-                      ? `Asignado a ${event.assignedUsersCount} usuarios`
-                      : `Asignado a: ${event?.assignedToUsername || "Usuario subordinado"}`
-                  }
-                />
               </div>
             )}
 
