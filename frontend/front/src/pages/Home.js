@@ -8,6 +8,7 @@ import useTodayEvents from "../hooks/useTodayEvents.jsx";
 import { getCurrentUserProfile } from "../api/userApi";
 import { getManagedUsers, getManagedUserGoals } from "../api/adminApi";
 import { calculateGlobalGoalsProgress } from "../features/objectives/utils/objectiveHelpers";
+import { resolveProfileImageUrl } from "../utils/profileImage";
 
 const AdminGoalsStats = ({ goals }) => {
   const metrics = useMemo(() => {
@@ -141,7 +142,7 @@ const Home = () => {
               >
                 {user.profileImagePath ? (
                   <img
-                    src={`http://localhost:8080${user.profileImagePath}`}
+                    src={resolveProfileImageUrl(user.profileImagePath)}
                     alt={`Perfil de ${user.username}`}
                   />
                 ) : (

@@ -7,7 +7,14 @@ import {
   sortGoalsByPriority,
 } from "../utils/objectiveHelpers";
 
-const GoalsSection = ({ goals, onCreate, onEdit, onDelete, isAdmin = false }) => {
+const GoalsSection = ({
+  goals,
+  onCreate,
+  onEdit,
+  onDelete,
+  isAdmin = false,
+  showAssignedUserColumn = false,
+}) => {
   const [showCompleted, setShowCompleted] = useState(false);
 
   /**
@@ -57,6 +64,14 @@ const GoalsSection = ({ goals, onCreate, onEdit, onDelete, isAdmin = false }) =>
               )}
             </strong>
           </div>
+
+          {showAssignedUserColumn && (
+            <div className="tableCell">
+              <span className={goal.status === "Done" ? "completedText" : ""}>
+                {goal.assignedToUsername || "—"}
+              </span>
+            </div>
+          )}
 
           <div className="tableCell">
             <span className={goal.status === "Done" ? "completedText" : ""}>
@@ -146,6 +161,7 @@ const GoalsSection = ({ goals, onCreate, onEdit, onDelete, isAdmin = false }) =>
         <div className="todoTable">
           <div className="tableRow tableHeader">
             <div className="tableCell">Título</div>
+            {showAssignedUserColumn && <div className="tableCell">Usuario</div>}
             <div className="tableCell">Descripción</div>
             <div className="tableCell">Prioridad</div>
             <div className="tableCell">Estado</div>
@@ -185,6 +201,7 @@ const GoalsSection = ({ goals, onCreate, onEdit, onDelete, isAdmin = false }) =>
               <div className="todoTable">
                 <div className="tableRow tableHeader">
                   <div className="tableCell">Título</div>
+                  {showAssignedUserColumn && <div className="tableCell">Usuario</div>}
                   <div className="tableCell">Descripción</div>
                   <div className="tableCell">Prioridad</div>
                   <div className="tableCell">Estado</div>

@@ -458,6 +458,7 @@ const Objectives = () => {
               onEdit={openEditGoalModal}
               onDelete={handleGoalDelete}
               isAdmin={isAdmin}
+              showAssignedUserColumn={isAdmin && selectedManagedUserId == null}
             />
           </div>
         </>
