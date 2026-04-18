@@ -15,8 +15,13 @@ import org.springframework.web.bind.annotation.*;
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("events")
@@ -72,12 +77,17 @@ public class CalendarController {
 
             validateEventDates(request);
             List<User> targets = resolveTargetUsers(actor, request);
+            String assignmentBatchId =
+                    actor.getRole() == UserRole.ADMIN && targets.size() > 1
+                            ? UUID.randomUUID().toString()
+                            : null;
 
             List<Event> created = new ArrayList<>();
             for (User target : targets) {
                 Event event = new Event();
                 eventService.applyEventDetails(event, request);
                 event.setUser(target);
+                event.setAssignmentBatchId(assignmentBatchId);
 
                 if (actor.getRole() == UserRole.ADMIN) {
                     event.setAssignedByAdmin(actor);
@@ -109,8 +119,69 @@ public class CalendarController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso para actualizar este evento.");
         }
 
+        if (actor.getRole() != UserRole.ADMIN && existingEvent.get().getAssignedByAdmin() != null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("No puedes modificar eventos asignados por administrador.");
+        }
+
         try {
             validateEventDates(eventDetails);
+
+            if (actor.getRole() == UserRole.ADMIN && existingEvent.get().getAssignedByAdmin() != null) {
+                List<User> targets = resolveTargetUsers(actor, eventDetails);
+                if (targets.isEmpty()) {
+                    return ResponseEntity.badRequest().body("Debes seleccionar al menos un usuario.");
+                }
+
+                String existingBatchId = existingEvent.get().getAssignmentBatchId();
+                List<Event> currentBatchEvents;
+
+                if (existingBatchId != null && !existingBatchId.isBlank()) {
+                    currentBatchEvents = eventService.getAssignedEventsByBatch(actor.getId(), existingBatchId);
+                } else {
+                    currentBatchEvents = new ArrayList<>();
+                    currentBatchEvents.add(existingEvent.get());
+                }
+
+                Map<Long, Event> currentByUserId = new HashMap<>();
+                currentBatchEvents.forEach((event) -> currentByUserId.put(event.getUser().getId(), event));
+
+                Set<Long> targetIds = new HashSet<>();
+                targets.forEach(user -> targetIds.add(user.getId()));
+
+                String targetBatchId = targets.size() > 1
+                        ? (existingBatchId != null && !existingBatchId.isBlank() ? existingBatchId : UUID.randomUUID().toString())
+                        : null;
+
+                Event representative = null;
+
+                for (User target : targets) {
+                    Event eventForTarget = currentByUserId.get(target.getId());
+
+                    if (eventForTarget == null) {
+                        eventForTarget = new Event();
+                        eventForTarget.setUser(target);
+                        eventForTarget.setAssignedByAdmin(actor);
+                    }
+
+                    eventForTarget.setAssignmentBatchId(targetBatchId);
+                    eventService.applyEventDetails(eventForTarget, eventDetails);
+                    Event saved = eventService.save(eventForTarget);
+
+                    if (representative == null) {
+                        representative = saved;
+                    }
+                }
+
+                for (Event event : currentBatchEvents) {
+                    if (!targetIds.contains(event.getUser().getId())) {
+                        eventService.deleteEventById(event.getId());
+                    }
+                }
+
+                return ResponseEntity.ok(representative);
+            }
+
             Optional<Event> updatedEvent = eventService.updateEventById(id, eventDetails);
             return updatedEvent.<ResponseEntity<?>>map(ResponseEntity::ok)
                     .orElseGet(() -> ResponseEntity.notFound().build());

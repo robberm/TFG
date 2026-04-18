@@ -65,6 +65,11 @@ public abstract class Objective {
         return assignedByAdmin != null ? assignedByAdmin.getUsername() : null;
     }
 
+    @JsonProperty("assignedToUsername")
+    public String getAssignedToUsername() {
+        return user != null ? user.getUsername() : null;
+    }
+
     @PrePersist
     public void onCreate() {
         this.createdAt = LocalDateTime.now();

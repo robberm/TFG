@@ -39,6 +39,9 @@ private Boolean isAllDay;
 @Column(unique = false)
 private Integer reminderMinutesBefore;
 
+@Column(unique = false)
+private String assignmentBatchId;
+
 @ManyToOne
 @JoinColumn(name = "user_id")
 private User user;
@@ -77,6 +80,16 @@ private User assignedByAdmin;
         return assignedByAdmin != null ? assignedByAdmin.getUsername() : null;
     }
 
+    @JsonProperty("assignedToUsername")
+    public String getAssignedToUsername() {
+        return user != null ? user.getUsername() : null;
+    }
+
+    @JsonProperty("assignedToUserId")
+    public Long getAssignedToUserId() {
+        return user != null ? user.getId() : null;
+    }
+
     public enum EventCategory {
         WORK("Work"),
         PERSONAL("Personal"),
@@ -98,6 +111,4 @@ private User assignedByAdmin;
         }
     }
 }
-
-
 

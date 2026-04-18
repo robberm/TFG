@@ -216,6 +216,15 @@
   background-color: var(--container-color, #ffffff);
 }
 
+.time-selector-input.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.time-selector-input.disabled:hover {
+  background-color: var(--hover-bg-color, rgba(0, 0, 0, 0.04));
+}
+
 .time-value {
   font-size: 14px;
   font-weight: 500;
