@@ -31,6 +31,38 @@ const useCalendarEvents = () => {
 
   const isAdmin = profile?.role === "ADMIN";
 
+  const collapseAdminAssignedEvents = useCallback((incomingEvents) => {
+    if (!Array.isArray(incomingEvents)) {
+      return [];
+    }
+
+    const groupedByBatch = new Map();
+
+    incomingEvents.forEach((event) => {
+      const groupKey = event.assignmentBatchId
+        ? `batch-${event.assignmentBatchId}`
+        : `event-${event.id}`;
+
+      if (!groupedByBatch.has(groupKey)) {
+        groupedByBatch.set(groupKey, {
+          ...event,
+          assignedUsersCount: 1,
+          assignedToUsername: event.assignedToUsername || null,
+        });
+        return;
+      }
+
+      const current = groupedByBatch.get(groupKey);
+      groupedByBatch.set(groupKey, {
+        ...current,
+        assignedUsersCount: (current.assignedUsersCount || 1) + 1,
+        assignedToUsername: "Varios usuarios",
+      });
+    });
+
+    return Array.from(groupedByBatch.values());
+  }, []);
+
   useEffect(() => {
     const loadScope = async () => {
       try {
@@ -90,11 +122,22 @@ const useCalendarEvents = () => {
         end,
         isAdmin ? selectedManagedUserId : null,
       );
-      setEvents(data);
+
+      if (isAdmin && selectedManagedUserId == null) {
+        setEvents(collapseAdminAssignedEvents(data));
+      } else {
+        setEvents(data);
+      }
     } catch (error) {
       console.error("Error fetching events:", error);
     }
-  }, [currentDate, isAdmin, selectedManagedUserId, viewMode]);
+  }, [
+    collapseAdminAssignedEvents,
+    currentDate,
+    isAdmin,
+    selectedManagedUserId,
+    viewMode,
+  ]);
 
   useEffect(() => {
     fetchEvents();

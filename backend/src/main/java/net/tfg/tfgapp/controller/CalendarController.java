@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("events")
@@ -72,12 +73,17 @@ public class CalendarController {
 
             validateEventDates(request);
             List<User> targets = resolveTargetUsers(actor, request);
+            String assignmentBatchId =
+                    actor.getRole() == UserRole.ADMIN && targets.size() > 1
+                            ? UUID.randomUUID().toString()
+                            : null;
 
             List<Event> created = new ArrayList<>();
             for (User target : targets) {
                 Event event = new Event();
                 eventService.applyEventDetails(event, request);
                 event.setUser(target);
+                event.setAssignmentBatchId(assignmentBatchId);
 
                 if (actor.getRole() == UserRole.ADMIN) {
                     event.setAssignedByAdmin(actor);

@@ -328,6 +328,7 @@ const EventModal = ({
 
   const canDeleteEvent = !event?.assignedByAdmin || isAdmin;
   const isAssignedEventReadOnly = Boolean(event?.assignedByAdmin) && !isAdmin;
+  const isEditing = Boolean(event?.id);
 
   const formatDisplayDate = () => {
     if (!formData.date) return "";
@@ -354,7 +355,7 @@ const EventModal = ({
 
         <form onSubmit={handleSubmit} className="gcal-form">
           <div className="gcal-title-section">
-            {isAdmin && (
+            {isAdmin && !isEditing && (
               <div className="gcal-admin-assignment">
                 <select
                   name="assignmentMode"
@@ -398,6 +399,21 @@ const EventModal = ({
                     ))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {isAdmin && isEditing && (
+              <div className="gcal-admin-assignment">
+                <input
+                  className="gcal-input"
+                  type="text"
+                  readOnly
+                  value={
+                    event?.assignedUsersCount > 1
+                      ? `Asignado a ${event.assignedUsersCount} usuarios`
+                      : `Asignado a: ${event?.assignedToUsername || "Usuario subordinado"}`
+                  }
+                />
               </div>
             )}
 
