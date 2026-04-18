@@ -79,6 +79,16 @@
   margin-bottom: 24px;
 }
 
+.gcal-input {
+  width: 100%;
+  margin-bottom: 12px;
+  border: 1px solid var(--input-border-color, #dadce0);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--font-color, #202124);
+  background: var(--calendar-bg-color, #fff);
+}
+
 .gcal-title-input {
   width: 100%;
   border: none;
@@ -204,6 +214,15 @@
 .time-selector-input.active {
   border-color: #6264a7;
   background-color: var(--container-color, #ffffff);
+}
+
+.time-selector-input.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.time-selector-input.disabled:hover {
+  background-color: var(--hover-bg-color, rgba(0, 0, 0, 0.04));
 }
 
 .time-value {

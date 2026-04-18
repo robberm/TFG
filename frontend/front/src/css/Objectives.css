@@ -28,6 +28,30 @@
   font-size: 0.9rem;
 }
 
+.adminScopeSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-width: 320px;
+  padding: 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--card-background);
+}
+
+.adminScopeSelector label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.adminScopeSelector select {
+  border: 1px solid var(--border-color);
+  background: var(--bg-main);
+  color: var(--text-main);
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+}
+
 /* Buttons */
 .refreshButton,
 .addButton,
@@ -1343,4 +1367,21 @@ body.dark .tableRow:hover {
     padding: 4px 8px;
     font-size: 0.7rem;
   }
+}
+
+
+.ownerTag.assigned {
+  margin-left: 8px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(66, 153, 225, 0.15);
+  color: #2b6cb0;
+  font-weight: 700;
+}
+
+.goalMetaText {
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.75;
 }

@@ -3,12 +3,14 @@ package net.tfg.tfgapp.service;
 import net.tfg.tfgapp.DTOs.users.AdminCreateOrganizationRequest;
 import net.tfg.tfgapp.DTOs.users.AdminCreateUserRequest;
 import net.tfg.tfgapp.DTOs.users.UserSummaryResponse;
+import net.tfg.tfgapp.domains.Goal;
 import net.tfg.tfgapp.domains.Organization;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.enumerates.UserRole;
 import net.tfg.tfgapp.repos.OrganizationRepo;
 import net.tfg.tfgapp.service.interfaces.IUserService;
 import net.tfg.tfgapp.service.interfaces.IAdminService;
+import net.tfg.tfgapp.service.interfaces.IGoalService;
 import net.tfg.tfgapp.validation.PasswordPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,15 +24,18 @@ public class AdminServiceImpl implements IAdminService {
     private final PasswordEncoder passwordEncoder;
     private final PasswordPolicy passwordPolicy;
     private final OrganizationRepo organizationRepo;
+    private final IGoalService goalService;
 
     public AdminServiceImpl(IUserService userService,
                             PasswordEncoder passwordEncoder,
                             PasswordPolicy passwordPolicy,
-                            OrganizationRepo organizationRepo) {
+                            OrganizationRepo organizationRepo,
+                            IGoalService goalService) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.passwordPolicy = passwordPolicy;
         this.organizationRepo = organizationRepo;
+        this.goalService = goalService;
     }
 
     /**
@@ -184,5 +189,32 @@ public class AdminServiceImpl implements IAdminService {
         userService.save(admin);
 
         return savedOrganization;
+    }
+
+    @Override
+    public List<Goal> getManagedUserGoals(String adminUsername, Long managedUserId) {
+        if (adminUsername == null || adminUsername.isBlank()) {
+            throw new IllegalArgumentException("Admin inválido.");
+        }
+
+        if (managedUserId == null) {
+            throw new IllegalArgumentException("El usuario subordinado es obligatorio.");
+        }
+
+        User admin = userService.getUserByUsername(adminUsername);
+        if (admin == null) {
+            throw new IllegalArgumentException("Admin no encontrado.");
+        }
+
+        if (admin.getRole() != UserRole.ADMIN) {
+            throw new SecurityException("No tienes permisos de administrador.");
+        }
+
+        User managedUser = userService.getManagedUser(admin.getId(), managedUserId);
+        if (managedUser == null) {
+            throw new SecurityException("No tienes acceso a ese usuario subordinado.");
+        }
+
+        return goalService.getAssignedGoalsForAdminAndUser(admin.getId(), managedUser.getId());
     }
 }

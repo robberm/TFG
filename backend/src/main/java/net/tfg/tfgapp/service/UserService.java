@@ -59,6 +59,22 @@ public class UserService implements IUserService {
         return uRepo.findByIdAndCreatedByAdmin_Id(userId, adminId).orElse(null);
     }
 
+
+    @Override
+    public List<User> getUsersInAdminScope(User admin) {
+        if (admin == null) {
+            return List.of();
+        }
+
+        if (admin.getOrganization() != null) {
+            return uRepo.findByOrganization_Id(admin.getOrganization().getId()).stream()
+                    .filter(user -> !user.getId().equals(admin.getId()))
+                    .toList();
+        }
+
+        return getManagedUsers(admin.getId());
+    }
+
     @Override
     public void delete(User user) {
         uRepo.delete(user);

@@ -1,146 +1,292 @@
 package net.tfg.tfgapp.controller;
 
-
-import jakarta.persistence.EntityNotFoundException;
+import net.tfg.tfgapp.DTOs.events.EventRequest;
 import net.tfg.tfgapp.domains.Event;
-import net.tfg.tfgapp.repos.EventRepo;
+import net.tfg.tfgapp.domains.User;
+import net.tfg.tfgapp.enumerates.UserRole;
 import net.tfg.tfgapp.security.JwtUtil;
 import net.tfg.tfgapp.service.EventService;
 import net.tfg.tfgapp.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.web.bind.annotation.*;
 
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("events")
 public class CalendarController {
 
-    @Autowired
-    private EventService eventService;
+    private final EventService eventService;
+    private final JwtUtil jwtUtil;
+    private final UserService userService;
 
-    @Autowired
-    private JwtUtil jwtUtil;
-    @Autowired
-    private UserService userService;
-
-    // Get all events
-    @GetMapping("/{username}")
-    public ResponseEntity<?> getAllEvents(@PathVariable String username) {
-        try {
-            // Obtienes los eventos del usuario con el servicio
-            List<Event> eventsList = eventService.getEventsByUsername(username);
-
-            // Si no se encuentran eventos, se retorna un mensaje apropiado
-            if (eventsList.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NO_CONTENT).body("No events found for user: " + username);
-            }
-
-            // Si hay eventos, se retornan con un código 200
-            return ResponseEntity.ok(eventsList);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching events: " + e.getMessage());
-        }
+    public CalendarController(EventService eventService, JwtUtil jwtUtil, UserService userService) {
+        this.eventService = eventService;
+        this.jwtUtil = jwtUtil;
+        this.userService = userService;
     }
 
-
-    // Get a specific event by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getEventById(@PathVariable Long id) {
-        Optional<Event> event = eventService.getEventById(id);
-        return event.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // Get events between specific dates
     @GetMapping("/range")
-    public List<?> getEventsBetween(
+    public ResponseEntity<?> getEventsBetween(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end,
-            @RequestHeader("Authorization") String token) { // Para pasar el token y extraer el usuario
+            @RequestParam(required = false) Long targetUserId,
+            @RequestHeader("Authorization") String token) {
 
-        String tokenF = token.replace("Bearer ", "").trim();
-        String username = jwtUtil.extractUsername(tokenF);  // Extraemos el nombre de usuario del token
+        User actor = getActor(token);
 
-        return eventService.findEventsByUserAndDateRange(username, start, end);  // Pasamos username y fechas al servicio
+        if (actor == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario no encontrado.");
+        }
+
+        if (actor.getRole() == UserRole.ADMIN) {
+            if (targetUserId != null) {
+                User target = userService.getUserById(targetUserId);
+                if (!canAccessManagedUser(actor, target)) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso sobre ese usuario.");
+                }
+                return ResponseEntity.ok(eventService.findAssignedEventsForAdminAndUserInRange(actor.getId(), targetUserId, start, end));
+            }
+
+            return ResponseEntity.ok(eventService.findAssignedEventsForAdminInRange(actor.getId(), start, end));
+        }
+
+        return ResponseEntity.ok(eventService.findEventsByUserAndDateRange(actor.getUsername(), start, end));
     }
 
-
-    // Create a new event
     @PostMapping
-    public ResponseEntity<?> createEvent(@RequestBody Event event, @RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> createEvent(@RequestBody EventRequest request,
+                                         @RequestHeader("Authorization") String token) {
+        try {
+            User actor = getActor(token);
 
-        try{
-            Map<String, String> response = new HashMap<>();
-            String tokenF = token.replace("Bearer ", "").trim();
-            String username = jwtUtil.extractUsername(tokenF);
-
-            if (userService.getUserByUsername(username) == null) {
+            if (actor == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario no encontrado.");
             }
-            event.setUser(userService.getUserByUsername(username));
 
-            if(event.getEndTime().isAfter(event.getStartTime())) {
-                eventService.save(event);
-                response.put("message", "Event "+event.getTitle()+" created successfully!");
+            validateEventDates(request);
+            List<User> targets = resolveTargetUsers(actor, request);
+            String assignmentBatchId =
+                    actor.getRole() == UserRole.ADMIN && targets.size() > 1
+                            ? UUID.randomUUID().toString()
+                            : null;
 
-                return new ResponseEntity<>(response, HttpStatus.CREATED);
+            List<Event> created = new ArrayList<>();
+            for (User target : targets) {
+                Event event = new Event();
+                eventService.applyEventDetails(event, request);
+                event.setUser(target);
+                event.setAssignmentBatchId(assignmentBatchId);
 
-            }else{
-             throw new DateTimeException("Date is not correct");
+                if (actor.getRole() == UserRole.ADMIN) {
+                    event.setAssignedByAdmin(actor);
+                }
+
+                created.add(eventService.save(event));
             }
 
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (DateTimeException e) {
-            // Capturamos la excepción y devolvemos el error
-            return ResponseEntity.badRequest().body("Hubo un fallo al crear el evento: "+e.getMessage());
+            return ResponseEntity.badRequest().body("Hubo un fallo al crear el evento: " + e.getMessage());
         }
     }
 
-    // Update an existing event
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateEvent(@PathVariable Long id, @RequestBody Event eventDetails) {
-        Optional<Event> updatedEvent = eventService.updateEventById(id, eventDetails);
+    public ResponseEntity<?> updateEvent(@PathVariable Long id,
+                                         @RequestBody EventRequest eventDetails,
+                                         @RequestHeader("Authorization") String token) {
+        User actor = getActor(token);
+        Optional<Event> existingEvent = eventService.getEventById(id);
 
-        if (updatedEvent.isPresent()) {
-            //messagingTemplate.convertAndSend("/topic/calendar", "EVENT_UPDATED");
-            return ResponseEntity.ok(updatedEvent.get());
-        } else {
+        if (existingEvent.isEmpty()) {
             return ResponseEntity.notFound().build();
+        }
+
+        if (actor == null || !canAccessEvent(actor, existingEvent.get())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso para actualizar este evento.");
+        }
+
+        if (actor.getRole() != UserRole.ADMIN && existingEvent.get().getAssignedByAdmin() != null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("No puedes modificar eventos asignados por administrador.");
+        }
+
+        try {
+            validateEventDates(eventDetails);
+
+            if (actor.getRole() == UserRole.ADMIN && existingEvent.get().getAssignedByAdmin() != null) {
+                List<User> targets = resolveTargetUsers(actor, eventDetails);
+                if (targets.isEmpty()) {
+                    return ResponseEntity.badRequest().body("Debes seleccionar al menos un usuario.");
+                }
+
+                String existingBatchId = existingEvent.get().getAssignmentBatchId();
+                List<Event> currentBatchEvents;
+
+                if (existingBatchId != null && !existingBatchId.isBlank()) {
+                    currentBatchEvents = eventService.getAssignedEventsByBatch(actor.getId(), existingBatchId);
+                } else {
+                    currentBatchEvents = new ArrayList<>();
+                    currentBatchEvents.add(existingEvent.get());
+                }
+
+                Map<Long, Event> currentByUserId = new HashMap<>();
+                currentBatchEvents.forEach((event) -> currentByUserId.put(event.getUser().getId(), event));
+
+                Set<Long> targetIds = new HashSet<>();
+                targets.forEach(user -> targetIds.add(user.getId()));
+
+                String targetBatchId = targets.size() > 1
+                        ? (existingBatchId != null && !existingBatchId.isBlank() ? existingBatchId : UUID.randomUUID().toString())
+                        : null;
+
+                Event representative = null;
+
+                for (User target : targets) {
+                    Event eventForTarget = currentByUserId.get(target.getId());
+
+                    if (eventForTarget == null) {
+                        eventForTarget = new Event();
+                        eventForTarget.setUser(target);
+                        eventForTarget.setAssignedByAdmin(actor);
+                    }
+
+                    eventForTarget.setAssignmentBatchId(targetBatchId);
+                    eventService.applyEventDetails(eventForTarget, eventDetails);
+                    Event saved = eventService.save(eventForTarget);
+
+                    if (representative == null) {
+                        representative = saved;
+                    }
+                }
+
+                for (Event event : currentBatchEvents) {
+                    if (!targetIds.contains(event.getUser().getId())) {
+                        eventService.deleteEventById(event.getId());
+                    }
+                }
+
+                return ResponseEntity.ok(representative);
+            }
+
+            Optional<Event> updatedEvent = eventService.updateEventById(id, eventDetails);
+            return updatedEvent.<ResponseEntity<?>>map(ResponseEntity::ok)
+                    .orElseGet(() -> ResponseEntity.notFound().build());
+        } catch (DateTimeException e) {
+            return ResponseEntity.badRequest().body("Hubo un fallo al actualizar el evento: " + e.getMessage());
         }
     }
 
-
-    // Delete an event
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEvent(@PathVariable Long id) {
-        try {
-            eventService.deleteEventById(id);
-            //messagingTemplate.convertAndSend("/topic/calendar", "EVENT_DELETED");
-            return ResponseEntity.noContent().build();
-        } catch (Exception e) {
+    public ResponseEntity<?> deleteEvent(@PathVariable Long id,
+                                         @RequestHeader("Authorization") String token) {
+        User actor = getActor(token);
+        Optional<Event> existingEvent = eventService.getEventById(id);
+
+        if (existingEvent.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
+
+        if (actor == null || !canAccessEvent(actor, existingEvent.get())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso para eliminar este evento.");
+        }
+
+        if (actor.getRole() != UserRole.ADMIN && existingEvent.get().getAssignedByAdmin() != null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("No puedes eliminar eventos asignados por administrador.");
+        }
+
+        eventService.deleteEventById(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/categories")
-    public ResponseEntity<?> getCategories(){
-        try{
-           List<String> categories = eventService.getCategories();
-           return ResponseEntity.ok(categories);
-
-        }catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching categories: "+e.getMessage());
+    public ResponseEntity<?> getCategories() {
+        try {
+            return ResponseEntity.ok(eventService.getCategories());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching categories: " + e.getMessage());
         }
     }
 
-}
+    private User getActor(String token) {
+        String tokenF = token.replace("Bearer ", "").trim();
+        String username = jwtUtil.extractUsername(tokenF);
+        return userService.getUserByUsername(username);
+    }
 
+    private void validateEventDates(EventRequest request) {
+        if (request.getEndTime() == null || request.getStartTime() == null || !request.getEndTime().isAfter(request.getStartTime())) {
+            throw new DateTimeException("Date is not correct");
+        }
+    }
+
+    private List<User> resolveTargetUsers(User actor, EventRequest request) {
+        if (actor.getRole() != UserRole.ADMIN) {
+            return List.of(actor);
+        }
+
+        if (Boolean.TRUE.equals(request.getAssignToAllUsers())) {
+            List<User> allUsers = userService.getUsersInAdminScope(actor);
+            if (allUsers.isEmpty()) {
+                throw new SecurityException("No hay usuarios subordinados para asignar.");
+            }
+            return allUsers;
+        }
+
+        if (request.getTargetUserIds() != null && !request.getTargetUserIds().isEmpty()) {
+            return request.getTargetUserIds().stream()
+                    .map(userService::getUserById)
+                    .peek(user -> {
+                        if (!canAccessManagedUser(actor, user)) {
+                            throw new SecurityException("No tienes permiso para operar sobre uno de los usuarios seleccionados.");
+                        }
+                    })
+                    .distinct()
+                    .toList();
+        }
+
+        if (request.getTargetUserId() != null) {
+            User managedUser = userService.getUserById(request.getTargetUserId());
+            if (!canAccessManagedUser(actor, managedUser)) {
+                throw new SecurityException("No tienes permiso para operar sobre ese usuario.");
+            }
+            return List.of(managedUser);
+        }
+
+        throw new SecurityException("Debes seleccionar al menos un usuario.");
+    }
+
+    private boolean canAccessManagedUser(User actor, User target) {
+        if (target == null || actor.getRole() != UserRole.ADMIN) {
+            return false;
+        }
+
+        return userService.getUsersInAdminScope(actor).stream()
+                .anyMatch(user -> user.getId().equals(target.getId()));
+    }
+
+    private boolean canAccessEvent(User actor, Event event) {
+        if (event.getUser().getId().equals(actor.getId())) {
+            return true;
+        }
+
+        return actor.getRole() == UserRole.ADMIN
+                && event.getAssignedByAdmin() != null
+                && event.getAssignedByAdmin().getId().equals(actor.getId())
+                && canAccessManagedUser(actor, event.getUser());
+    }
+}

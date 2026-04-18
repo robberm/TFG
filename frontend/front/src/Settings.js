@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useDarkMode } from "./DarkModeContext";
 import "./css/Settings.css";
+import { resolveProfileImageUrl } from "./utils/profileImage";
 
 const API_BASE_URL = "http://localhost:8080";
 
@@ -48,9 +49,12 @@ const Settings = () => {
       }
 
       if (data?.profileImagePath) {
-        setProfileImage(`${API_BASE_URL}/uploads/${data.profileImagePath}`);
+        const profileUrl = resolveProfileImageUrl(data.profileImagePath);
+        setProfileImage(profileUrl);
+        localStorage.setItem("profileImage", profileUrl);
       } else {
         setProfileImage("");
+        localStorage.removeItem("profileImage");
       }
     } catch (error) {
       setAccountMessage(error.message || "No se pudo cargar el perfil.");
@@ -84,10 +88,17 @@ const Settings = () => {
         );
       }
 
+      if (data?.username) {
+        localStorage.setItem("username", data.username);
+      }
+
       if (data?.profileImagePath) {
-        setProfileImage(`${API_BASE_URL}/uploads/${data.profileImagePath}`);
+        const profileUrl = resolveProfileImageUrl(data.profileImagePath);
+        setProfileImage(profileUrl);
+        localStorage.setItem("profileImage", profileUrl);
       } else {
         setProfileImage("");
+        localStorage.removeItem("profileImage");
       }
 
       setAccountMessage(

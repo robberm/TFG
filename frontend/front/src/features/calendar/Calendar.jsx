@@ -15,6 +15,10 @@ const Calendar = () => {
     currentDate,
     selectedDate,
     events,
+    isAdmin,
+    managedUsers,
+    selectedManagedUserId,
+    setSelectedManagedUserId,
     showModal,
     selectedEvent,
     viewMode,
@@ -66,6 +70,31 @@ const Calendar = () => {
       />
 
       <div className="calendar-body">
+        {isAdmin && (
+          <div className="adminCalendarScopeSelector">
+            <label htmlFor="calendar-managed-user">Usuario subordinado</label>
+            <select
+              id="calendar-managed-user"
+              value={selectedManagedUserId ?? ""}
+              onChange={(event) =>
+                setSelectedManagedUserId(
+                  event.target.value ? Number(event.target.value) : null,
+                )
+              }
+            >
+              <option value="">Todos los asignados</option>
+              {managedUsers.length === 0 && (
+                <option value="">Sin usuarios subordinados</option>
+              )}
+              {managedUsers.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.username}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {viewMode === "month" && (
           <MonthView
             currentDate={currentDate}
@@ -102,6 +131,9 @@ const Calendar = () => {
           onClose={handleCloseModal}
           onSave={handleSaveEvent}
           onDelete={handleDeleteEvent}
+          isAdmin={isAdmin}
+          managedUsers={managedUsers}
+          defaultManagedUserId={selectedManagedUserId}
         />
       )}
     </div>

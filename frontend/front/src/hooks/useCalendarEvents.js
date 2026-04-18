@@ -15,6 +15,8 @@ import {
   saveCalendarEvent,
   deleteCalendarEvent,
 } from "../api/eventApi";
+import { getCurrentUserProfile } from "../api/userApi";
+import { getManagedUsers } from "../api/adminApi";
 
 const useCalendarEvents = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -23,6 +25,81 @@ const useCalendarEvents = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [viewMode, setViewMode] = useState("month");
+  const [profile, setProfile] = useState(null);
+  const [managedUsers, setManagedUsers] = useState([]);
+  const [selectedManagedUserId, setSelectedManagedUserId] = useState(null);
+
+  const isAdmin = profile?.role === "ADMIN";
+
+  const collapseAdminAssignedEvents = useCallback((incomingEvents) => {
+    if (!Array.isArray(incomingEvents)) {
+      return [];
+    }
+
+    const groupedByBatch = new Map();
+
+    incomingEvents.forEach((event) => {
+      const groupKey = event.assignmentBatchId
+        ? `batch-${event.assignmentBatchId}`
+        : `event-${event.id}`;
+
+      if (!groupedByBatch.has(groupKey)) {
+        groupedByBatch.set(groupKey, {
+          ...event,
+          assignedUsersCount: 1,
+          assignedToUsername: event.assignedToUsername || null,
+          assignedUserIds:
+            event.assignedToUserId != null ? [event.assignedToUserId] : [],
+        });
+        return;
+      }
+
+      const current = groupedByBatch.get(groupKey);
+      groupedByBatch.set(groupKey, {
+        ...current,
+        assignedUsersCount: (current.assignedUsersCount || 1) + 1,
+        assignedToUsername: "Varios usuarios",
+        assignedUserIds: [
+          ...(current.assignedUserIds || []),
+          ...(event.assignedToUserId != null ? [event.assignedToUserId] : []),
+        ],
+      });
+    });
+
+    return Array.from(groupedByBatch.values());
+  }, []);
+
+  useEffect(() => {
+    const loadScope = async () => {
+      try {
+        const currentProfile = await getCurrentUserProfile();
+        setProfile(currentProfile);
+
+        if (currentProfile?.role === "ADMIN") {
+          const users = await getManagedUsers();
+          const normalizedUsers = Array.isArray(users) ? users : [];
+          setManagedUsers(normalizedUsers);
+          setSelectedManagedUserId((previousId) => {
+            if (
+              previousId != null &&
+              normalizedUsers.some((user) => user.id === previousId)
+            ) {
+              return previousId;
+            }
+            return previousId ?? null;
+          });
+          return;
+        }
+
+        setManagedUsers([]);
+        setSelectedManagedUserId(null);
+      } catch (error) {
+        console.error("Error loading calendar scope:", error);
+      }
+    };
+
+    loadScope();
+  }, []);
 
   const fetchEvents = useCallback(async () => {
     try {
@@ -46,12 +123,27 @@ const useCalendarEvents = () => {
         end = dayEnd;
       }
 
-      const data = await fetchEventsByRange(start, end);
-      setEvents(data);
+      const data = await fetchEventsByRange(
+        start,
+        end,
+        isAdmin ? selectedManagedUserId : null,
+      );
+
+      if (isAdmin && selectedManagedUserId == null) {
+        setEvents(collapseAdminAssignedEvents(data));
+      } else {
+        setEvents(data);
+      }
     } catch (error) {
       console.error("Error fetching events:", error);
     }
-  }, [currentDate, viewMode]);
+  }, [
+    collapseAdminAssignedEvents,
+    currentDate,
+    isAdmin,
+    selectedManagedUserId,
+    viewMode,
+  ]);
 
   useEffect(() => {
     fetchEvents();
@@ -174,6 +266,11 @@ const useCalendarEvents = () => {
     currentDate,
     selectedDate,
     events,
+    profile,
+    isAdmin,
+    managedUsers,
+    selectedManagedUserId,
+    setSelectedManagedUserId,
     showModal,
     selectedEvent,
     viewMode,

@@ -110,6 +110,7 @@ const MonthView = ({
               onClick={(e) => onEventClick(event, e)}
             >
               {event.title}
+              {event.assignedByAdmin && <span className="eventOwnerTag">Asignado</span>}
             </div>
           ))}
         </div>

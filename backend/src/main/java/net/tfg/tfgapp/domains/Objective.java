@@ -2,6 +2,7 @@ package net.tfg.tfgapp.domains;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -40,9 +41,34 @@ public abstract class Objective {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_by_admin_id")
+    private User assignedByAdmin;
+
+
     @JsonIgnore
     @OneToMany(mappedBy = "objective", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ObjectiveLog> logs = new ArrayList<>();
+
+
+
+    @JsonProperty("assignedByAdmin")
+    public boolean isAssignedByAdmin() {
+        return assignedByAdmin != null;
+    }
+
+    @JsonProperty("assignedByAdminUsername")
+    public String getAssignedByAdminUsername() {
+        return assignedByAdmin != null ? assignedByAdmin.getUsername() : null;
+    }
+
+    @JsonProperty("assignedToUsername")
+    public String getAssignedToUsername() {
+        return user != null ? user.getUsername() : null;
+    }
 
     @PrePersist
     public void onCreate() {

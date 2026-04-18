@@ -8,7 +8,7 @@ function UserMenu() {
   const [username, setUsername] = useState(
     localStorage.getItem("username") || "User",
   );
-  const [profileImage, setProfileImage] = useState("");
+  const [profileImage, setProfileImage] = useState(localStorage.getItem("profileImage") || "");
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,36 +31,14 @@ function UserMenu() {
       return;
     }
 
-    try {
-      const response = await fetch("http://localhost:8080/users/me", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const usernameFromStorage = localStorage.getItem("username");
+    const profileImageFromStorage = localStorage.getItem("profileImage");
 
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        throw new Error(data?.message || "No se pudo cargar el perfil.");
-      }
-
-      if (data?.username) {
-        setUsername(data.username);
-        localStorage.setItem("username", data.username);
-      }
-
-      if (data?.profileImagePath) {
-        setProfileImage(
-          `http://localhost:8080/uploads/${data.profileImagePath}`,
-        );
-      } else {
-        setProfileImage("");
-      }
-    } catch (error) {
-      console.warn("No se pudo cargar la información del perfil.", error);
-      setProfileImage("");
+    if (usernameFromStorage) {
+      setUsername(usernameFromStorage);
     }
+
+    setProfileImage(profileImageFromStorage || "");
   };
 
   const handleLogout = async () => {
@@ -75,6 +53,8 @@ function UserMenu() {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
     localStorage.removeItem("profileImage");
+    localStorage.removeItem("role");
+    localStorage.removeItem("organizationId");
 
     setProfileImage("");
     navigate("/", { replace: true });

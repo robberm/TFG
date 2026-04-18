@@ -1,5 +1,6 @@
 const API_BASE_URL = "http://localhost:8080";
 
+
 const getToken = () => localStorage.getItem("token");
 
 const buildHeaders = (extraHeaders = {}) => {
@@ -50,7 +51,10 @@ const request = async (path, options = {}) => {
 };
 
 /* Goals */
-export const getGoals = () => request("/goals");
+export const getGoals = (targetUserId = null) =>
+  request(
+    targetUserId ? `/goals?targetUserId=${encodeURIComponent(targetUserId)}` : "/goals",
+  );
 
 export const getGoalById = (goalId) => request(`/goals/${goalId}`);
 

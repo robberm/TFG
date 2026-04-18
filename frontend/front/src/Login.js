@@ -3,6 +3,7 @@ import './css/App.css';
 import { useNavigate } from "react-router-dom";
 import PasswordInput from "./components/PasswordInput";
 import { getCurrentUserProfile } from "./api/userApi";
+import { resolveProfileImageUrl } from "./utils/profileImage";
 
 
 const Login = () => {
@@ -35,10 +36,20 @@ const Login = () => {
         const token = data.token.trim(); 
         localStorage.setItem("token", token); 
         localStorage.setItem("username", data.username);
+        localStorage.setItem("role", data.role || "PERSONAL");
+        localStorage.setItem("organizationId", data.organizationId ?? "");
 
-        const profile = await getCurrentUserProfile();
-        const isAdmin = profile?.role === "ADMIN";
-        const hasOrganization = Boolean(profile?.organizationId);
+        const profile = await getCurrentUserProfile({ forceRefresh: true });
+        if (profile?.profileImagePath) {
+          localStorage.setItem(
+            "profileImage",
+            resolveProfileImageUrl(profile.profileImagePath),
+          );
+        } else {
+          localStorage.removeItem("profileImage");
+        }
+        const isAdmin = (data.role || profile?.role) === "ADMIN";
+        const hasOrganization = Boolean((data.organizationId ?? profile?.organizationId));
         const nextPath = isAdmin
           ? hasOrganization
             ? "/admin"

@@ -5,6 +5,8 @@ import net.tfg.tfgapp.DTOs.objectives.GoalRequest;
 import net.tfg.tfgapp.domains.Goal;
 import net.tfg.tfgapp.domains.User;
 
+import java.util.List;
+
 public interface IGoalService extends IObjectiveService<Goal> {
 
     Goal createGoal(GoalRequest request, User user);
@@ -12,4 +14,10 @@ public interface IGoalService extends IObjectiveService<Goal> {
     Goal updateGoal(Goal existingGoal, GoalRequest request);
 
     Goal updateGoalProgress(Goal goal, GoalProgressRequest request);
+
+    void applyGoalDetails(Goal goal, GoalRequest request);
+
+    List<Goal> getAssignedGoalsForAdmin(Long adminId);
+
+    List<Goal> getAssignedGoalsForAdminAndUser(Long adminId, Long userId);
 }

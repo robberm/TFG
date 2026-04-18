@@ -62,7 +62,7 @@ const parseCalendarDate = (value) => {
   return parseISO(value);
 };
 
-const TimeSelector = ({ value, onChange, label }) => {
+const TimeSelector = ({ value, onChange, label, disabled = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const dropdownRef = useRef(null);
@@ -102,8 +102,9 @@ const TimeSelector = ({ value, onChange, label }) => {
     <div className="time-selector" ref={dropdownRef}>
       <label className="time-selector-label">{label}</label>
       <div
-        className={`time-selector-input ${isOpen ? "active" : ""}`}
+        className={`time-selector-input ${isOpen ? "active" : ""} ${disabled ? "disabled" : ""}`}
         onClick={() => {
+          if (disabled) return;
           setIsOpen(true);
           setTimeout(() => inputRef.current?.focus(), 0);
         }}
@@ -129,6 +130,7 @@ const TimeSelector = ({ value, onChange, label }) => {
             className="time-search"
             placeholder="Buscar hora..."
             value={search}
+            disabled={disabled}
             onChange={(e) => setSearch(e.target.value)}
           />
           <div className="time-options" ref={optionsRef}>
@@ -149,7 +151,16 @@ const TimeSelector = ({ value, onChange, label }) => {
   );
 };
 
-const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
+const EventModal = ({
+  event,
+  selectedDate,
+  onClose,
+  onSave,
+  onDelete,
+  isAdmin = false,
+  managedUsers = [],
+  defaultManagedUserId = null,
+}) => {
   const [formData, setFormData] = useState({
     id: null,
     title: "",
@@ -160,6 +171,9 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
     location: "",
     category: "",
     isAllDay: false,
+    targetUserId: "",
+    targetUserIds: [],
+    assignmentMode: "single",
   });
   const [reminderMinutesBefore, setReminderMinutesBefore] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -170,6 +184,27 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
     if (event) {
       const startDate = parseCalendarDate(event.startTime);
       const endDate = parseCalendarDate(event.endTime);
+      const assignedUserIds = Array.isArray(event.assignedUserIds)
+        ? event.assignedUserIds.map((userId) => String(userId))
+        : event.assignedToUserId != null
+          ? [String(event.assignedToUserId)]
+          : [];
+
+      const isAllManagedUsersSelected =
+        managedUsers.length > 0 &&
+        assignedUserIds.length === managedUsers.length &&
+        managedUsers.every((user) =>
+          assignedUserIds.includes(String(user.id)),
+        );
+
+      const inferredAssignmentMode = isAllManagedUsersSelected
+        ? "all"
+        : assignedUserIds.length > 1
+          ? "multiple"
+          : "single";
+      const defaultSingleUserId =
+        assignedUserIds[0] ??
+        (defaultManagedUserId != null ? String(defaultManagedUserId) : "");
 
       setFormData({
         id: event.id,
@@ -181,6 +216,9 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
         location: event.location || "",
         category: event.category || "",
         isAllDay: event.isAllDay || false,
+        targetUserId: defaultSingleUserId,
+        targetUserIds: assignedUserIds,
+        assignmentMode: inferredAssignmentMode,
       });
       setReminderMinutesBefore(event.reminderMinutesBefore ?? null);
       setShowMoreOptions(true);
@@ -201,13 +239,16 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
         location: "",
         category: "",
         isAllDay: false,
+        targetUserId: defaultManagedUserId ?? "",
+        targetUserIds: defaultManagedUserId != null ? [String(defaultManagedUserId)] : [],
+        assignmentMode: "single",
       });
       setReminderMinutesBefore(null);
       setShowMoreOptions(false);
     }
 
     setTimeout(() => titleInputRef.current?.focus(), 100);
-  }, [event, selectedDate]);
+  }, [defaultManagedUserId, event, managedUsers, selectedDate]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -242,8 +283,26 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const toggleTargetSelection = (value) => {
+    setFormData((prev) => {
+      const current = prev.targetUserIds || [];
+      const alreadySelected = current.includes(String(value));
+
+      return {
+        ...prev,
+        targetUserIds: alreadySelected
+          ? current.filter((item) => item !== String(value))
+          : [...current, String(value)],
+      };
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (isAssignedEventReadOnly) {
+      return;
+    }
 
     const startDateTime = `${formData.date}T${formData.startTime}`;
     const endDateTime = `${formData.date}T${formData.endTime}`;
@@ -258,6 +317,16 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
       category: formData.category,
       isAllDay: formData.isAllDay,
       reminderMinutesBefore,
+      targetUserId:
+        isAdmin && formData.assignmentMode === "single" && formData.targetUserId
+          ? Number(formData.targetUserId)
+          : null,
+      targetUserIds:
+        isAdmin && formData.assignmentMode === "multiple"
+          ? formData.targetUserIds
+                            .map((value) => Number(value))
+          : null,
+      assignToAllUsers: isAdmin && formData.assignmentMode === "all",
     };
 
     onSave(eventData);
@@ -277,6 +346,9 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
     };
     return colors[cat?.toLowerCase()] || "#6264a7";
   };
+
+  const canDeleteEvent = !event?.assignedByAdmin || isAdmin;
+  const isAssignedEventReadOnly = Boolean(event?.assignedByAdmin) && !isAdmin;
 
   const formatDisplayDate = () => {
     if (!formData.date) return "";
@@ -303,6 +375,53 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
 
         <form onSubmit={handleSubmit} className="gcal-form">
           <div className="gcal-title-section">
+            {isAdmin && (
+              <div className="gcal-admin-assignment">
+                <select
+                  name="assignmentMode"
+                  className="gcal-input"
+                  value={formData.assignmentMode}
+                  onChange={handleChange}
+                >
+                  <option value="single">Usuario</option>
+                  <option value="multiple">Varios usuarios</option>
+                  <option value="all">Todos (organización)</option>
+                </select>
+
+                {formData.assignmentMode === "single" && (
+                  <select
+                    name="targetUserId"
+                    className="gcal-input"
+                    value={formData.targetUserId}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Selecciona usuario subordinado</option>
+                    {managedUsers.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.username}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                {formData.assignmentMode === "multiple" && (
+                  <div className="gcal-multi-targets">
+                    {managedUsers.map((user) => (
+                      <label key={user.id}>
+                        <input
+                          type="checkbox"
+                          checked={formData.targetUserIds?.includes(String(user.id))}
+                          onChange={() => toggleTargetSelection(user.id)}
+                        />
+                        {user.username}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             <input
               ref={titleInputRef}
               type="text"
@@ -310,6 +429,7 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
               className="gcal-title-input"
               placeholder="Añadir título"
               value={formData.title}
+              disabled={isAssignedEventReadOnly}
               onChange={handleChange}
               required
             />
@@ -337,6 +457,7 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
                   name="date"
                   className="gcal-date-input"
                   value={formData.date}
+                  disabled={isAssignedEventReadOnly}
                   onChange={handleChange}
                   required
                 />
@@ -348,24 +469,27 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
                   <TimeSelector
                     label="Inicio"
                     value={formData.startTime}
+                    disabled={isAssignedEventReadOnly}
                     onChange={(val) => handleTimeChange("startTime", val)}
                   />
                   <span className="gcal-time-separator">—</span>
                   <TimeSelector
                     label="Fin"
                     value={formData.endTime}
+                    disabled={isAssignedEventReadOnly}
                     onChange={(val) => handleTimeChange("endTime", val)}
                   />
                 </div>
               )}
 
               <label className="gcal-allday-toggle">
-                <input
-                  type="checkbox"
-                  name="isAllDay"
-                  checked={formData.isAllDay}
-                  onChange={handleChange}
-                />
+                  <input
+                    type="checkbox"
+                    name="isAllDay"
+                    checked={formData.isAllDay}
+                    disabled={isAssignedEventReadOnly}
+                    onChange={handleChange}
+                  />
                 <span className="gcal-toggle-slider"></span>
                 <span className="gcal-toggle-label">Todo el día</span>
               </label>
@@ -411,6 +535,7 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
                   className="gcal-location-input"
                   placeholder="Añadir ubicación"
                   value={formData.location}
+                  disabled={isAssignedEventReadOnly}
                   onChange={handleChange}
                 />
               </div>
@@ -434,6 +559,7 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
                   className="gcal-description-input"
                   placeholder="Añadir descripción"
                   value={formData.description}
+                  disabled={isAssignedEventReadOnly}
                   onChange={handleChange}
                   rows="3"
                 />
@@ -443,6 +569,7 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
                 <label>Reminder</label>
                 <select
                   value={reminderMinutesBefore ?? ""}
+                  disabled={isAssignedEventReadOnly}
                   onChange={(e) =>
                     setReminderMinutesBefore(
                       e.target.value === "" ? null : Number(e.target.value),
@@ -473,6 +600,7 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
                       key={cat}
                       type="button"
                       className={`gcal-category-chip ${formData.category === cat ? "active" : ""}`}
+                      disabled={isAssignedEventReadOnly}
                       style={{
                         "--chip-color": getCategoryColor(cat),
                       }}
@@ -490,7 +618,7 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
           )}
 
           <div className="gcal-modal-footer">
-            {event && (
+            {event && canDeleteEvent && (
               <button
                 type="button"
                 className="gcal-delete-btn"
@@ -516,9 +644,11 @@ const EventModal = ({ event, selectedDate, onClose, onSave, onDelete }) => {
               >
                 Cancelar
               </button>
-              <button type="submit" className="gcal-save-btn">
-                {event ? "Guardar" : "Crear"}
-              </button>
+              {!isAssignedEventReadOnly && (
+                <button type="submit" className="gcal-save-btn">
+                  {event ? "Guardar" : "Crear"}
+                </button>
+              )}
             </div>
           </div>
         </form>

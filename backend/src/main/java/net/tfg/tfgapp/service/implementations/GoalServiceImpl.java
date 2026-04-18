@@ -27,35 +27,16 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
         this.objectiveLogRepo = objectiveLogRepo;
     }
 
-    /**
-     * Obtiene todos los objetivos grandes de un usuario.
-     */
     @Override
     public List<Goal> getByUsername(String username) {
         return goalRepo.findByUserUsername(username);
     }
 
-    /**
-     * Crea un nuevo objetivo grande asociado al usuario autenticado.
-     */
     @Override
     public Goal createGoal(GoalRequest request, User user) {
         Goal goal = new Goal();
-        goal.setTitulo(request.getTitulo());
-        goal.setDescription(request.getDescription());
-        goal.setPriority(request.getPriority() != null ? request.getPriority() : ObjectivePriority.Media);
-        goal.setStatus(request.getStatus() != null ? request.getStatus() : GoalStatus.NotStarted);
-        goal.setNumeric(request.isNumeric());
-        goal.setActive(request.getActive() == null || request.getActive());
+        applyGoalDetails(goal, request);
         goal.setUser(user);
-
-        if (request.isNumeric()) {
-            goal.setValorObjetivo(request.getValorObjetivo());
-            goal.setValorProgreso(request.getValorProgreso() != null ? request.getValorProgreso() : 0.0);
-        } else {
-            goal.setValorObjetivo(null);
-            goal.setValorProgreso(null);
-        }
 
         Goal savedGoal = goalRepo.save(goal);
 
@@ -71,32 +52,30 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
         return savedGoal;
     }
 
-    /**
-     * Actualiza los campos editables de un objetivo grande.
-     */
     @Override
     public Goal updateGoal(Goal existingGoal, GoalRequest request) {
-        existingGoal.setTitulo(request.getTitulo());
-        existingGoal.setDescription(request.getDescription());
-        existingGoal.setPriority(request.getPriority() != null ? request.getPriority() : existingGoal.getPriority());
-        existingGoal.setStatus(request.getStatus() != null ? request.getStatus() : existingGoal.getStatus());
-        existingGoal.setNumeric(request.isNumeric());
-        existingGoal.setActive(request.getActive() == null || request.getActive());
-
-        if (request.isNumeric()) {
-            existingGoal.setValorObjetivo(request.getValorObjetivo());
-            existingGoal.setValorProgreso(request.getValorProgreso());
-        } else {
-            existingGoal.setValorObjetivo(null);
-            existingGoal.setValorProgreso(null);
-        }
-
+        applyGoalDetails(existingGoal, request);
         return goalRepo.save(existingGoal);
     }
 
-    /**
-     * Actualiza el progreso de un objetivo y registra el cambio en el histórico.
-     */
+    @Override
+    public void applyGoalDetails(Goal goal, GoalRequest request) {
+        goal.setTitulo(request.getTitulo());
+        goal.setDescription(request.getDescription());
+        goal.setPriority(request.getPriority() != null ? request.getPriority() : ObjectivePriority.Media);
+        goal.setStatus(request.getStatus() != null ? request.getStatus() : GoalStatus.NotStarted);
+        goal.setNumeric(request.isNumeric());
+        goal.setActive(request.getActive() == null || request.getActive());
+
+        if (request.isNumeric()) {
+            goal.setValorObjetivo(request.getValorObjetivo());
+            goal.setValorProgreso(request.getValorProgreso() != null ? request.getValorProgreso() : 0.0);
+        } else {
+            goal.setValorObjetivo(null);
+            goal.setValorProgreso(null);
+        }
+    }
+
     @Override
     public Goal updateGoalProgress(Goal goal, GoalProgressRequest request) {
         goal.setValorProgreso(request.getValorProgreso());
@@ -110,5 +89,15 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
         objectiveLogRepo.save(log);
 
         return goalRepo.save(goal);
+    }
+
+    @Override
+    public List<Goal> getAssignedGoalsForAdmin(Long adminId) {
+        return goalRepo.findByAssignedByAdmin_Id(adminId);
+    }
+
+    @Override
+    public List<Goal> getAssignedGoalsForAdminAndUser(Long adminId, Long userId) {
+        return goalRepo.findByAssignedByAdmin_IdAndUser_Id(adminId, userId);
     }
 }

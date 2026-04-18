@@ -22,9 +22,19 @@ const ProtectedRoute = ({
       }
 
       try {
-        const profile = await getCurrentUserProfile();
-        const isAdmin = profile?.role === "ADMIN";
-        const hasOrganization = Boolean(profile?.organizationId);
+        let role = localStorage.getItem("role");
+        let organizationId = localStorage.getItem("organizationId");
+
+        if (!role) {
+          const profile = await getCurrentUserProfile();
+          role = profile?.role || "PERSONAL";
+          organizationId = profile?.organizationId ?? "";
+          localStorage.setItem("role", role);
+          localStorage.setItem("organizationId", organizationId);
+        }
+
+        const isAdmin = role === "ADMIN";
+        const hasOrganization = Boolean(organizationId);
 
         if (requireAdmin && !isAdmin) {
           if (isMounted) setStatus("forbidden");
@@ -50,6 +60,8 @@ const ProtectedRoute = ({
       } catch (_) {
         localStorage.removeItem("token");
         localStorage.removeItem("username");
+        localStorage.removeItem("role");
+        localStorage.removeItem("organizationId");
         if (isMounted) setStatus("unauthorized");
       }
     };

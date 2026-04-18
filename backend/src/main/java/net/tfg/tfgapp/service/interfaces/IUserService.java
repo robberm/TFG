@@ -20,5 +20,7 @@ public interface IUserService {
 
     User getManagedUser(Long adminId, Long userId);
 
+    List<User> getUsersInAdminScope(User admin);
+
     void delete(User user);
 }

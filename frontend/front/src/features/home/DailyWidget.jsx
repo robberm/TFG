@@ -88,6 +88,89 @@ const getTimedEventStyle = (event) => {
   };
 };
 
+/**
+ * Distribuye eventos solapados en columnas para que coexistan visualmente.
+ *
+ * @param {Array<Object>} dayEvents eventos del día
+ * @returns {Map<number, {top: string, height: string, left: string, width: string}>}
+ */
+const buildEventLayoutMap = (dayEvents) => {
+  const sorted = [...dayEvents]
+    .map((event) => {
+      const start = parseCalendarDate(event.startTime);
+      const end = parseCalendarDate(event.endTime);
+      const startMinutes = getMinutesOfDay(start);
+      let endMinutes = getMinutesOfDay(end);
+
+      if (endMinutes <= startMinutes) {
+        endMinutes += 24 * 60;
+      }
+
+      return {
+        event,
+        startMinutes,
+        endMinutes,
+      };
+    })
+    .sort((a, b) => a.startMinutes - b.startMinutes || a.endMinutes - b.endMinutes);
+
+  const positioned = [];
+  let cluster = [];
+  let clusterEnd = -1;
+
+  const flushCluster = () => {
+    if (cluster.length === 0) return;
+
+    const totalColumns = Math.max(...cluster.map((item) => item.column)) + 1;
+
+    cluster.forEach((item) => {
+      const baseStyle = getTimedEventStyle(item.event);
+      const widthPct = 100 / totalColumns;
+      const leftPct = item.column * widthPct;
+
+      positioned.push({
+        id: item.event.id,
+        style: {
+          ...baseStyle,
+          left: `calc(${leftPct}% + 8px)`,
+          width: `calc(${widthPct}% - 16px)`,
+        },
+      });
+    });
+
+    cluster = [];
+    clusterEnd = -1;
+  };
+
+  sorted.forEach((item) => {
+    if (cluster.length === 0 || item.startMinutes < clusterEnd) {
+      const usedColumns = new Set(
+        cluster
+          .filter((current) => current.endMinutes > item.startMinutes)
+          .map((current) => current.column),
+      );
+
+      let column = 0;
+      while (usedColumns.has(column)) {
+        column += 1;
+      }
+
+      cluster = cluster.filter((current) => current.endMinutes > item.startMinutes);
+      cluster.push({ ...item, column });
+      clusterEnd = Math.max(clusterEnd, item.endMinutes);
+      return;
+    }
+
+    flushCluster();
+    cluster.push({ ...item, column: 0 });
+    clusterEnd = item.endMinutes;
+  });
+
+  flushCluster();
+
+  return new Map(positioned.map((item) => [item.id, item.style]));
+};
+
 const DailyWidget = ({ events, onEventsChanged }) => {
   const [currentDate] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
@@ -109,6 +192,10 @@ const DailyWidget = ({ events, onEventsChanged }) => {
         isSameDay(parseCalendarDate(event.startTime), currentDate),
     );
   }, [events, currentDate]);
+  const timedEventLayoutMap = useMemo(
+    () => buildEventLayoutMap(timedEvents),
+    [timedEvents],
+  );
 
   const hours = useMemo(() => Array.from({ length: 24 }, (_, i) => i), []);
 
@@ -247,7 +334,8 @@ const DailyWidget = ({ events, onEventsChanged }) => {
                       key={event.id}
                       className={`day-event ${event.category || ""} homeDailyEventCard`}
                       style={{
-                        ...getTimedEventStyle(event),
+                        ...(timedEventLayoutMap.get(event.id) ||
+                          getTimedEventStyle(event)),
                         pointerEvents: "auto",
                         cursor: "pointer",
                       }}

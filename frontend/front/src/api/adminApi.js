@@ -1,5 +1,6 @@
 const API_BASE_URL = "http://localhost:8080/admin";
 
+
 const getAuthHeaders = (includeJson = false) => {
   const token = localStorage.getItem("token");
 
@@ -65,6 +66,15 @@ export const createAdminOrganization = async (organizationName) => {
     method: "POST",
     headers: getAuthHeaders(true),
     body: JSON.stringify({ organizationName }),
+  });
+
+  return parseResponse(response);
+};
+
+export const getManagedUserGoals = async (userId) => {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}/goals`, {
+    method: "GET",
+    headers: getAuthHeaders(),
   });
 
   return parseResponse(response);

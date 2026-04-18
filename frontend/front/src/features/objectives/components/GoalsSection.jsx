@@ -7,7 +7,14 @@ import {
   sortGoalsByPriority,
 } from "../utils/objectiveHelpers";
 
-const GoalsSection = ({ goals, onCreate, onEdit, onDelete }) => {
+const GoalsSection = ({
+  goals,
+  onCreate,
+  onEdit,
+  onDelete,
+  isAdmin = false,
+  showAssignedUserColumn = false,
+}) => {
   const [showCompleted, setShowCompleted] = useState(false);
 
   /**
@@ -52,12 +59,26 @@ const GoalsSection = ({ goals, onCreate, onEdit, onDelete }) => {
           <div className="tableCell">
             <strong className={goal.status === "Done" ? "completedText" : ""}>
               {goal.titulo}
+              {goal.assignedByAdmin && (
+                <span className="ownerTag assigned">Asignado</span>
+              )}
             </strong>
           </div>
+
+          {showAssignedUserColumn && (
+            <div className="tableCell">
+              <span className={goal.status === "Done" ? "completedText" : ""}>
+                {goal.assignedToUsername || "—"}
+              </span>
+            </div>
+          )}
 
           <div className="tableCell">
             <span className={goal.status === "Done" ? "completedText" : ""}>
               {goal.description || "—"}
+              {goal.assignedByAdmin && goal.assignedByAdminUsername && (
+                <div className="goalMetaText">Por: {goal.assignedByAdminUsername}</div>
+              )}
             </span>
           </div>
 
@@ -109,13 +130,15 @@ const GoalsSection = ({ goals, onCreate, onEdit, onDelete }) => {
               <i className="fa fa-edit"></i>
             </button>
 
-            <button
-              className="actionButton deleteButton"
-              onClick={() => onDelete(goal)}
-              title="Eliminar"
-            >
-              <i className="fa fa-trash"></i>
-            </button>
+            {(isAdmin || !goal.assignedByAdmin) && (
+              <button
+                className="actionButton deleteButton"
+                onClick={() => onDelete(goal)}
+                title="Eliminar"
+              >
+                <i className="fa fa-trash"></i>
+              </button>
+            )}
           </div>
         </div>
       );
@@ -138,6 +161,7 @@ const GoalsSection = ({ goals, onCreate, onEdit, onDelete }) => {
         <div className="todoTable">
           <div className="tableRow tableHeader">
             <div className="tableCell">Título</div>
+            {showAssignedUserColumn && <div className="tableCell">Usuario</div>}
             <div className="tableCell">Descripción</div>
             <div className="tableCell">Prioridad</div>
             <div className="tableCell">Estado</div>
@@ -177,6 +201,7 @@ const GoalsSection = ({ goals, onCreate, onEdit, onDelete }) => {
               <div className="todoTable">
                 <div className="tableRow tableHeader">
                   <div className="tableCell">Título</div>
+                  {showAssignedUserColumn && <div className="tableCell">Usuario</div>}
                   <div className="tableCell">Descripción</div>
                   <div className="tableCell">Prioridad</div>
                   <div className="tableCell">Estado</div>
