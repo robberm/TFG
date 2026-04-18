@@ -17,6 +17,8 @@ const GoalModal = ({
   defaultManagedUserId = null,
 }) => {
   const [form, setForm] = useState(EMPTY_GOAL_FORM);
+  const isAssignedGoalReadOnlyForUser =
+    Boolean(initialData?.assignedByAdmin) && !isAdmin;
 
   /**
    * Cuando abrimos el modal en modo edición, cargamos los datos del goal.
@@ -110,6 +112,27 @@ const GoalModal = ({
     const isNewGoalFromAdmin = isAdmin && !initialData;
     const normalizedForm = normalizeGoalForm(form);
 
+    if (isAssignedGoalReadOnlyForUser) {
+      onSubmit({
+        ...normalizedForm,
+        titulo: initialData.titulo,
+        description: initialData.description,
+        priority: initialData.priority,
+        isNumeric: isGoalNumeric(initialData),
+        valorObjetivo: initialData.valorObjetivo,
+        active: initialData.active,
+        status: normalizedForm.status,
+        valorProgreso: isGoalNumeric(initialData)
+          ? normalizedForm.valorProgreso
+          : null,
+        notes: form.notes?.trim() || "",
+        targetUserId: null,
+        targetUserIds: null,
+        assignToAllUsers: false,
+      });
+      return;
+    }
+
     onSubmit({
       ...normalizedForm,
       status: isAdmin ? (initialData?.status || "NotStarted") : normalizedForm.status,
@@ -199,6 +222,7 @@ const GoalModal = ({
                   id="goal-title"
                   type="text"
                   value={form.titulo}
+                  disabled={isAssignedGoalReadOnlyForUser}
                   onChange={(event) =>
                     handleChange("titulo", event.target.value)
                   }
@@ -212,6 +236,7 @@ const GoalModal = ({
                 <select
                   id="goal-priority"
                   value={form.priority}
+                  disabled={isAssignedGoalReadOnlyForUser}
                   onChange={(event) =>
                     handleChange("priority", event.target.value)
                   }
@@ -230,6 +255,7 @@ const GoalModal = ({
                   id="goal-description"
                   rows="3"
                   value={form.description}
+                  disabled={isAssignedGoalReadOnlyForUser}
                   onChange={(event) =>
                     handleChange("description", event.target.value)
                   }
@@ -266,6 +292,7 @@ const GoalModal = ({
                     id="goal-is-numeric"
                     type="checkbox"
                     checked={form.isNumeric}
+                    disabled={isAssignedGoalReadOnlyForUser}
                     onChange={(event) =>
                       handleNumericToggle(event.target.checked)
                     }
@@ -278,6 +305,7 @@ const GoalModal = ({
                     id="goal-active"
                     type="checkbox"
                     checked={form.active}
+                    disabled={isAssignedGoalReadOnlyForUser}
                     onChange={(event) =>
                       handleChange("active", event.target.checked)
                     }
@@ -311,6 +339,7 @@ const GoalModal = ({
                       type="number"
                       step="0.01"
                       value={form.valorObjetivo}
+                      disabled={isAssignedGoalReadOnlyForUser}
                       onChange={(event) =>
                         handleChange("valorObjetivo", event.target.value)
                       }

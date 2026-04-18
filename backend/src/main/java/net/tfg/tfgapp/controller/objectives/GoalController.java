@@ -112,6 +112,24 @@ public class GoalController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
+        if (actor.getRole() != UserRole.ADMIN && existingGoal.isAssignedByAdmin()) {
+            GoalRequest restrictedRequest = new GoalRequest();
+            restrictedRequest.setTitulo(existingGoal.getTitulo());
+            restrictedRequest.setDescription(existingGoal.getDescription());
+            restrictedRequest.setPriority(existingGoal.getPriority());
+            restrictedRequest.setActive(existingGoal.getActive());
+            restrictedRequest.setNumeric(existingGoal.isNumeric());
+            restrictedRequest.setValorObjetivo(existingGoal.getValorObjetivo());
+            restrictedRequest.setStatus(request.getStatus() != null ? request.getStatus() : existingGoal.getStatus());
+            restrictedRequest.setValorProgreso(
+                    existingGoal.isNumeric()
+                            ? (request.getValorProgreso() != null ? request.getValorProgreso() : existingGoal.getValorProgreso())
+                            : null
+            );
+
+            return ResponseEntity.ok(goalService.updateGoal(existingGoal, restrictedRequest));
+        }
+
         return ResponseEntity.ok(goalService.updateGoal(existingGoal, request));
     }
 

@@ -62,7 +62,7 @@ const parseCalendarDate = (value) => {
   return parseISO(value);
 };
 
-const TimeSelector = ({ value, onChange, label }) => {
+const TimeSelector = ({ value, onChange, label, disabled = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const dropdownRef = useRef(null);
@@ -102,8 +102,9 @@ const TimeSelector = ({ value, onChange, label }) => {
     <div className="time-selector" ref={dropdownRef}>
       <label className="time-selector-label">{label}</label>
       <div
-        className={`time-selector-input ${isOpen ? "active" : ""}`}
+        className={`time-selector-input ${isOpen ? "active" : ""} ${disabled ? "disabled" : ""}`}
         onClick={() => {
+          if (disabled) return;
           setIsOpen(true);
           setTimeout(() => inputRef.current?.focus(), 0);
         }}
@@ -129,6 +130,7 @@ const TimeSelector = ({ value, onChange, label }) => {
             className="time-search"
             placeholder="Buscar hora..."
             value={search}
+            disabled={disabled}
             onChange={(e) => setSearch(e.target.value)}
           />
           <div className="time-options" ref={optionsRef}>
@@ -277,6 +279,9 @@ const EventModal = ({
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    if (isAssignedEventReadOnly) {
+      return;
+    }
 
     const startDateTime = `${formData.date}T${formData.startTime}`;
     const endDateTime = `${formData.date}T${formData.endTime}`;
@@ -322,6 +327,7 @@ const EventModal = ({
   };
 
   const canDeleteEvent = !event?.assignedByAdmin || isAdmin;
+  const isAssignedEventReadOnly = Boolean(event?.assignedByAdmin) && !isAdmin;
 
   const formatDisplayDate = () => {
     if (!formData.date) return "";
@@ -402,6 +408,7 @@ const EventModal = ({
               className="gcal-title-input"
               placeholder="Añadir título"
               value={formData.title}
+              disabled={isAssignedEventReadOnly}
               onChange={handleChange}
               required
             />
@@ -429,6 +436,7 @@ const EventModal = ({
                   name="date"
                   className="gcal-date-input"
                   value={formData.date}
+                  disabled={isAssignedEventReadOnly}
                   onChange={handleChange}
                   required
                 />
@@ -440,24 +448,27 @@ const EventModal = ({
                   <TimeSelector
                     label="Inicio"
                     value={formData.startTime}
+                    disabled={isAssignedEventReadOnly}
                     onChange={(val) => handleTimeChange("startTime", val)}
                   />
                   <span className="gcal-time-separator">—</span>
                   <TimeSelector
                     label="Fin"
                     value={formData.endTime}
+                    disabled={isAssignedEventReadOnly}
                     onChange={(val) => handleTimeChange("endTime", val)}
                   />
                 </div>
               )}
 
               <label className="gcal-allday-toggle">
-                <input
-                  type="checkbox"
-                  name="isAllDay"
-                  checked={formData.isAllDay}
-                  onChange={handleChange}
-                />
+                  <input
+                    type="checkbox"
+                    name="isAllDay"
+                    checked={formData.isAllDay}
+                    disabled={isAssignedEventReadOnly}
+                    onChange={handleChange}
+                  />
                 <span className="gcal-toggle-slider"></span>
                 <span className="gcal-toggle-label">Todo el día</span>
               </label>
@@ -503,6 +514,7 @@ const EventModal = ({
                   className="gcal-location-input"
                   placeholder="Añadir ubicación"
                   value={formData.location}
+                  disabled={isAssignedEventReadOnly}
                   onChange={handleChange}
                 />
               </div>
@@ -526,6 +538,7 @@ const EventModal = ({
                   className="gcal-description-input"
                   placeholder="Añadir descripción"
                   value={formData.description}
+                  disabled={isAssignedEventReadOnly}
                   onChange={handleChange}
                   rows="3"
                 />
@@ -535,6 +548,7 @@ const EventModal = ({
                 <label>Reminder</label>
                 <select
                   value={reminderMinutesBefore ?? ""}
+                  disabled={isAssignedEventReadOnly}
                   onChange={(e) =>
                     setReminderMinutesBefore(
                       e.target.value === "" ? null : Number(e.target.value),
@@ -565,6 +579,7 @@ const EventModal = ({
                       key={cat}
                       type="button"
                       className={`gcal-category-chip ${formData.category === cat ? "active" : ""}`}
+                      disabled={isAssignedEventReadOnly}
                       style={{
                         "--chip-color": getCategoryColor(cat),
                       }}
@@ -608,9 +623,11 @@ const EventModal = ({
               >
                 Cancelar
               </button>
-              <button type="submit" className="gcal-save-btn">
-                {event ? "Guardar" : "Crear"}
-              </button>
+              {!isAssignedEventReadOnly && (
+                <button type="submit" className="gcal-save-btn">
+                  {event ? "Guardar" : "Crear"}
+                </button>
+              )}
             </div>
           </div>
         </form>

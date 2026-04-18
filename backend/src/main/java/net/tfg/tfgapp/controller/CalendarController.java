@@ -109,6 +109,11 @@ public class CalendarController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso para actualizar este evento.");
         }
 
+        if (actor.getRole() != UserRole.ADMIN && existingEvent.get().getAssignedByAdmin() != null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("No puedes modificar eventos asignados por administrador.");
+        }
+
         try {
             validateEventDates(eventDetails);
             Optional<Event> updatedEvent = eventService.updateEventById(id, eventDetails);
