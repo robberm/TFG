@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:8080";
+import { apiRequest } from "./apiClient";
 
 let cachedProfile = null;
 let cachedProfileToken = null;
@@ -20,20 +20,58 @@ export const getCurrentUserProfile = async ({ forceRefresh = false } = {}) => {
     return cachedProfile;
   }
 
-  const response = await fetch(`${API_BASE_URL}/users/me`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const data = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new Error(data?.message || "No se pudo cargar el perfil de usuario.");
-  }
+  const data = await apiRequest("/users/me", { method: "GET" });
 
   cachedProfile = data;
   cachedProfileToken = token;
+  return data;
+};
+
+/**
+ * Sube imagen de perfil.
+ * Nota: FormData => includeJson false para no forzar Content-Type manual.
+ */
+export const updateCurrentUserProfileImage = async (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const data = await apiRequest("/users/profile-image", {
+    method: "PUT",
+    includeJson: false,
+    body: formData,
+  });
+
+  clearCurrentUserProfileCache();
+  return data;
+};
+
+export const deleteCurrentUserProfileImage = async () => {
+  const data = await apiRequest("/users/profile-image", {
+    method: "DELETE",
+    includeJson: false,
+  });
+  clearCurrentUserProfileCache();
+  return data;
+};
+
+export const changeCurrentUsername = async (newUsername, currentPassword) => {
+  const data = await apiRequest("/users/change/username", {
+    method: "POST",
+    body: JSON.stringify({ newUsername, currentPassword }),
+  });
+  clearCurrentUserProfileCache();
+  return data;
+};
+
+export const changeCurrentPassword = async (
+  currentPassword,
+  newPassword,
+  confirmPassword,
+) => {
+  const data = await apiRequest("/users/change/password", {
+    method: "POST",
+    body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+  });
+  clearCurrentUserProfileCache();
   return data;
 };

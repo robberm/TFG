@@ -1,7 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import "./css/Block.css";
+import "./css/ErrorToast.css";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
+import {
+  addBlockedApp as addBlockedAppApi,
+  getBlockedApps as getBlockedAppsApi,
+  getInstalledApps,
+  removeBlockedApp as removeBlockedAppApi,
+  resetBlockedApps,
+} from "./api/blockApi";
+import { getApiErrorMessage } from "./api/apiClient";
 
 //Constantes:
 const bubbleContent =
@@ -235,18 +244,16 @@ function Block() {
     setIsLoadingApps(true);
 
     try {
-      const response = await fetch("http://localhost:8080/api/installed-apps");
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status} - ${errorText}`);
-      }
-
-      const apps = await response.json();
+      const apps = await getInstalledApps();
       setInstalledApps(Array.isArray(apps) ? apps : []);
     } catch (error) {
       console.error("Error obteniendo aplicaciones instaladas:", error);
-      setErrorMessage("No se pudo cargar la lista de aplicaciones instaladas");
+      setErrorMessage(
+        getApiErrorMessage(
+          error,
+          "No se pudo cargar la lista de aplicaciones instaladas",
+        ),
+      );
     } finally {
       setIsLoadingApps(false);
     }
@@ -312,18 +319,16 @@ function Block() {
 
   const fetchBlockedApps = async () => {
     try {
-      const response = await fetch("http://localhost:8080/api/blocked-apps");
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status} - ${errorText}`);
-      }
-
-      const apps = await response.json();
+      const apps = await getBlockedAppsApi();
       setBlockedApps(Array.isArray(apps) ? apps : []);
     } catch (error) {
       console.error("Error obteniendo apps bloqueadas:", error);
-      setErrorMessage("No se pudo cargar la lista de aplicaciones bloqueadas");
+      setErrorMessage(
+        getApiErrorMessage(
+          error,
+          "No se pudo cargar la lista de aplicaciones bloqueadas",
+        ),
+      );
     }
   };
 
@@ -344,20 +349,7 @@ function Block() {
     }
 
     try {
-      const response = await fetch("http://localhost:8080/api/blocked-apps", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          executableName,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status} - ${errorText}`);
-      }
+      await addBlockedAppApi(executableName);
 
       setSearchQuery("");
       setIsDropdownOpen(false);
@@ -365,47 +357,27 @@ function Block() {
       await fetchBlockedApps();
     } catch (error) {
       console.error("Error agregando app bloqueada:", error);
-      setErrorMessage("No se pudo agregar la aplicación");
+      setErrorMessage(getApiErrorMessage(error, "No se pudo agregar la aplicación"));
     }
   };
 
   const removeBlockedApp = async (appName) => {
     try {
-      const response = await fetch(
-        `http://localhost:8080/api/blocked-apps/${encodeURIComponent(appName)}`,
-        { method: "DELETE" },
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status} - ${errorText}`);
-      }
-
+      await removeBlockedAppApi(appName);
       await fetchBlockedApps();
     } catch (error) {
       console.error("Error eliminando app bloqueada:", error);
-      setErrorMessage("No se pudo eliminar la aplicación");
+      setErrorMessage(getApiErrorMessage(error, "No se pudo eliminar la aplicación"));
     }
   };
 
   const resetAppList = async () => {
     try {
-      const response = await fetch(
-        "http://localhost:8080/api/blocked-apps/reset",
-        {
-          method: "DELETE",
-        },
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status} - ${errorText}`);
-      }
-
+      await resetBlockedApps();
       await fetchBlockedApps();
     } catch (error) {
       console.error("Error reseteando app list", error);
-      setErrorMessage("Error al resetear la lista");
+      setErrorMessage(getApiErrorMessage(error, "Error al resetear la lista"));
     }
   };
 

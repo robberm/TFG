@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import { clearActiveSessionUser } from "../../api/authApi";
 
 import "../../css/UserMenu.css";
 
@@ -43,9 +44,7 @@ function UserMenu() {
 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:8080/session/clear", {
-        method: "POST",
-      });
+      await clearActiveSessionUser();
     } catch (err) {
       console.warn("Log out failed.", err);
     }

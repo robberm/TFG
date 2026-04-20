@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { format, addMinutes, startOfDay, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import "../../css/EventModal.css";
+import { fetchEventCategories } from "../../api/eventApi";
 
 // Genera opciones de tiempo en incrementos de 15 minutos
 const generateTimeOptions = () => {
@@ -253,9 +254,7 @@ const EventModal = ({
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch("http://localhost:8080/events/categories");
-        if (!response.ok) throw new Error("Error fetching categories");
-        const data = await response.json();
+        const data = await fetchEventCategories();
         setCategories(data);
       } catch (error) {
         console.error("Failed to load categories:", error);

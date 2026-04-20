@@ -2,6 +2,10 @@ import React, { useState, useRef } from "react";
 import './css/App.css';
 import { useNavigate } from "react-router-dom";
 import PasswordInput from "./components/PasswordInput";
+import {
+  getApiErrorMessage,
+} from "./api/apiClient";
+import { loginUser, registerActiveSessionUser } from "./api/authApi";
 import { getCurrentUserProfile } from "./api/userApi";
 import { resolveProfileImageUrl } from "./utils/profileImage";
 
@@ -20,19 +24,8 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:8080/users/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username: loginUsername, password: loginPw }),
-      });
-     // por si falla la request, definimos un LOG:
-     
-
-      if (response.ok) {
-        //pasamos token de sesión
-        const data = await response.json();  //convierte response de Java en un objeto Javascript.
+      const data = await loginUser(loginUsername, loginPw);
+      //pasamos token de sesión
         const token = data.token.trim(); 
         localStorage.setItem("token", token); 
         localStorage.setItem("username", data.username);
@@ -57,21 +50,12 @@ const Login = () => {
           : "/home";
 
         //Registramos usuario en la sesión 
-         await fetch("http://localhost:8080/session/active-user", {
-           method: "POST",
-           headers: {
-             Authorization: `Bearer ${token}`,
-           },
-         });
+        await registerActiveSessionUser();
         // Redirige según rol
         console.log("Login perfecto");
         navigate(nextPath);
-      } else {
-        const errorMessage = await response.text();
-        setError(errorMessage);;
-      }
     } catch (err) {
-      setError("Error query, try again.");
+      setError(getApiErrorMessage(err, "Error de conexión, inténtalo de nuevo."));
       
     }
   };
