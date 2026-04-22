@@ -23,8 +23,12 @@ const Settings = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [profileImage, setProfileImage] = useState("");
 
-  const [accountMessage, setAccountMessage] = useState("");
-  const [accountError, setAccountError] = useState(false);
+  const [profileMessage, setProfileMessage] = useState("");
+  const [profileError, setProfileError] = useState(false);
+  const [usernameMessage, setUsernameMessage] = useState("");
+  const [usernameError, setUsernameError] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
 
   useEffect(() => {
     loadCurrentUserProfile();
@@ -51,8 +55,8 @@ const Settings = () => {
         localStorage.removeItem("profileImage");
       }
     } catch (error) {
-      setAccountMessage(getApiErrorMessage(error, "No se pudo cargar el perfil."));
-      setAccountError(true);
+      setProfileMessage(getApiErrorMessage(error, "No se pudo cargar el perfil."));
+      setProfileError(true);
     }
   };
 
@@ -77,14 +81,14 @@ const Settings = () => {
         localStorage.removeItem("profileImage");
       }
 
-      setAccountMessage(
+      setProfileMessage(
         data?.message || "Imagen de perfil actualizada correctamente.",
       );
-      setAccountError(false);
+      setProfileError(false);
       e.target.value = "";
     } catch (error) {
-      setAccountMessage(getApiErrorMessage(error, "No se pudo actualizar la foto de perfil."));
-      setAccountError(true);
+      setProfileMessage(getApiErrorMessage(error, "No se pudo actualizar la foto de perfil."));
+      setProfileError(true);
       e.target.value = "";
     }
   };
@@ -94,24 +98,25 @@ const Settings = () => {
       const data = await deleteCurrentUserProfileImage();
 
       setProfileImage("");
-      setAccountMessage(data?.message || "Imagen eliminada correctamente.");
-      setAccountError(false);
+      setProfileMessage(data?.message || "Imagen eliminada correctamente.");
+      setProfileError(false);
     } catch (error) {
-      setAccountMessage(getApiErrorMessage(error, "No se pudo eliminar la foto."));
-      setAccountError(true);
+      setProfileMessage(getApiErrorMessage(error, "No se pudo eliminar la foto."));
+      setProfileError(true);
     }
   };
 
   const handleUsernameSave = async () => {
     if (!username || !currentPassword) {
-      setAccountMessage(
+      setUsernameMessage(
         "Debes introducir el nuevo username y tu contraseña actual.",
       );
-      setAccountError(true);
+      setUsernameError(true);
       return;
     }
 
     try {
+      setUsernameMessage("");
       const data = await changeCurrentUsername(username, currentPassword);
       const message = data?.message || "Username actualizado correctamente.";
 
@@ -119,29 +124,30 @@ const Settings = () => {
       localStorage.setItem("username", data.username);
 
       setUsername(data.username);
-      setAccountMessage(message);
-      setAccountError(false);
+      setUsernameMessage(message);
+      setUsernameError(false);
       setCurrentPassword("");
     } catch (error) {
-      setAccountMessage(getApiErrorMessage(error, "No se pudo actualizar el username."));
-      setAccountError(true);
+      setUsernameMessage(getApiErrorMessage(error, "No se pudo actualizar el username."));
+      setUsernameError(true);
     }
   };
 
   const handlePasswordSave = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setAccountMessage("Debes rellenar todos los campos.");
-      setAccountError(true);
+      setPasswordMessage("Debes rellenar todos los campos.");
+      setPasswordError(true);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setAccountMessage("Las contraseñas no coinciden.");
-      setAccountError(true);
+      setPasswordMessage("Las contraseñas no coinciden.");
+      setPasswordError(true);
       return;
     }
 
     try {
+      setPasswordMessage("");
       const data = await changeCurrentPassword(
         currentPassword,
         newPassword,
@@ -152,14 +158,14 @@ const Settings = () => {
       localStorage.setItem("token", data.token);
       localStorage.setItem("username", data.username);
 
-      setAccountMessage(message);
-      setAccountError(false);
+      setPasswordMessage(message);
+      setPasswordError(false);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (error) {
-      setAccountMessage(getApiErrorMessage(error, "No se pudo actualizar la contraseña."));
-      setAccountError(true);
+      setPasswordMessage(getApiErrorMessage(error, "No se pudo actualizar la contraseña."));
+      setPasswordError(true);
     }
   };
 
@@ -248,6 +254,11 @@ const Settings = () => {
               </button>
             </div>
           </div>
+          {profileMessage && (
+            <p className={`accountMessage ${profileError ? "error" : "success"}`}>
+              {profileMessage}
+            </p>
+          )}
         </section>
 
         <section className="settingsCard">
@@ -294,6 +305,11 @@ const Settings = () => {
           >
             Guardar username
           </button>
+          {usernameMessage && (
+            <p className={`accountMessage ${usernameError ? "error" : "success"}`}>
+              {usernameMessage}
+            </p>
+          )}
         </section>
 
         <section className="settingsCard">
@@ -351,13 +367,12 @@ const Settings = () => {
           >
             Cambiar contraseña
           </button>
+          {passwordMessage && (
+            <p className={`accountMessage ${passwordError ? "error" : "success"}`}>
+              {passwordMessage}
+            </p>
+          )}
         </section>
-
-        {accountMessage && (
-          <p className={`accountMessage ${accountError ? "error" : "success"}`}>
-            {accountMessage}
-          </p>
-        )}
       </div>
     </div>
   );
