@@ -8,13 +8,14 @@ import {
 import { loginUser, registerActiveSessionUser } from "./api/authApi";
 import { getCurrentUserProfile } from "./api/userApi";
 import { resolveProfileImageUrl } from "./utils/profileImage";
+import { useError } from "./components/ErrorContext";
 
 
 const Login = () => {
   // Definir estado para username y password
   const [loginUsername, setLoginUsername] = useState("");  // Estado para el nombre de usuario
   const [loginPw, setLoginPw] = useState("");  // Estado para la contraseña
-  const [error, setError] = useState(null);  // Estado para el mensaje de error
+  const { setErrorMessage } = useError();
 
   // Usamos useRef para el campo de contraseña
   const passwordInputRef = useRef(null);
@@ -24,6 +25,7 @@ const Login = () => {
     e.preventDefault();
 
     try {
+      setErrorMessage("");
       const data = await loginUser(loginUsername, loginPw);
       //pasamos token de sesión
         const token = data.token.trim(); 
@@ -55,7 +57,7 @@ const Login = () => {
         console.log("Login perfecto");
         navigate(nextPath);
     } catch (err) {
-      setError(getApiErrorMessage(err, "Error de conexión, inténtalo de nuevo."));
+      setErrorMessage(getApiErrorMessage(err, "Error de conexión, inténtalo de nuevo."));
       
     }
   };
@@ -104,7 +106,6 @@ const Login = () => {
           Log-in
         </button>
       </form>
-      {error && <div className="error">{error}</div>}
     </div>
   );
 }

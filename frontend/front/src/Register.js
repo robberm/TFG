@@ -4,12 +4,13 @@ import { useNavigate } from "react-router-dom";
 import PasswordInput from "./components/PasswordInput";
 import { getApiErrorMessage } from "./api/apiClient";
 import { registerActiveSessionUser, registerUser } from "./api/authApi";
+import { useError } from "./components/ErrorContext";
 
 const Register = () => {
   // Definir estado para username y password
   const [registerUsername, setRegisterUsername] = useState(""); // Estado para el nombre de usuario
   const [registerPw, setRegisterPw] = useState(""); // Estado para la contraseña
-  const [error, setError] = useState(null); // Estado para el mensaje de error
+  const { setErrorMessage } = useError();
 
   // Usamos useRef para el campo de contraseña
   const passwordInputRef = useRef(null);
@@ -22,21 +23,22 @@ const Register = () => {
     const normalizedPassword = registerPw.trim();
 
     if (!normalizedUsername) {
-      setError("El username es obligatorio.");
+      setErrorMessage("El username es obligatorio.");
       return;
     }
 
     if (normalizedUsername.includes(" ")) {
-      setError("El username no puede contener espacios.");
+      setErrorMessage("El username no puede contener espacios.");
       return;
     }
 
     if (!normalizedPassword) {
-      setError("La contraseña es obligatoria.");
+      setErrorMessage("La contraseña es obligatoria.");
       return;
     }
 
     try {
+      setErrorMessage("");
       const data = await registerUser(normalizedUsername, normalizedPassword);
       const token = data.token.trim();
 
@@ -50,7 +52,7 @@ const Register = () => {
       navigate("/home");
     } catch (err) {
       console.log(err);
-      setError(getApiErrorMessage(err, "Error de conexión, inténtalo de nuevo."));
+      setErrorMessage(getApiErrorMessage(err, "Error de conexión, inténtalo de nuevo."));
     }
   };
 
@@ -100,8 +102,6 @@ const Register = () => {
         La contraseña debe tener al menos 10 caracteres, incluir letras, un
         número y un símbolo
       </h4>
-      {error && <div className="error">{error}</div>}{" "}
-      {/* Muestra el error si existe */}
     </div>
   );
 };

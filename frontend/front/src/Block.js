@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import "./css/Block.css";
-import "./css/ErrorToast.css";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import {
@@ -11,6 +10,7 @@ import {
   resetBlockedApps,
 } from "./api/blockApi";
 import { getApiErrorMessage } from "./api/apiClient";
+import { useError } from "./components/ErrorContext";
 
 //Constantes:
 const bubbleContent =
@@ -181,13 +181,13 @@ const CategoryIcons = {
 };
 
 function Block() {
+  const { setErrorMessage } = useError();
   const [blockedApps, setBlockedApps] = useState([]);
   const [installedApps, setInstalledApps] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [isBlocked, setIsBlocked] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
   const [isLoadingApps, setIsLoadingApps] = useState(false);
   const [activeTab, setActiveTab] = useState("add"); // 'add' | 'manage'
 
@@ -486,18 +486,6 @@ function Block() {
             <h2>Tiempo de descanso</h2>
             <p>Relájate y descansa la vista</p>
           </div>
-        </div>
-      )}
-
-      {errorMessage && (
-        <div className="error-toast">
-          <span>{errorMessage}</span>
-          <button
-            onClick={() => setErrorMessage("")}
-            className="error-toast-close"
-          >
-            <CloseIcon />
-          </button>
         </div>
       )}
 

@@ -40,6 +40,8 @@
   border-radius: 4px;
   color: white;
   cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
   transition: background var(--transition-fast);
 }
 
