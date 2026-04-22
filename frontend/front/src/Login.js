@@ -104,6 +104,7 @@ const Login = () => {
           Log-in
         </button>
       </form>
+      {error && <div className="error">{error}</div>}
     </div>
   );
 }
