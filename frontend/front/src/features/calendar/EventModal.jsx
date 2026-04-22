@@ -346,8 +346,16 @@ const EventModal = ({
     return colors[cat?.toLowerCase()] || "#6264a7";
   };
 
-  const canDeleteEvent = !event?.assignedByAdmin || isAdmin;
-  const isAssignedEventReadOnly = Boolean(event?.assignedByAdmin) && !isAdmin;
+  /**
+   * Compatibilidad defensiva:
+   * - `assignedByAdmin` debería ser booleano.
+   * - Si por cualquier serialización llega como string/valor raro,
+   *   solo bloqueamos edición cuando sea explícitamente true o haya username admin.
+   */
+  const isEventAssignedByAdmin =
+    event?.assignedByAdmin === true || Boolean(event?.assignedByAdminUsername);
+  const canDeleteEvent = !isEventAssignedByAdmin || isAdmin;
+  const isAssignedEventReadOnly = isEventAssignedByAdmin && !isAdmin;
 
   const formatDisplayDate = () => {
     if (!formData.date) return "";

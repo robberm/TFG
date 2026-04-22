@@ -4,13 +4,12 @@ import { useNavigate } from "react-router-dom";
 import PasswordInput from "./components/PasswordInput";
 import { getApiErrorMessage } from "./api/apiClient";
 import { registerActiveSessionUser, registerUser } from "./api/authApi";
-import { useError } from "./components/ErrorContext";
 
 const Register = () => {
   // Definir estado para username y password
   const [registerUsername, setRegisterUsername] = useState(""); // Estado para el nombre de usuario
   const [registerPw, setRegisterPw] = useState(""); // Estado para la contraseña
-  const { setErrorMessage } = useError();
+  const [error, setError] = useState("");
 
   // Usamos useRef para el campo de contraseña
   const passwordInputRef = useRef(null);
@@ -23,22 +22,22 @@ const Register = () => {
     const normalizedPassword = registerPw.trim();
 
     if (!normalizedUsername) {
-      setErrorMessage("El username es obligatorio.");
+      setError("El username es obligatorio.");
       return;
     }
 
     if (normalizedUsername.includes(" ")) {
-      setErrorMessage("El username no puede contener espacios.");
+      setError("El username no puede contener espacios.");
       return;
     }
 
     if (!normalizedPassword) {
-      setErrorMessage("La contraseña es obligatoria.");
+      setError("La contraseña es obligatoria.");
       return;
     }
 
     try {
-      setErrorMessage("");
+      setError("");
       const data = await registerUser(normalizedUsername, normalizedPassword);
       const token = data.token.trim();
 
@@ -52,7 +51,7 @@ const Register = () => {
       navigate("/home");
     } catch (err) {
       console.log(err);
-      setErrorMessage(getApiErrorMessage(err, "Error de conexión, inténtalo de nuevo."));
+      setError(getApiErrorMessage(err, "Error de conexión, inténtalo de nuevo."));
     }
   };
 
@@ -102,6 +101,7 @@ const Register = () => {
         La contraseña debe tener al menos 10 caracteres, incluir letras, un
         número y un símbolo
       </h4>
+      {error && <div className="error">{error}</div>}
     </div>
   );
 };
