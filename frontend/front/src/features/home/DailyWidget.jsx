@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import { format, isSameDay, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import EventModal from "../calendar/EventModal.jsx";
@@ -371,17 +370,15 @@ const DailyWidget = ({ events, onEventsChanged }) => {
         </div>
       </div>
 
-      {showModal &&
-        createPortal(
-          <EventModal
-            event={selectedEvent}
-            selectedDate={selectedDate}
-            onClose={() => setShowModal(false)}
-            onSave={handleSaveEvent}
-            onDelete={handleDeleteEvent}
-          />,
-          document.body,
-        )}
+      {showModal && (
+        <EventModal
+          event={selectedEvent}
+          selectedDate={selectedDate}
+          onClose={() => setShowModal(false)}
+          onSave={handleSaveEvent}
+          onDelete={handleDeleteEvent}
+        />
+      )}
     </>
   );
 };

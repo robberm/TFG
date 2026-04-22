@@ -353,7 +353,9 @@ const EventModal = ({
    *   solo bloqueamos edición cuando sea explícitamente true o haya username admin.
    */
   const isEventAssignedByAdmin =
-    event?.assignedByAdmin === true || Boolean(event?.assignedByAdminUsername);
+    event?.assignedByAdmin === true &&
+    Boolean(event?.assignedByAdminUsername) &&
+    event?.assignedByAdminUsername !== event?.assignedToUsername;
   const canDeleteEvent = !isEventAssignedByAdmin || isAdmin;
   const isAssignedEventReadOnly = isEventAssignedByAdmin && !isAdmin;
 
