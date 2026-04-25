@@ -21,6 +21,7 @@ const generateTimeOptions = () => {
 };
 
 const TIME_OPTIONS = generateTimeOptions();
+const EMPTY_MANAGED_USERS = Object.freeze([]);
 
 /**
  * Convierte una fecha del backend a objeto Date de forma estable.
@@ -159,7 +160,7 @@ const EventModal = ({
   onSave,
   onDelete,
   isAdmin = false,
-  managedUsers = [],
+  managedUsers = EMPTY_MANAGED_USERS,
   defaultManagedUserId = null,
 }) => {
   const [formData, setFormData] = useState({
