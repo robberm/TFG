@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { format, addMinutes, startOfDay, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import "../../css/EventModal.css";
+import { fetchEventCategories } from "../../api/eventApi";
 
 // Genera opciones de tiempo en incrementos de 15 minutos
 const generateTimeOptions = () => {
@@ -20,6 +21,7 @@ const generateTimeOptions = () => {
 };
 
 const TIME_OPTIONS = generateTimeOptions();
+const EMPTY_MANAGED_USERS = Object.freeze([]);
 
 /**
  * Convierte una fecha del backend a objeto Date de forma estable.
@@ -158,7 +160,7 @@ const EventModal = ({
   onSave,
   onDelete,
   isAdmin = false,
-  managedUsers = [],
+  managedUsers = EMPTY_MANAGED_USERS,
   defaultManagedUserId = null,
 }) => {
   const [formData, setFormData] = useState({
@@ -253,9 +255,7 @@ const EventModal = ({
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch("http://localhost:8080/events/categories");
-        if (!response.ok) throw new Error("Error fetching categories");
-        const data = await response.json();
+        const data = await fetchEventCategories();
         setCategories(data);
       } catch (error) {
         console.error("Failed to load categories:", error);
@@ -347,8 +347,18 @@ const EventModal = ({
     return colors[cat?.toLowerCase()] || "#6264a7";
   };
 
-  const canDeleteEvent = !event?.assignedByAdmin || isAdmin;
-  const isAssignedEventReadOnly = Boolean(event?.assignedByAdmin) && !isAdmin;
+  /**
+   * Compatibilidad defensiva:
+   * - `assignedByAdmin` debería ser booleano.
+   * - Si por cualquier serialización llega como string/valor raro,
+   *   solo bloqueamos edición cuando sea explícitamente true o haya username admin.
+   */
+  const isEventAssignedByAdmin =
+    event?.assignedByAdmin === true &&
+    Boolean(event?.assignedByAdminUsername) &&
+    event?.assignedByAdminUsername !== event?.assignedToUsername;
+  const canDeleteEvent = !isEventAssignedByAdmin || isAdmin;
+  const isAssignedEventReadOnly = isEventAssignedByAdmin && !isAdmin;
 
   const formatDisplayDate = () => {
     if (!formData.date) return "";

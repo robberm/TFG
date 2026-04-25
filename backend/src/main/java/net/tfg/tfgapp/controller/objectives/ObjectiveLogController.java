@@ -4,7 +4,6 @@ import net.tfg.tfgapp.domains.ObjectiveLog;
 import net.tfg.tfgapp.security.JwtUtil;
 import net.tfg.tfgapp.service.interfaces.IObjectiveLogService;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,7 +33,7 @@ public class ObjectiveLogController {
         }
 
         if (!logs.get(0).getObjective().getUser().getUsername().equals(username)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso para acceder a este histórico.");
+            throw new SecurityException("No tienes permiso para acceder a este histórico.");
         }
 
         return ResponseEntity.ok(logs);
