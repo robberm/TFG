@@ -10,6 +10,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -38,6 +40,11 @@ private EventCategory category;
 private Boolean isAllDay;
 @Column(unique = false)
 private Integer reminderMinutesBefore;
+
+@ElementCollection
+@CollectionTable(name = "event_reminders", joinColumns = @JoinColumn(name = "event_id"))
+@Column(name = "minutes_before")
+private List<Integer> reminderMinutesBeforeList = new ArrayList<>();
 
 @Column(unique = false)
 private String assignmentBatchId;
@@ -111,4 +118,3 @@ private User assignedByAdmin;
         }
     }
 }
-

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -81,7 +82,29 @@ public class EventService {
         target.setLocation(details.getLocation());
         target.setCategory(details.getCategory() != null ? details.getCategory() : Event.EventCategory.PERSONAL);
         target.setIsAllDay(details.getIsAllDay() != null ? details.getIsAllDay() : false);
-        target.setReminderMinutesBefore(details.getReminderMinutesBefore());
+        List<Integer> normalizedReminders = normalizeReminderValues(details);
+        target.setReminderMinutesBeforeList(normalizedReminders);
+        target.setReminderMinutesBefore(
+                normalizedReminders.isEmpty()
+                        ? null
+                        : normalizedReminders.get(0)
+        );
+    }
+
+    private List<Integer> normalizeReminderValues(EventRequest details) {
+        List<Integer> requestedReminders = details.getReminderMinutesBeforeList();
+
+        if (requestedReminders == null || requestedReminders.isEmpty()) {
+            requestedReminders = details.getReminderMinutesBefore() != null
+                    ? List.of(details.getReminderMinutesBefore())
+                    : List.of();
+        }
+
+        return requestedReminders.stream()
+                .filter(value -> value != null && value > 0)
+                .distinct()
+                .sorted(Comparator.naturalOrder())
+                .toList();
     }
 
     public Optional<Event> getEventById(Long id) {

@@ -13,6 +13,8 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +27,7 @@ public class ReminderScheduler {
     /**
      * Tareas activas indexadas por id de evento.
      */
-    private final Map<Long, ScheduledFuture<?>> scheduledReminders = new ConcurrentHashMap<>();
+    private final Map<Long, List<ScheduledFuture<?>>> scheduledReminders = new ConcurrentHashMap<>();
 
     @Autowired
     private TaskScheduler reminderTaskScheduler;
@@ -69,18 +71,24 @@ public class ReminderScheduler {
         cancelReminder(event.getId());
 
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime triggerTime = event.getStartTime().minusMinutes(event.getReminderMinutesBefore());
+        List<Integer> reminderOffsets = getReminderOffsets(event);
+        List<ScheduledFuture<?>> futures = new ArrayList<>();
 
-        Date executionDate = triggerTime.isAfter(now)
-                ? toDate(triggerTime)
-                : new Date(System.currentTimeMillis() + 1000);
+        for (Integer reminderOffset : reminderOffsets) {
+            LocalDateTime triggerTime = event.getStartTime().minusMinutes(reminderOffset);
 
-        ScheduledFuture<?> scheduledFuture = reminderTaskScheduler.schedule(
-                () -> executeReminder(event),
-                executionDate
-        );
+            Date executionDate = triggerTime.isAfter(now)
+                    ? toDate(triggerTime)
+                    : new Date(System.currentTimeMillis() + 1000);
 
-        scheduledReminders.put(event.getId(), scheduledFuture);
+            ScheduledFuture<?> scheduledFuture = reminderTaskScheduler.schedule(
+                    () -> executeReminder(event, reminderOffset),
+                    executionDate
+            );
+            futures.add(scheduledFuture);
+        }
+
+        scheduledReminders.put(event.getId(), futures);
     }
 
     /**
@@ -102,10 +110,12 @@ public class ReminderScheduler {
             return;
         }
 
-        ScheduledFuture<?> scheduledFuture = scheduledReminders.remove(eventId);
+        List<ScheduledFuture<?>> scheduledFutures = scheduledReminders.remove(eventId);
 
-        if (scheduledFuture != null) {
-            scheduledFuture.cancel(false);
+        if (scheduledFutures != null) {
+            for (ScheduledFuture<?> scheduledFuture : scheduledFutures) {
+                scheduledFuture.cancel(false);
+            }
         }
     }
 
@@ -114,7 +124,7 @@ public class ReminderScheduler {
      *
      * @param event evento cuyo reminder debe enviarse
      */
-    private void executeReminder(Event event) {
+    private void executeReminder(Event event, Integer reminderOffset) {
         try {
             if (event == null || event.getId() == null || event.getUser() == null) {
                 return;
@@ -126,10 +136,13 @@ public class ReminderScheduler {
                 return;
             }
 
-            reminderService.sendReminder(reminderMapper.toDto(event));
+            reminderService.sendReminder(reminderMapper.toDto(event, reminderOffset));
         } finally {
             if (event != null && event.getId() != null) {
-                scheduledReminders.remove(event.getId());
+                List<ScheduledFuture<?>> futures = scheduledReminders.get(event.getId());
+                if (futures != null && futures.stream().allMatch(ScheduledFuture::isDone)) {
+                    scheduledReminders.remove(event.getId());
+                }
             }
         }
     }
@@ -145,8 +158,27 @@ public class ReminderScheduler {
                 && event.getId() != null
                 && event.getStartTime() != null
                 && event.getEndTime() != null
-                && event.getReminderMinutesBefore() != null
+                && !getReminderOffsets(event).isEmpty()
                 && event.getEndTime().isAfter(LocalDateTime.now());
+    }
+
+    private List<Integer> getReminderOffsets(Event event) {
+        if (event == null) {
+            return List.of();
+        }
+
+        List<Integer> configuredList = event.getReminderMinutesBeforeList();
+        if (configuredList != null && !configuredList.isEmpty()) {
+            return configuredList.stream()
+                    .filter(value -> value != null && value > 0)
+                    .distinct()
+                    .sorted(Comparator.naturalOrder())
+                    .toList();
+        }
+
+        return event.getReminderMinutesBefore() != null && event.getReminderMinutesBefore() > 0
+                ? List.of(event.getReminderMinutesBefore())
+                : List.of();
     }
 
     /**

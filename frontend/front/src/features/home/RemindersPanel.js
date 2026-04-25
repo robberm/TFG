@@ -50,9 +50,16 @@ const RemindersPanel = ({ todayEvents, isLoadingTodayEvents }) => {
   const reminderEvents = useMemo(() => {
     return [...todayEvents]
       .filter(
-        (event) =>
-          event.reminderMinutesBefore !== null &&
-          event.reminderMinutesBefore !== undefined,
+        (event) => {
+          const hasLegacyReminder =
+            event.reminderMinutesBefore !== null &&
+            event.reminderMinutesBefore !== undefined;
+          const hasMultipleReminders =
+            Array.isArray(event.reminderMinutesBeforeList) &&
+            event.reminderMinutesBeforeList.length > 0;
+
+          return hasLegacyReminder || hasMultipleReminders;
+        },
       )
       .sort((a, b) => {
         const aDate = parseReminderDate(a.startTime);
@@ -60,18 +67,6 @@ const RemindersPanel = ({ todayEvents, isLoadingTodayEvents }) => {
         return aDate - bDate;
       });
   }, [todayEvents]);
-
-  const getReminderLabel = (minutes) => {
-    if (minutes === 1440) {
-      return "24h antes";
-    }
-
-    if (minutes === 10) {
-      return "10 min antes";
-    }
-
-    return `${minutes} min antes`;
-  };
 
   return (
     <div className="remindersSection">
@@ -98,10 +93,6 @@ const RemindersPanel = ({ todayEvents, isLoadingTodayEvents }) => {
                 </div>
 
                 <div className="reminderCardTitle">{event.title}</div>
-
-                <div className="reminderCardBadge">
-                  Reminder: {getReminderLabel(event.reminderMinutesBefore)}
-                </div>
 
                 {event.location && (
                   <div className="reminderCardLocation">

@@ -87,7 +87,13 @@ public interface EventRepo extends JpaRepository<Event, Long> {
     @Query("""
         SELECT e
         FROM Event e
-        WHERE e.reminderMinutesBefore IS NOT NULL
+        WHERE (
+            e.reminderMinutesBefore IS NOT NULL
+            OR EXISTS (
+                SELECT 1
+                FROM e.reminderMinutesBeforeList reminderValue
+            )
+        )
           AND e.endTime > :now
         ORDER BY e.startTime ASC
         """)
