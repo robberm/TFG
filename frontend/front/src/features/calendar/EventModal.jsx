@@ -635,7 +635,7 @@ const EventModal = ({
                         key={minutes}
                         type="button"
                         disabled={isAssignedEventReadOnly}
-                        className={`gcal-category-chip ${isSelected ? "active" : ""}`}
+                        className={`gcal-reminder-chip ${isSelected ? "active" : ""}`}
                         onClick={() =>
                           isSelected
                             ? removeReminderMinutes(minutes)

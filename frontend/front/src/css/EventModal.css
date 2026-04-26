@@ -8,6 +8,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
   z-index: 1000;
   animation: gcal-fade-in 0.15s ease-out;
 }
@@ -35,7 +37,7 @@
   width: 100%;
   max-width: 480px;
   max-height: 90vh;
-  overflow: hidden;
+  overflow-y: auto;
   animation: gcal-slide-up 0.2s ease-out;
 }
 
@@ -72,6 +74,76 @@
 /* Form */
 .gcal-form {
   padding: 0 24px 24px;
+}
+
+.formGroup {
+  margin-bottom: 20px;
+}
+
+.gcal-reminder-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.gcal-reminder-chip {
+  border: 1px solid var(--input-border-color, #dadce0);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--font-color, #202124);
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.gcal-reminder-chip:hover {
+  border-color: #6264a7;
+}
+
+.gcal-reminder-chip.active {
+  border-color: #6264a7;
+  background-color: rgba(98, 100, 167, 0.12);
+  color: #6264a7;
+}
+
+.gcal-reminder-custom {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.gcal-reminder-custom input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--input-border-color, #dadce0);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--container-color, #fff);
+  color: var(--font-color, #202124);
+}
+
+.gcal-reminder-custom button,
+.gcal-reminder-list button {
+  border: 1px solid var(--input-border-color, #dadce0);
+  border-radius: 8px;
+  background: transparent;
+  padding: 8px 10px;
+  color: var(--font-color, #202124);
+  cursor: pointer;
+}
+
+.gcal-reminder-list {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gcal-reminder-list span {
+  font-size: 13px;
+  color: var(--disabled-font-color, #80868b);
 }
 
 /* Title Section */
@@ -506,6 +578,30 @@
   box-shadow: 0 2px 8px rgba(98, 100, 167, 0.3);
 }
 
+@media (max-width: 640px) {
+  .gcal-modal-overlay {
+    align-items: flex-start;
+    padding: 8px;
+  }
+
+  .gcal-modal {
+    max-height: calc(100vh - 16px);
+  }
+
+  .gcal-form {
+    padding: 0 16px 16px;
+  }
+
+  .gcal-reminder-custom {
+    flex-direction: column;
+  }
+
+  .gcal-modal-footer {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
 /* ================================
    DARK MODE SUPPORT
    ================================ */
@@ -621,6 +717,21 @@ body.dark .gcal-more-options-btn:hover {
   border-color: #8ab4f8;
   color: #8ab4f8;
   background-color: rgba(138, 180, 248, 0.08);
+}
+
+body.dark .gcal-reminder-chip,
+body.dark .gcal-reminder-custom input,
+body.dark .gcal-reminder-custom button,
+body.dark .gcal-reminder-list button {
+  border-color: #5f6368;
+  color: #e8eaed;
+  background-color: transparent;
+}
+
+body.dark .gcal-reminder-chip.active {
+  border-color: #8ab4f8;
+  color: #8ab4f8;
+  background-color: rgba(138, 180, 248, 0.14);
 }
 
 body.dark .gcal-location-input,
