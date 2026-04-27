@@ -13,17 +13,15 @@ import { DarkModeProvider } from './DarkModeContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
-    <DarkModeProvider>
-      <ErrorMessageGenerator>
-        <ErrorBox />
-        <BrowserRouter>
-          <FocusModeListener />
-          <MainLayout>
-            <AppRouter />
-          </MainLayout>
-        </BrowserRouter>
-      </ErrorMessageGenerator>
-    </DarkModeProvider>
-  </React.StrictMode>
+  <DarkModeProvider>
+    <ErrorMessageGenerator>
+      <ErrorBox />
+      <BrowserRouter>
+        <FocusModeListener />
+        <MainLayout>
+          <AppRouter />
+        </MainLayout>
+      </BrowserRouter>
+    </ErrorMessageGenerator>
+  </DarkModeProvider>
 );

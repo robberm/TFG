@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import "./css/Block.css";
+import SockJS from "sockjs-client";
+import { Client } from "@stomp/stompjs";
 import {
   addBlockedApp as addBlockedAppApi,
   getBlockedApps as getBlockedAppsApi,
@@ -64,6 +66,19 @@ function Block() {
   const searchInputRef = useRef(null);
   const dropdownRef = useRef(null);
 
+  const applyFocusState = useCallback((state) => {
+    setFocusModeEnabled(!!state.focusModeEnabled);
+    const workSeconds = Number(state.workDurationSeconds || 1200);
+    setWorkDurationMinutes(Math.max(0.1, Math.round((workSeconds / 60) * 10) / 10));
+    setBreakDurationSeconds(Math.max(1, Number(state.breakDurationSeconds || 20)));
+    setFocusAction(state.focusAction || "NOTIFICATION");
+    const phase = state.currentPhase || "OFF";
+    setIsBreakPhase(phase === "BREAK");
+    const phaseEndsAtEpochMs = state.phaseEndsAtEpochMs || 0;
+    const remaining = Math.max(0, Math.floor((phaseEndsAtEpochMs - (state.serverTimeEpochMs || Date.now())) / 1000));
+    setTimeUntilNextBlock(remaining);
+  }, []);
+
   const normalizedBlockedApps = useMemo(() => blockedApps.map((app) => app.toLowerCase()), [blockedApps]);
 
   const filteredApplications = installedApps
@@ -101,28 +116,45 @@ function Block() {
   const fetchFocusState = useCallback(async () => {
     try {
       const state = await getFocusState();
-      setFocusModeEnabled(!!state.focusModeEnabled);
-      setWorkDurationMinutes(Math.max(1, Math.round((state.workDurationSeconds || 1200) / 60)));
-      setBreakDurationSeconds(Math.max(1, state.breakDurationSeconds || 20));
-      setFocusAction(state.focusAction || "NOTIFICATION");
-      const phase = state.currentPhase || "OFF";
-      setIsBreakPhase(phase === "BREAK");
-      const phaseEndsAtEpochMs = state.phaseEndsAtEpochMs || 0;
-      const remaining = Math.max(0, Math.floor((phaseEndsAtEpochMs - (state.serverTimeEpochMs || Date.now())) / 1000));
-      setTimeUntilNextBlock(remaining);
+      applyFocusState(state);
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error, "No se pudo obtener el estado de foco"));
     }
-  }, [setErrorMessage]);
+  }, [applyFocusState, setErrorMessage]);
 
   useEffect(() => {
     fetchBlockedApps();
     fetchInstalledApps();
     fetchFocusState();
 
-    const refreshInterval = setInterval(fetchFocusState, 10000);
+    const refreshInterval = setInterval(fetchFocusState, 20000);
     return () => clearInterval(refreshInterval);
   }, [fetchBlockedApps, fetchFocusState, fetchInstalledApps]);
+
+  useEffect(() => {
+    const socket = new SockJS("http://localhost:8080/ws");
+    const stompClient = new Client({
+      webSocketFactory: () => socket,
+      reconnectDelay: 5000,
+      debug: () => {},
+      onConnect: () => {
+        stompClient.subscribe("/topic/focus-state", (message) => {
+          try {
+            const state = JSON.parse(message.body);
+            applyFocusState(state);
+          } catch (error) {
+            console.error("No se pudo parsear focus-state", error);
+          }
+        });
+      },
+    });
+
+    stompClient.activate();
+
+    return () => {
+      stompClient.deactivate();
+    };
+  }, [applyFocusState]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -148,7 +180,7 @@ function Block() {
     try {
       await updateFocusSettings({
         focusModeEnabled: next.focusModeEnabled,
-        workDurationSeconds: Math.max(1, next.workDurationMinutes) * 60,
+        workDurationSeconds: Math.max(1, Math.round(Math.max(0.1, Number(next.workDurationMinutes || 0.1)) * 60)),
         breakDurationSeconds: Math.max(1, next.breakDurationSeconds),
         focusAction: next.focusAction,
       });
@@ -260,9 +292,10 @@ function Block() {
             <label>Trabajo (min)</label>
             <input
               type="number"
-              min="1"
+              min="0.1"
+              step="0.1"
               value={workDurationMinutes}
-              onChange={(e) => setWorkDurationMinutes(Number(e.target.value || 1))}
+              onChange={(e) => setWorkDurationMinutes(Number(e.target.value || 0.1))}
               onBlur={() => saveFocusSettings({ focusModeEnabled, workDurationMinutes, breakDurationSeconds, focusAction })}
             />
           </div>
