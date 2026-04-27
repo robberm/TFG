@@ -118,17 +118,6 @@ function Block() {
   const dropdownRef = useRef(null);
 
   const isValidExecutableName = useCallback((value) => /^[a-z0-9_.-]+\.exe$/i.test((value || "").trim()), []);
-  const buildExecutableFromDisplayName = useCallback((displayName) => {
-    const base = (displayName || "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, "");
-
-    if (!base) {
-      return "";
-    }
-
-    return `${base}.exe`;
-  }, []);
 
   const normalizeDurations = useCallback((workSeconds, breakSeconds) => {
     let nextWorkSeconds = Math.max(1, Math.round(Number(workSeconds || 1)));
@@ -162,13 +151,13 @@ function Block() {
   const normalizedBlockedApps = useMemo(() => blockedApps.map((app) => app.toLowerCase()), [blockedApps]);
 
   const filteredApplications = installedApps
+    .filter((app) => isValidExecutableName(app.executableName))
     .filter((app) => {
       const query = searchQuery.toLowerCase().trim();
       if (!query) return true;
       return (
         (app.displayName || "").toLowerCase().includes(query) ||
-        (app.executableName || "").toLowerCase().includes(query) ||
-        buildExecutableFromDisplayName(app.displayName).includes(query)
+        (app.executableName || "").toLowerCase().includes(query)
       );
     });
 
@@ -300,13 +289,8 @@ function Block() {
       return resolvedName;
     }
 
-    const fallbackByDisplayName = buildExecutableFromDisplayName(application?.displayName);
-    if (isValidExecutableName(fallbackByDisplayName)) {
-      return fallbackByDisplayName;
-    }
-
     return "";
-  }, [buildExecutableFromDisplayName, isValidExecutableName]);
+  }, [isValidExecutableName]);
 
   const addBlockedApp = async (application) => {
     const executableName = resolveExecutableForBlocking(application);
@@ -471,7 +455,7 @@ function Block() {
                             <li key={`${application.displayName}-${application.executableName || index}`} className={`process-item ${index === selectedIndex ? "selected" : ""} ${isAlreadyBlocked ? "already-blocked" : ""}`} onClick={() => !isAlreadyBlocked && addBlockedApp(application)} onMouseEnter={() => setSelectedIndex(index)}>
                               <div className="process-icon">{application.iconBase64 ? <img src={application.iconBase64} alt="" /> : <span className="category-icon">{CategoryIcons.other}</span>}</div>
                               <div className="process-info"><span className="process-name">{application.displayName}</span><span className="process-exe">{resolveExecutableForBlocking(application)}</span></div>
-                              <span className="process-category cat-other">{application.blockable ? "instalada" : "estimada"}</span>
+                              <span className="process-category cat-other">instalada</span>
                             </li>
                           );
                         })}

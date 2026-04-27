@@ -440,12 +440,24 @@ public class WindowsUtils {
                     "taskkill",
                     "/im",
                     normalizedProcessName,
-                    "/f",
-                    "/t"
+                    "/f"
             ).start();
             killByImageName.waitFor(3, TimeUnit.SECONDS);
 
             if (killByImageName.exitValue() == 0) {
+                return true;
+            }
+
+            Process killByImageNameTree = new ProcessBuilder(
+                    "taskkill",
+                    "/im",
+                    normalizedProcessName,
+                    "/f",
+                    "/t"
+            ).start();
+            killByImageNameTree.waitFor(3, TimeUnit.SECONDS);
+
+            if (killByImageNameTree.exitValue() == 0) {
                 return true;
             }
 
@@ -481,12 +493,21 @@ public class WindowsUtils {
                         "taskkill",
                         "/pid",
                         String.valueOf(pid),
-                        "/f",
-                        "/t"
+                        "/f"
                 ).start();
                 kill.waitFor();
                 if (kill.exitValue() != 0) {
-                    success = false;
+                    Process killTree = new ProcessBuilder(
+                            "taskkill",
+                            "/pid",
+                            String.valueOf(pid),
+                            "/f",
+                            "/t"
+                    ).start();
+                    killTree.waitFor();
+                    if (killTree.exitValue() != 0) {
+                        success = false;
+                    }
                 }
             }
 

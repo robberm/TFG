@@ -117,6 +117,9 @@ public class HeuristicInstalledApplicationExecutableResolver implements Installe
     }
 
     private String extractExecutablePathFromUninstallString(String uninstallString) {
+        if (uninstallString != null && uninstallString.toLowerCase().contains("steam://")) {
+            return null;
+        }
         return extractExecutablePath(uninstallString);
     }
 
