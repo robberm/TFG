@@ -34,6 +34,16 @@ public class HeuristicInstalledApplicationExecutableResolver implements Installe
 
     @Override
     public ResolvedExecutableDTO resolveExecutable(InstalledApplicationRegistryEntry application) {
+        String resolvedFromKnownRules = resolveFromKnownRules(application);
+        if (isUsableExecutable(resolvedFromKnownRules)) {
+            File executableFile = new File(resolvedFromKnownRules);
+            return new ResolvedExecutableDTO(
+                    executableFile.getName().toLowerCase(),
+                    executableFile.getAbsolutePath(),
+                    true
+            );
+        }
+
         String executableFromIcon = extractExecutablePathFromDisplayIcon(application.getDisplayIcon());
 
         if (isUsableExecutable(executableFromIcon)) {
@@ -70,6 +80,30 @@ public class HeuristicInstalledApplicationExecutableResolver implements Installe
         }
 
         return new ResolvedExecutableDTO(null, null, false);
+    }
+
+    private String resolveFromKnownRules(InstalledApplicationRegistryEntry application) {
+        String displayName = normalize(application.getDisplayName());
+        String installLocation = expandEnvironmentVariables(application.getInstallLocation());
+        String uninstallString = application.getUninstallString() == null ? "" : application.getUninstallString().toLowerCase();
+
+        if (uninstallString.contains("steam://")) {
+            return null;
+        }
+
+        if (displayName.contains("steam") && installLocation != null && !installLocation.isBlank()) {
+            return Path.of(installLocation, "steam.exe").toString();
+        }
+
+        if (displayName.contains("leagueoflegends") && installLocation != null && !installLocation.isBlank()) {
+            return Path.of(installLocation, "LeagueClient.exe").toString();
+        }
+
+        if (displayName.contains("riotclient") && installLocation != null && !installLocation.isBlank()) {
+            return Path.of(installLocation, "RiotClientServices.exe").toString();
+        }
+
+        return null;
     }
 
     private String extractExecutablePathFromDisplayIcon(String displayIcon) {

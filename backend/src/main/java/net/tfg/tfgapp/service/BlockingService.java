@@ -25,9 +25,11 @@ public class BlockingService {
     private final IStorageService storageService;
 
     private volatile boolean isBlocking = false;
+    private volatile boolean isOnBreak = false;
     private volatile boolean pauseScheduledBlocks = false;
     private volatile long lastBlockTime = 0;
     private volatile long nextActionAtEpochMs = 0;
+    private volatile long breakEndsAtEpochMs = 0;
 
     public BlockingService(SimpMessageSendingOperations messagingTemplate,
                            ApplicationEventPublisher eventPublisher,
@@ -48,7 +50,14 @@ public class BlockingService {
     }
 
     private void checkForBlock() {
-        if (!shouldBlock()) {
+        if (isOnBreak) {
+            if (System.currentTimeMillis() >= breakEndsAtEpochMs) {
+                endBreak();
+            }
+            return;
+        }
+
+        if (!shouldStartWorkCycle()) {
             return;
         }
 
@@ -57,10 +66,10 @@ public class BlockingService {
         }
     }
 
-    private boolean shouldBlock() {
+    private boolean shouldStartWorkCycle() {
         IStorageService.Config config = storageService.loadConfig();
 
-        return !isBlocking
+        return !isOnBreak
                 && !pauseScheduledBlocks
                 && config.isFocusModeEnabled();
     }
@@ -68,28 +77,31 @@ public class BlockingService {
     private void executeFocusAction() {
         IStorageService.Config config = storageService.loadConfig();
         FocusAction action = FocusAction.from(config.getFocusAction());
+        int breakDurationSeconds = getBreakDurationSeconds(config);
+
+        isOnBreak = true;
+        breakEndsAtEpochMs = System.currentTimeMillis() + toMillis(breakDurationSeconds);
 
         if (action == FocusAction.SCREEN_BLOCK) {
-            startBlocking(getBreakDurationSeconds(config));
+            startBlockingVisual(breakDurationSeconds);
         } else {
-            notifyFocusBreak(getBreakDurationSeconds(config));
+            notifyFocusBreak(breakDurationSeconds);
         }
 
-        this.nextActionAtEpochMs = System.currentTimeMillis() + toMillis(getWorkDurationSeconds(config));
+        this.nextActionAtEpochMs = breakEndsAtEpochMs + toMillis(getWorkDurationSeconds(config));
         publishFocusState();
     }
 
-    public void startBlocking(int durationSeconds) {
+    private void startBlockingVisual(int durationSeconds) {
         isBlocking = true;
         lastBlockTime = System.currentTimeMillis();
 
         eventPublisher.publishEvent(new BlockingEvent(true));
-        messagingTemplate.convertAndSend("/topic/block", "BLOCK_SCREEN");
-
-        scheduler.schedule(() -> {
-            isBlocking = false;
-            endBlocking();
-        }, durationSeconds, TimeUnit.SECONDS);
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("type", "BLOCK_SCREEN");
+        payload.put("durationSeconds", durationSeconds);
+        payload.put("endsAtEpochMs", breakEndsAtEpochMs);
+        messagingTemplate.convertAndSend("/topic/block", payload);
 
         publishFocusState();
     }
@@ -106,7 +118,18 @@ public class BlockingService {
 
     private void endBlocking() {
         eventPublisher.publishEvent(new BlockingEvent(false));
+        isBlocking = false;
         publishFocusState();
+    }
+
+    private void endBreak() {
+        isOnBreak = false;
+        breakEndsAtEpochMs = 0;
+        if (isBlocking) {
+            endBlocking();
+        } else {
+            publishFocusState();
+        }
     }
 
     public void pauseScheduledBlocks(boolean pause) {
@@ -123,14 +146,18 @@ public class BlockingService {
     }
 
     public void forceBlockNow(int durationSeconds) {
-        if (!isBlocking) {
-            startBlocking(Math.max(1, durationSeconds));
+        if (!isOnBreak) {
+            int safeDuration = Math.max(1, durationSeconds);
+            isOnBreak = true;
+            breakEndsAtEpochMs = System.currentTimeMillis() + toMillis(safeDuration);
+            startBlockingVisual(safeDuration);
         }
     }
 
     public void cancelCurrentBlock() {
-        if (isBlocking) {
-            isBlocking = false;
+        if (isBlocking || isOnBreak) {
+            isOnBreak = false;
+            breakEndsAtEpochMs = 0;
             endBlocking();
         }
     }
@@ -146,6 +173,9 @@ public class BlockingService {
         state.put("breakDurationSeconds", getBreakDurationSeconds(config));
         state.put("focusAction", FocusAction.from(config.getFocusAction()).name());
         state.put("nextActionAtEpochMs", nextActionAtEpochMs);
+        state.put("breakEndsAtEpochMs", breakEndsAtEpochMs);
+        state.put("currentPhase", !config.isFocusModeEnabled() ? "OFF" : (isOnBreak ? "BREAK" : "WORK"));
+        state.put("phaseEndsAtEpochMs", isOnBreak ? breakEndsAtEpochMs : nextActionAtEpochMs);
         state.put("serverTimeEpochMs", Instant.now().toEpochMilli());
         state.put("lastBlockTime", lastBlockTime);
 
@@ -169,6 +199,8 @@ public class BlockingService {
             this.nextActionAtEpochMs = System.currentTimeMillis() + toMillis(getWorkDurationSeconds(config));
         } else {
             this.nextActionAtEpochMs = 0;
+            this.breakEndsAtEpochMs = 0;
+            this.isOnBreak = false;
             cancelCurrentBlock();
         }
 

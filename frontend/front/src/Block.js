@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import "./css/Block.css";
-import SockJS from "sockjs-client";
-import { Client } from "@stomp/stompjs";
 import {
   addBlockedApp as addBlockedAppApi,
   getBlockedApps as getBlockedAppsApi,
@@ -54,7 +52,6 @@ function Block() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [isBlocked, setIsBlocked] = useState(false);
   const [isLoadingApps, setIsLoadingApps] = useState(false);
   const [activeTab, setActiveTab] = useState("add");
   const [focusModeEnabled, setFocusModeEnabled] = useState(false);
@@ -62,6 +59,7 @@ function Block() {
   const [breakDurationSeconds, setBreakDurationSeconds] = useState(20);
   const [focusAction, setFocusAction] = useState("NOTIFICATION");
   const [timeUntilNextBlock, setTimeUntilNextBlock] = useState(20 * 60);
+  const [isBreakPhase, setIsBreakPhase] = useState(false);
 
   const searchInputRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -104,11 +102,13 @@ function Block() {
     try {
       const state = await getFocusState();
       setFocusModeEnabled(!!state.focusModeEnabled);
-      setIsBlocked(!!state.isBlocking);
       setWorkDurationMinutes(Math.max(1, Math.round((state.workDurationSeconds || 1200) / 60)));
       setBreakDurationSeconds(Math.max(1, state.breakDurationSeconds || 20));
       setFocusAction(state.focusAction || "NOTIFICATION");
-      const remaining = Math.max(0, Math.floor(((state.nextActionAtEpochMs || 0) - (state.serverTimeEpochMs || Date.now())) / 1000));
+      const phase = state.currentPhase || "OFF";
+      setIsBreakPhase(phase === "BREAK");
+      const phaseEndsAtEpochMs = state.phaseEndsAtEpochMs || 0;
+      const remaining = Math.max(0, Math.floor((phaseEndsAtEpochMs - (state.serverTimeEpochMs || Date.now())) / 1000));
       setTimeUntilNextBlock(remaining);
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error, "No se pudo obtener el estado de foco"));
@@ -120,56 +120,8 @@ function Block() {
     fetchInstalledApps();
     fetchFocusState();
 
-    const socket = new SockJS("http://localhost:8080/ws");
-    const stompClient = new Client({
-      webSocketFactory: () => socket,
-      reconnectDelay: 5000,
-      onConnect: () => {
-        stompClient.subscribe("/topic/block", (message) => {
-          if (message.body === "BLOCK_SCREEN") {
-            window.electronAPI?.startBlock();
-          }
-        });
-
-        stompClient.subscribe("/topic/focus-state", (message) => {
-          try {
-            const state = JSON.parse(message.body);
-            setFocusModeEnabled(!!state.focusModeEnabled);
-            setIsBlocked(!!state.isBlocking);
-            setFocusAction(state.focusAction || "NOTIFICATION");
-            setWorkDurationMinutes(Math.max(1, Math.round((state.workDurationSeconds || 1200) / 60)));
-            setBreakDurationSeconds(Math.max(1, state.breakDurationSeconds || 20));
-            const remaining = Math.max(0, Math.floor(((state.nextActionAtEpochMs || 0) - (state.serverTimeEpochMs || Date.now())) / 1000));
-            setTimeUntilNextBlock(remaining);
-          } catch (error) {
-            console.error("No se pudo parsear focus-state", error);
-          }
-        });
-
-        stompClient.subscribe("/topic/focus-events", (message) => {
-          try {
-            const event = JSON.parse(message.body);
-            if (event.type === "FOCUS_NOTIFICATION") {
-              if (window.electronAPI?.showReminderWindow) {
-                window.electronAPI.showReminderWindow({
-                  title: event.title,
-                  description: event.message,
-                  startTime: new Date().toISOString(),
-                  allDay: false,
-                });
-              } else if (window.Notification && Notification.permission === "granted") {
-                new Notification(event.title, { body: event.message });
-              }
-            }
-          } catch (error) {
-            console.error("No se pudo parsear focus-event", error);
-          }
-        });
-      },
-    });
-
-    stompClient.activate();
-    return () => stompClient.deactivate();
+    const refreshInterval = setInterval(fetchFocusState, 10000);
+    return () => clearInterval(refreshInterval);
   }, [fetchBlockedApps, fetchFocusState, fetchInstalledApps]);
 
   useEffect(() => {
@@ -256,8 +208,9 @@ function Block() {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const progressPercentage = workDurationMinutes > 0
-    ? ((workDurationMinutes * 60 - timeUntilNextBlock) / (workDurationMinutes * 60)) * 100
+  const currentPhaseDuration = isBreakPhase ? breakDurationSeconds : workDurationMinutes * 60;
+  const progressPercentage = currentPhaseDuration > 0
+    ? ((currentPhaseDuration - timeUntilNextBlock) / currentPhaseDuration) * 100
     : 0;
 
   const modeLabel = focusModeEnabled ? "Focus mode" : "Off";
@@ -274,17 +227,17 @@ function Block() {
 
         <div className="timer-card">
           <div className="timer-progress-ring">
-            <svg className="timer-ring" viewBox="0 0 120 120">
+            <svg className={`timer-ring ${isBreakPhase ? "timer-ring-resting" : ""}`} viewBox="0 0 120 120">
               <circle className="timer-ring-bg" cx="60" cy="60" r="54" fill="none" strokeWidth="8" />
               <circle className="timer-ring-progress" cx="60" cy="60" r="54" fill="none" strokeWidth="8" strokeDasharray={`${2 * Math.PI * 54}`} strokeDashoffset={`${2 * Math.PI * 54 * (1 - progressPercentage / 100)}`} transform="rotate(-90 60 60)" />
             </svg>
             <div className="timer-display">
               <span className="timer-value">{formatTime(timeUntilNextBlock)}</span>
-              <span className="timer-label">próximo descanso</span>
+              <span className="timer-label">{isBreakPhase ? "descansando" : "próximo descanso"}</span>
             </div>
           </div>
           <div className="timer-status">
-            {isBlocked ? <span className="status-badge status-resting">Descansando</span> : <span className="status-badge status-working">En actividad: {modeLabel}</span>}
+            {isBreakPhase ? <span className="status-badge status-resting">Descansando</span> : <span className="status-badge status-working">{modeLabel}</span>}
           </div>
         </div>
 

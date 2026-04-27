@@ -2,7 +2,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("electronAPI", {
   onBlockStatus: (callback) => ipcRenderer.on("block-status", callback),
-  startBlock: () => ipcRenderer.send("start-block"),
+  startBlock: (payload) => ipcRenderer.send("start-block", payload),
   endBlock: () => ipcRenderer.send("end-block"),
 
   minimizeWindow: () => ipcRenderer.send("window:minimize"),
