@@ -118,6 +118,17 @@ function Block() {
   const dropdownRef = useRef(null);
 
   const isValidExecutableName = useCallback((value) => /^[a-z0-9_.-]+\.exe$/i.test((value || "").trim()), []);
+  const buildExecutableFromDisplayName = useCallback((displayName) => {
+    const base = (displayName || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+
+    if (!base) {
+      return "";
+    }
+
+    return `${base}.exe`;
+  }, []);
 
   const normalizeDurations = useCallback((workSeconds, breakSeconds) => {
     let nextWorkSeconds = Math.max(1, Math.round(Number(workSeconds || 1)));
@@ -151,13 +162,13 @@ function Block() {
   const normalizedBlockedApps = useMemo(() => blockedApps.map((app) => app.toLowerCase()), [blockedApps]);
 
   const filteredApplications = installedApps
-    .filter((app) => app.blockable || (app.executableName || "").toLowerCase().endsWith(".exe"))
     .filter((app) => {
       const query = searchQuery.toLowerCase().trim();
       if (!query) return true;
       return (
         (app.displayName || "").toLowerCase().includes(query) ||
-        (app.executableName || "").toLowerCase().includes(query)
+        (app.executableName || "").toLowerCase().includes(query) ||
+        buildExecutableFromDisplayName(app.displayName).includes(query)
       );
     });
 
@@ -279,10 +290,28 @@ function Block() {
     }
   };
 
+  const resolveExecutableForBlocking = useCallback((application) => {
+    if (typeof application === "string") {
+      return application.trim().toLowerCase();
+    }
+
+    const resolvedName = (application?.executableName || "").trim().toLowerCase();
+    if (isValidExecutableName(resolvedName)) {
+      return resolvedName;
+    }
+
+    const fallbackByDisplayName = buildExecutableFromDisplayName(application?.displayName);
+    if (isValidExecutableName(fallbackByDisplayName)) {
+      return fallbackByDisplayName;
+    }
+
+    return "";
+  }, [buildExecutableFromDisplayName, isValidExecutableName]);
+
   const addBlockedApp = async (application) => {
-    const executableName = typeof application === "string" ? application : application?.executableName || "";
+    const executableName = resolveExecutableForBlocking(application);
     if (!executableName) {
-      setErrorMessage("No se puede bloquear esta aplicación porque no tiene ejecutable principal resuelto");
+      setErrorMessage("No se puede bloquear esta aplicación porque no tiene ejecutable válido");
       return;
     }
     if (normalizedBlockedApps.includes(executableName.toLowerCase())) {
@@ -428,7 +457,6 @@ function Block() {
                   <span className="search-icon"><SearchIcon /></span>
                   <input ref={searchInputRef} type="text" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setSelectedIndex(-1); setIsDropdownOpen(true); }} onFocus={() => setIsDropdownOpen(true)} placeholder="Buscar aplicación para bloquear..." className="search-input" />
                   {searchQuery && <button className="search-clear" onClick={() => { setSearchQuery(""); searchInputRef.current?.focus(); }}><CloseIcon /></button>}
-                  <button className="search-refresh" onClick={fetchInstalledApps} disabled={isLoadingApps} title="Actualizar lista de aplicaciones"><RefreshIcon /></button>
                 </div>
 
                 {isDropdownOpen && (
@@ -442,8 +470,8 @@ function Block() {
                           return (
                             <li key={`${application.displayName}-${application.executableName || index}`} className={`process-item ${index === selectedIndex ? "selected" : ""} ${isAlreadyBlocked ? "already-blocked" : ""}`} onClick={() => !isAlreadyBlocked && addBlockedApp(application)} onMouseEnter={() => setSelectedIndex(index)}>
                               <div className="process-icon">{application.iconBase64 ? <img src={application.iconBase64} alt="" /> : <span className="category-icon">{CategoryIcons.other}</span>}</div>
-                              <div className="process-info"><span className="process-name">{application.displayName}</span><span className="process-exe">{application.executableName}</span></div>
-                              <span className="process-category cat-other">instalada</span>
+                              <div className="process-info"><span className="process-name">{application.displayName}</span><span className="process-exe">{resolveExecutableForBlocking(application)}</span></div>
+                              <span className="process-category cat-other">{application.blockable ? "instalada" : "estimada"}</span>
                             </li>
                           );
                         })}
