@@ -728,3 +728,30 @@
 }
 
 
+
+.focus-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.focus-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.focus-field label {
+  font-size: 0.78rem;
+  color: color-mix(in srgb, var(--text-primary) 65%, transparent);
+}
+
+.focus-field input,
+.focus-field select {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 0.5rem 0.6rem;
+}

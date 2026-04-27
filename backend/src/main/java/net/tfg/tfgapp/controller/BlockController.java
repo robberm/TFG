@@ -1,8 +1,7 @@
 package net.tfg.tfgapp.controller;
 
 
-import lombok.Getter;
-import lombok.Setter;
+import net.tfg.tfgapp.DTOs.apprestrict.FocusSettingsRequest;
 import net.tfg.tfgapp.service.BlockingService;
 import net.tfg.tfgapp.utils.WindowsUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +44,22 @@ public class BlockController {
     @PostMapping("/cancel")
     public void cancelBlock() {
         blockingService.cancelCurrentBlock();
+    }
+
+
+    @GetMapping("/focus-state")
+    public Map<String, Object> getFocusState() {
+        return blockingService.getFocusState();
+    }
+
+    @PutMapping("/focus-settings")
+    public void updateFocusSettings(@RequestBody FocusSettingsRequest request) {
+        blockingService.updateFocusSettings(
+                request.isFocusModeEnabled(),
+                request.getWorkDurationSeconds(),
+                request.getBreakDurationSeconds(),
+                request.getFocusAction()
+        );
     }
 
     /**

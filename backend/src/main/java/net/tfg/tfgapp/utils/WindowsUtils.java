@@ -429,23 +429,37 @@ public class WindowsUtils {
      * Termina un proceso por su nombre.
      */
     public static boolean killProcess(String processName) {
+        String normalizedProcessName = normalizeProcessName(processName);
+
+        if (normalizedProcessName == null) {
+            return false;
+        }
+
         try {
+            Process killByImageName = Runtime.getRuntime().exec(
+                    "taskkill /im \"" + normalizedProcessName + "\" /f"
+            );
+            killByImageName.waitFor(3, TimeUnit.SECONDS);
+
+            if (killByImageName.exitValue() == 0) {
+                return true;
+            }
+
             Process process = Runtime.getRuntime().exec(
-                    "tasklist /fi \"imagename eq " + processName + "\" /fo csv /nh");
+                    "tasklist /fi \"imagename eq " + normalizedProcessName + "\" /fo csv /nh");
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
             List<Integer> pids = new ArrayList<>();
 
             while ((line = reader.readLine()) != null) {
-                if (!line.trim().isEmpty()) {
+                if (!line.trim().isEmpty() && !line.startsWith("INFO:")) {
                     String[] columns = line.split("\",\"");
                     if (columns.length >= 2) {
                         String pidStr = columns[1].replace("\"", "").trim();
                         try {
                             pids.add(Integer.parseInt(pidStr));
-                        } catch (NumberFormatException e) {
-                            System.err.println("PID inválido para línea: " + line);
+                        } catch (NumberFormatException ignored) {
                         }
                     }
                 }
@@ -461,10 +475,34 @@ public class WindowsUtils {
             }
 
             return success && !pids.isEmpty();
-        } catch (IOException | InterruptedException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        } catch (IOException e) {
             e.printStackTrace();
             return false;
         }
+    }
+
+    private static String normalizeProcessName(String processName) {
+        if (processName == null) {
+            return null;
+        }
+
+        String normalized = processName.trim().toLowerCase();
+        if (normalized.isEmpty()) {
+            return null;
+        }
+
+        if (!normalized.endsWith(".exe")) {
+            normalized = normalized + ".exe";
+        }
+
+        if (!normalized.matches("^[a-z0-9_.-]+\\.exe$")) {
+            return null;
+        }
+
+        return normalized;
     }
 
     /**

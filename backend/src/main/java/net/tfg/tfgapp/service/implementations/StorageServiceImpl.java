@@ -53,6 +53,18 @@ public class StorageServiceImpl implements IStorageService {
                 config.setGames(Collections.emptySet());
             }
 
+            if (config.getWorkDurationSeconds() <= 0) {
+                config.setWorkDurationSeconds(20 * 60);
+            }
+
+            if (config.getBreakDurationSeconds() <= 0) {
+                config.setBreakDurationSeconds(20);
+            }
+
+            if (config.getFocusAction() == null || config.getFocusAction().isBlank()) {
+                config.setFocusAction("NOTIFICATION");
+            }
+
             return config;
 
         } catch (IOException e) {
@@ -80,6 +92,10 @@ public class StorageServiceImpl implements IStorageService {
                     "riotclientservices.exe",
                     "steam.exe"
             ));
+            cleanConfig.setFocusModeEnabled(false);
+            cleanConfig.setWorkDurationSeconds(20 * 60);
+            cleanConfig.setBreakDurationSeconds(20);
+            cleanConfig.setFocusAction("NOTIFICATION");
             MAPPER.writeValue(new File(STORAGE_FILE), cleanConfig);
         } catch (IOException e) {
             throw new RuntimeException("Error resetting config", e);
