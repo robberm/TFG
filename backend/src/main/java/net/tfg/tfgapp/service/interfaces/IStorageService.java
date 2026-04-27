@@ -42,6 +42,10 @@ public interface IStorageService {
     class Config {
         private Set<String> blockedApps;
         private Set<String> games;
+        private boolean focusModeEnabled = false;
+        private int workDurationSeconds = 20 * 60;
+        private int breakDurationSeconds = 20;
+        private String focusAction = "NOTIFICATION";
 
         public Set<String> getBlockedApps() {
             return blockedApps;
@@ -57,6 +61,38 @@ public interface IStorageService {
 
         public void setGames(Set<String> games) {
             this.games = games;
+        }
+
+        public boolean isFocusModeEnabled() {
+            return focusModeEnabled;
+        }
+
+        public void setFocusModeEnabled(boolean focusModeEnabled) {
+            this.focusModeEnabled = focusModeEnabled;
+        }
+
+        public int getWorkDurationSeconds() {
+            return workDurationSeconds;
+        }
+
+        public void setWorkDurationSeconds(int workDurationSeconds) {
+            this.workDurationSeconds = workDurationSeconds;
+        }
+
+        public int getBreakDurationSeconds() {
+            return breakDurationSeconds;
+        }
+
+        public void setBreakDurationSeconds(int breakDurationSeconds) {
+            this.breakDurationSeconds = breakDurationSeconds;
+        }
+
+        public String getFocusAction() {
+            return focusAction;
+        }
+
+        public void setFocusAction(String focusAction) {
+            this.focusAction = focusAction;
         }
     }
 }

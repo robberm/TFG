@@ -1,93 +1,117 @@
 package net.tfg.tfgapp.service;
 
-
 import jakarta.annotation.PostConstruct;
 import net.tfg.tfgapp.events.BlockingEvent;
-import org.springframework.beans.factory.annotation.Autowired;
+import net.tfg.tfgapp.service.interfaces.IStorageService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalTime;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Service
 public class BlockingService {
+    private static final int DEFAULT_WORK_DURATION_SECONDS = 20 * 60;
+    private static final int DEFAULT_BREAK_DURATION_SECONDS = 20;
+
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
-    private boolean isBlocking = false;
-    private boolean pauseScheduledBlocks = false;
-    private long lastBlockTime = 0;
+    private final SimpMessageSendingOperations messagingTemplate;
+    private final ApplicationEventPublisher eventPublisher;
+    private final IStorageService storageService;
 
-    @Autowired
-    private SimpMessageSendingOperations messagingTemplate; //para el blocking entre front - back
-    public BlockingService(SimpMessagingTemplate messagingTemplate) {
+    private volatile boolean isBlocking = false;
+    private volatile boolean pauseScheduledBlocks = false;
+    private volatile long lastBlockTime = 0;
+    private volatile long nextActionAtEpochMs = 0;
+
+    public BlockingService(SimpMessageSendingOperations messagingTemplate,
+                           ApplicationEventPublisher eventPublisher,
+                           IStorageService storageService) {
         this.messagingTemplate = messagingTemplate;
+        this.eventPublisher = eventPublisher;
+        this.storageService = storageService;
     }
-    @Autowired
-    private AppRestrictionService restrictionService;
-
-    @Autowired
-    private ApplicationEventPublisher eventPublisher;
 
     @PostConstruct
     public void init() {
-        // Programar bloqueos cada 20 minutos
-        scheduler.scheduleAtFixedRate(this::checkForBlock, 0, 20, TimeUnit.MINUTES);
+        IStorageService.Config config = storageService.loadConfig();
+        if (config.isFocusModeEnabled()) {
+            nextActionAtEpochMs = System.currentTimeMillis() + toMillis(getWorkDurationSeconds(config));
+        }
 
-            /* Verificar cada minuto si estamos en horario de trabajo
-            scheduler.scheduleAtFixedRate(this::checkWorkingHours, 0, 1, TimeUnit.MINUTES);*/
+        scheduler.scheduleAtFixedRate(this::checkForBlock, 0, 1, TimeUnit.SECONDS);
     }
 
     private void checkForBlock() {
-        if (shouldBlock()) {
-            startBlocking();
+        if (!shouldBlock()) {
+            return;
+        }
+
+        if (System.currentTimeMillis() >= nextActionAtEpochMs) {
+            executeFocusAction();
         }
     }
 
     private boolean shouldBlock() {
-        // No bloquear si:
-        // 1. Ya estamos en un bloqueo
-        // 3. Está pausado manualmente
-        // 4. No es horario laboral
-        //la idea es insertar aqui los checks de si lo he deshabilitado manualmente o estoy en partida larga de algun juego
-        return !isBlocking &&
-                !pauseScheduledBlocks && !restrictionService.isGameModeActive();
+        IStorageService.Config config = storageService.loadConfig();
 
+        return !isBlocking
+                && !pauseScheduledBlocks
+                && config.isFocusModeEnabled();
     }
 
-    private boolean isWorkingTime() {
-        LocalTime now = LocalTime.now();
-        return now.isAfter(LocalTime.of(8, 0)) && now.isBefore(LocalTime.of(18, 0));
+    private void executeFocusAction() {
+        IStorageService.Config config = storageService.loadConfig();
+        FocusAction action = FocusAction.from(config.getFocusAction());
+
+        if (action == FocusAction.SCREEN_BLOCK) {
+            startBlocking(getBreakDurationSeconds(config));
+        } else {
+            notifyFocusBreak(getBreakDurationSeconds(config));
+        }
+
+        this.nextActionAtEpochMs = System.currentTimeMillis() + toMillis(getWorkDurationSeconds(config));
+        publishFocusState();
     }
 
-    public void startBlocking() {
+    public void startBlocking(int durationSeconds) {
         isBlocking = true;
         lastBlockTime = System.currentTimeMillis();
 
-        // Enviar evento al frontend para bloquear
         eventPublisher.publishEvent(new BlockingEvent(true));
-
-        // Registrar en consola
-        System.out.println("Iniciando bloqueo de pantalla...");
         messagingTemplate.convertAndSend("/topic/block", "BLOCK_SCREEN");
-        // Programar fin del bloqueo
+
         scheduler.schedule(() -> {
             isBlocking = false;
             endBlocking();
-        }, 20, TimeUnit.SECONDS);
+        }, durationSeconds, TimeUnit.SECONDS);
+
+        publishFocusState();
+    }
+
+    private void notifyFocusBreak(int breakDurationSeconds) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("type", "FOCUS_NOTIFICATION");
+        payload.put("title", "Tiempo de descanso");
+        payload.put("message", "Descansa " + breakDurationSeconds + "s y vuelve al foco.");
+        payload.put("breakDurationSeconds", breakDurationSeconds);
+
+        messagingTemplate.convertAndSend("/topic/focus-events", payload);
     }
 
     private void endBlocking() {
-        // Enviar evento al frontend para desbloquear
         eventPublisher.publishEvent(new BlockingEvent(false));
-        System.out.println("Bloqueo de pantalla finalizado.");
+        publishFocusState();
     }
 
     public void pauseScheduledBlocks(boolean pause) {
         this.pauseScheduledBlocks = pause;
+        publishFocusState();
     }
 
     public boolean isBlockingActive() {
@@ -98,33 +122,97 @@ public class BlockingService {
         return pauseScheduledBlocks;
     }
 
-    // Método para forzar un bloqueo manualmente
     public void forceBlockNow(int durationSeconds) {
         if (!isBlocking) {
-            scheduler.execute(() -> {
-                startBlocking();
-                try {
-                    TimeUnit.SECONDS.sleep(durationSeconds);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-                endBlocking();
-            });
+            startBlocking(Math.max(1, durationSeconds));
         }
     }
 
-    // Método para cancelar un bloqueo en curso
     public void cancelCurrentBlock() {
         if (isBlocking) {
-            scheduler.execute(this::endBlocking);
             isBlocking = false;
+            endBlocking();
         }
     }
 
-    // Método para verificar si hay un juego en ejecución
-    private void checkWorkingHours() {
-        // Opcional: Ajustar comportamiento según horario laboral
+    public Map<String, Object> getFocusState() {
+        IStorageService.Config config = storageService.loadConfig();
+
+        Map<String, Object> state = new HashMap<>();
+        state.put("focusModeEnabled", config.isFocusModeEnabled());
+        state.put("isBlocking", isBlocking);
+        state.put("isPaused", pauseScheduledBlocks);
+        state.put("workDurationSeconds", getWorkDurationSeconds(config));
+        state.put("breakDurationSeconds", getBreakDurationSeconds(config));
+        state.put("focusAction", FocusAction.from(config.getFocusAction()).name());
+        state.put("nextActionAtEpochMs", nextActionAtEpochMs);
+        state.put("serverTimeEpochMs", Instant.now().toEpochMilli());
+        state.put("lastBlockTime", lastBlockTime);
+
+        return state;
+    }
+
+    public void updateFocusSettings(boolean focusModeEnabled,
+                                    Integer workDurationSeconds,
+                                    Integer breakDurationSeconds,
+                                    String action) {
+        IStorageService.Config config = storageService.loadConfig();
+
+        config.setFocusModeEnabled(focusModeEnabled);
+        config.setWorkDurationSeconds(sanitizeDuration(workDurationSeconds, DEFAULT_WORK_DURATION_SECONDS));
+        config.setBreakDurationSeconds(sanitizeDuration(breakDurationSeconds, DEFAULT_BREAK_DURATION_SECONDS));
+        config.setFocusAction(FocusAction.from(action).name());
+
+        storageService.saveConfig(config);
+
+        if (focusModeEnabled) {
+            this.nextActionAtEpochMs = System.currentTimeMillis() + toMillis(getWorkDurationSeconds(config));
+        } else {
+            this.nextActionAtEpochMs = 0;
+            cancelCurrentBlock();
+        }
+
+        publishFocusState();
+    }
+
+    private void publishFocusState() {
+        messagingTemplate.convertAndSend("/topic/focus-state", getFocusState());
+    }
+
+    private int sanitizeDuration(Integer duration, int defaultValue) {
+        if (duration == null || duration <= 0) {
+            return defaultValue;
+        }
+
+        return duration;
+    }
+
+    private int getWorkDurationSeconds(IStorageService.Config config) {
+        return sanitizeDuration(config.getWorkDurationSeconds(), DEFAULT_WORK_DURATION_SECONDS);
+    }
+
+    private int getBreakDurationSeconds(IStorageService.Config config) {
+        return sanitizeDuration(config.getBreakDurationSeconds(), DEFAULT_BREAK_DURATION_SECONDS);
+    }
+
+    private long toMillis(int seconds) {
+        return seconds * 1000L;
+    }
+
+    private enum FocusAction {
+        SCREEN_BLOCK,
+        NOTIFICATION;
+
+        static FocusAction from(String value) {
+            if (value == null) {
+                return NOTIFICATION;
+            }
+
+            try {
+                return FocusAction.valueOf(value.trim().toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                return NOTIFICATION;
+            }
+        }
     }
 }
-
-
