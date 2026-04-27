@@ -46,6 +46,9 @@ const PlusIcon = () => (
 );
 
 const CategoryIcons = { other: (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>) };
+const WORK_MINUTE_OPTIONS = [0.5, 1, 2, 5, 10, 15, 20, 25, 30, 45, 60, 90];
+const BREAK_SECOND_OPTIONS = [5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 300];
+const MIN_WORK_BREAK_GAP_SECONDS = 5;
 
 function Block() {
   const { setErrorMessage } = useError();
@@ -65,6 +68,24 @@ function Block() {
 
   const searchInputRef = useRef(null);
   const dropdownRef = useRef(null);
+
+  const normalizeDurations = useCallback((workMinutes, breakSeconds) => {
+    let nextWorkSeconds = Math.max(1, Math.round(Math.max(0.1, Number(workMinutes || 0.1)) * 60));
+    let nextBreakSeconds = Math.max(1, Math.round(Number(breakSeconds || 1)));
+
+    if (nextWorkSeconds - nextBreakSeconds < MIN_WORK_BREAK_GAP_SECONDS) {
+      nextBreakSeconds = Math.max(1, nextWorkSeconds - MIN_WORK_BREAK_GAP_SECONDS);
+      if (nextWorkSeconds - nextBreakSeconds < MIN_WORK_BREAK_GAP_SECONDS) {
+        nextWorkSeconds = nextBreakSeconds + MIN_WORK_BREAK_GAP_SECONDS;
+      }
+    }
+
+    return {
+      workDurationSeconds: nextWorkSeconds,
+      breakDurationSeconds: nextBreakSeconds,
+      workDurationMinutes: Math.round((nextWorkSeconds / 60) * 10) / 10,
+    };
+  }, []);
 
   const applyFocusState = useCallback((state) => {
     setFocusModeEnabled(!!state.focusModeEnabled);
@@ -113,21 +134,23 @@ function Block() {
     }
   }, [setErrorMessage]);
 
-  const fetchFocusState = useCallback(async () => {
+  const fetchFocusState = useCallback(async (showError = true) => {
     try {
       const state = await getFocusState();
       applyFocusState(state);
     } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, "No se pudo obtener el estado de foco"));
+      if (showError) {
+        setErrorMessage(getApiErrorMessage(error, "No se pudo obtener el estado de foco"));
+      }
     }
   }, [applyFocusState, setErrorMessage]);
 
   useEffect(() => {
     fetchBlockedApps();
     fetchInstalledApps();
-    fetchFocusState();
+    fetchFocusState(true);
 
-    const refreshInterval = setInterval(fetchFocusState, 20000);
+    const refreshInterval = setInterval(() => fetchFocusState(false), 20000);
     return () => clearInterval(refreshInterval);
   }, [fetchBlockedApps, fetchFocusState, fetchInstalledApps]);
 
@@ -177,17 +200,34 @@ function Block() {
   }, []);
 
   const saveFocusSettings = async (next) => {
+    const normalized = normalizeDurations(next.workDurationMinutes, next.breakDurationSeconds);
+    setWorkDurationMinutes(normalized.workDurationMinutes);
+    setBreakDurationSeconds(normalized.breakDurationSeconds);
+
     try {
       await updateFocusSettings({
         focusModeEnabled: next.focusModeEnabled,
-        workDurationSeconds: Math.max(1, Math.round(Math.max(0.1, Number(next.workDurationMinutes || 0.1)) * 60)),
-        breakDurationSeconds: Math.max(1, next.breakDurationSeconds),
+        workDurationSeconds: normalized.workDurationSeconds,
+        breakDurationSeconds: normalized.breakDurationSeconds,
         focusAction: next.focusAction,
       });
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error, "No se pudieron guardar los ajustes de foco"));
     }
   };
+
+  const availableWorkOptions = useMemo(() => {
+    const options = new Set(WORK_MINUTE_OPTIONS);
+    options.add(Math.round(workDurationMinutes * 10) / 10);
+    return Array.from(options).sort((a, b) => a - b);
+  }, [workDurationMinutes]);
+
+  const availableBreakOptions = useMemo(() => {
+    const maxBreakByCurrentWork = Math.max(1, Math.round(workDurationMinutes * 60) - MIN_WORK_BREAK_GAP_SECONDS);
+    const options = BREAK_SECOND_OPTIONS.filter((value) => value <= maxBreakByCurrentWork);
+    options.push(Math.max(1, breakDurationSeconds));
+    return Array.from(new Set(options)).sort((a, b) => a - b);
+  }, [workDurationMinutes, breakDurationSeconds]);
 
   const addBlockedApp = async (application) => {
     const executableName = typeof application === "string" ? application : application?.executableName || "";
@@ -290,24 +330,37 @@ function Block() {
           </div>
           <div className="focus-field">
             <label>Trabajo (min)</label>
-            <input
-              type="number"
-              min="0.1"
-              step="0.1"
+            <select
               value={workDurationMinutes}
-              onChange={(e) => setWorkDurationMinutes(Number(e.target.value || 0.1))}
-              onBlur={() => saveFocusSettings({ focusModeEnabled, workDurationMinutes, breakDurationSeconds, focusAction })}
-            />
+              onChange={(e) => {
+                const nextWorkMinutes = Number(e.target.value || 0.1);
+                setWorkDurationMinutes(nextWorkMinutes);
+                saveFocusSettings({ focusModeEnabled, workDurationMinutes: nextWorkMinutes, breakDurationSeconds, focusAction });
+              }}
+            >
+              {availableWorkOptions.map((minutesValue) => (
+                <option key={minutesValue} value={minutesValue}>
+                  {minutesValue % 1 === 0 ? `${minutesValue} min` : `${minutesValue.toFixed(1)} min`}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="focus-field">
             <label>Descanso (s)</label>
-            <input
-              type="number"
-              min="1"
+            <select
               value={breakDurationSeconds}
-              onChange={(e) => setBreakDurationSeconds(Number(e.target.value || 1))}
-              onBlur={() => saveFocusSettings({ focusModeEnabled, workDurationMinutes, breakDurationSeconds, focusAction })}
-            />
+              onChange={(e) => {
+                const nextBreakSeconds = Number(e.target.value || 1);
+                setBreakDurationSeconds(nextBreakSeconds);
+                saveFocusSettings({ focusModeEnabled, workDurationMinutes, breakDurationSeconds: nextBreakSeconds, focusAction });
+              }}
+            >
+              {availableBreakOptions.map((secondsValue) => (
+                <option key={secondsValue} value={secondsValue}>
+                  {secondsValue}s
+                </option>
+              ))}
+            </select>
           </div>
           <div className="focus-field">
             <label>Al terminar</label>

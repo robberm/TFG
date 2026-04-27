@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 public class BlockingService {
     private static final int DEFAULT_WORK_DURATION_SECONDS = 20 * 60;
     private static final int DEFAULT_BREAK_DURATION_SECONDS = 20;
+    private static final int MIN_WORK_BREAK_GAP_SECONDS = 5;
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
     private final SimpMessageSendingOperations messagingTemplate;
@@ -188,9 +189,19 @@ public class BlockingService {
                                     String action) {
         IStorageService.Config config = storageService.loadConfig();
 
+        int sanitizedWorkDurationSeconds = sanitizeDuration(workDurationSeconds, DEFAULT_WORK_DURATION_SECONDS);
+        int sanitizedBreakDurationSeconds = sanitizeDuration(breakDurationSeconds, DEFAULT_BREAK_DURATION_SECONDS);
+
+        if (sanitizedWorkDurationSeconds - sanitizedBreakDurationSeconds < MIN_WORK_BREAK_GAP_SECONDS) {
+            sanitizedBreakDurationSeconds = Math.max(1, sanitizedWorkDurationSeconds - MIN_WORK_BREAK_GAP_SECONDS);
+            if (sanitizedWorkDurationSeconds - sanitizedBreakDurationSeconds < MIN_WORK_BREAK_GAP_SECONDS) {
+                sanitizedWorkDurationSeconds = sanitizedBreakDurationSeconds + MIN_WORK_BREAK_GAP_SECONDS;
+            }
+        }
+
         config.setFocusModeEnabled(focusModeEnabled);
-        config.setWorkDurationSeconds(sanitizeDuration(workDurationSeconds, DEFAULT_WORK_DURATION_SECONDS));
-        config.setBreakDurationSeconds(sanitizeDuration(breakDurationSeconds, DEFAULT_BREAK_DURATION_SECONDS));
+        config.setWorkDurationSeconds(sanitizedWorkDurationSeconds);
+        config.setBreakDurationSeconds(sanitizedBreakDurationSeconds);
         config.setFocusAction(FocusAction.from(action).name());
 
         storageService.saveConfig(config);
