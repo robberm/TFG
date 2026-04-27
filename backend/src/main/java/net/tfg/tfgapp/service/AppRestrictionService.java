@@ -27,7 +27,7 @@ public class AppRestrictionService {
     @PostConstruct
     public void init() {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.scheduleAtFixedRate(this::checkSystemState, 0, 5, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::checkSystemState, 0, 2, TimeUnit.SECONDS);
     }
 
     private void checkSystemState() {
@@ -44,10 +44,7 @@ public class AppRestrictionService {
         IStorageService.Config config = storageService.loadConfig();
         Set<String> blockedExecutables = normalizeBlockedExecutables(config.getBlockedApps());
 
-        WindowsUtils.getRunningProcesses().stream()
-                .map(this::normalizeExecutableNameSafely)
-                .filter(blockedExecutables::contains)
-                .forEach(WindowsUtils::killProcess);
+        blockedExecutables.forEach(WindowsUtils::killProcess);
     }
 
     public void addBlockedApp(String executableName) {
