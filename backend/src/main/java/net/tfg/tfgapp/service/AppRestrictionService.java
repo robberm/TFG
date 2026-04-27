@@ -6,7 +6,9 @@ import net.tfg.tfgapp.utils.WindowsUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -14,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class AppRestrictionService {
+    private static final Map<String, Set<String>> EXECUTABLE_ALIASES = buildExecutableAliases();
 
     private final IStorageService storageService;
 
@@ -39,10 +42,11 @@ public class AppRestrictionService {
 
     private void enforceRestrictions() {
         IStorageService.Config config = storageService.loadConfig();
+        Set<String> blockedExecutables = normalizeBlockedExecutables(config.getBlockedApps());
 
         WindowsUtils.getRunningProcesses().stream()
                 .map(this::normalizeExecutableNameSafely)
-                .filter(config.getBlockedApps()::contains)
+                .filter(blockedExecutables::contains)
                 .forEach(WindowsUtils::killProcess);
     }
 
@@ -124,5 +128,33 @@ public class AppRestrictionService {
         } catch (Exception ex) {
             return "";
         }
+    }
+
+    private Set<String> normalizeBlockedExecutables(Set<String> blockedApps) {
+        if (blockedApps == null || blockedApps.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        Set<String> normalized = new HashSet<>();
+
+        for (String blockedApp : blockedApps) {
+            String normalizedExecutable = normalizeExecutableNameSafely(blockedApp);
+            if (normalizedExecutable.isEmpty()) {
+                continue;
+            }
+
+            normalized.add(normalizedExecutable);
+            normalized.addAll(EXECUTABLE_ALIASES.getOrDefault(normalizedExecutable, Collections.emptySet()));
+        }
+
+        return normalized;
+    }
+
+    private static Map<String, Set<String>> buildExecutableAliases() {
+        Map<String, Set<String>> aliases = new HashMap<>();
+        aliases.put("leagueoflegends.exe", Set.of("leagueclient.exe", "leagueclientux.exe", "leagueclientuxrender.exe"));
+        aliases.put("riotclientservices.exe", Set.of("riotclientux.exe", "riotclientuxrender.exe"));
+        aliases.put("steam.exe", Set.of("steamwebhelper.exe"));
+        return aliases;
     }
 }

@@ -436,17 +436,39 @@ public class WindowsUtils {
         }
 
         try {
-            Process killByImageName = Runtime.getRuntime().exec(
-                    "taskkill /im \"" + normalizedProcessName + "\" /f"
-            );
+            Process killByImageName = new ProcessBuilder(
+                    "taskkill",
+                    "/im",
+                    normalizedProcessName,
+                    "/f"
+            ).start();
             killByImageName.waitFor(3, TimeUnit.SECONDS);
 
             if (killByImageName.exitValue() == 0) {
                 return true;
             }
 
-            Process process = Runtime.getRuntime().exec(
-                    "tasklist /fi \"imagename eq " + normalizedProcessName + "\" /fo csv /nh");
+            Process killByImageNameTree = new ProcessBuilder(
+                    "taskkill",
+                    "/im",
+                    normalizedProcessName,
+                    "/f",
+                    "/t"
+            ).start();
+            killByImageNameTree.waitFor(3, TimeUnit.SECONDS);
+
+            if (killByImageNameTree.exitValue() == 0) {
+                return true;
+            }
+
+            Process process = new ProcessBuilder(
+                    "tasklist",
+                    "/fi",
+                    "imagename eq " + normalizedProcessName,
+                    "/fo",
+                    "csv",
+                    "/nh"
+            ).start();
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
@@ -467,10 +489,25 @@ public class WindowsUtils {
 
             boolean success = true;
             for (int pid : pids) {
-                Process kill = Runtime.getRuntime().exec("taskkill /pid " + pid + " /f");
+                Process kill = new ProcessBuilder(
+                        "taskkill",
+                        "/pid",
+                        String.valueOf(pid),
+                        "/f"
+                ).start();
                 kill.waitFor();
                 if (kill.exitValue() != 0) {
-                    success = false;
+                    Process killTree = new ProcessBuilder(
+                            "taskkill",
+                            "/pid",
+                            String.valueOf(pid),
+                            "/f",
+                            "/t"
+                    ).start();
+                    killTree.waitFor();
+                    if (killTree.exitValue() != 0) {
+                        success = false;
+                    }
                 }
             }
 

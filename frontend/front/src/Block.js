@@ -46,6 +46,57 @@ const PlusIcon = () => (
 );
 
 const CategoryIcons = { other: (<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>) };
+const MIN_WORK_BREAK_GAP_SECONDS = 5;
+const HOUR_OPTIONS = Array.from({ length: 6 }, (_, index) => index);
+const MINUTE_SECOND_OPTIONS = Array.from({ length: 60 }, (_, index) => index);
+
+const formatDurationCaption = (totalSeconds) => {
+  const safeSeconds = Math.max(1, Number(totalSeconds || 0));
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const seconds = safeSeconds % 60;
+  return `${hours.toString().padStart(2, "0")} : ${minutes.toString().padStart(2, "0")} : ${seconds.toString().padStart(2, "0")}`;
+};
+
+const DurationSelector = ({ valueSeconds, onChange }) => {
+  const totalSeconds = Math.max(1, Number(valueSeconds || 1));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  const updateValue = (nextHours, nextMinutes, nextSeconds) => {
+    const normalizedHours = Math.max(0, Number(nextHours || 0));
+    const normalizedMinutes = Math.max(0, Math.min(59, Number(nextMinutes || 0)));
+    const normalizedSeconds = Math.max(0, Math.min(59, Number(nextSeconds || 0)));
+    onChange(Math.max(1, normalizedHours * 3600 + normalizedMinutes * 60 + normalizedSeconds));
+  };
+
+  return (
+    <div className="duration-selector">
+      <select value={hours} onChange={(e) => updateValue(e.target.value, minutes, seconds)}>
+        {HOUR_OPTIONS.map((optionHour) => (
+          <option key={`h-${optionHour}`} value={optionHour}>
+            {optionHour.toString().padStart(2, "0")}h
+          </option>
+        ))}
+      </select>
+      <select value={minutes} onChange={(e) => updateValue(hours, e.target.value, seconds)}>
+        {MINUTE_SECOND_OPTIONS.map((optionMinute) => (
+          <option key={`m-${optionMinute}`} value={optionMinute}>
+            {optionMinute.toString().padStart(2, "0")}m
+          </option>
+        ))}
+      </select>
+      <select value={seconds} onChange={(e) => updateValue(hours, minutes, e.target.value)}>
+        {MINUTE_SECOND_OPTIONS.map((optionSecond) => (
+          <option key={`s-${optionSecond}`} value={optionSecond}>
+            {optionSecond.toString().padStart(2, "0")}s
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+};
 
 function Block() {
   const { setErrorMessage } = useError();
@@ -54,22 +105,53 @@ function Block() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [isBlocked, setIsBlocked] = useState(false);
   const [isLoadingApps, setIsLoadingApps] = useState(false);
   const [activeTab, setActiveTab] = useState("add");
   const [focusModeEnabled, setFocusModeEnabled] = useState(false);
-  const [workDurationMinutes, setWorkDurationMinutes] = useState(20);
+  const [workDurationSeconds, setWorkDurationSeconds] = useState(20 * 60);
   const [breakDurationSeconds, setBreakDurationSeconds] = useState(20);
   const [focusAction, setFocusAction] = useState("NOTIFICATION");
   const [timeUntilNextBlock, setTimeUntilNextBlock] = useState(20 * 60);
+  const [isBreakPhase, setIsBreakPhase] = useState(false);
 
   const searchInputRef = useRef(null);
   const dropdownRef = useRef(null);
 
+  const isValidExecutableName = useCallback((value) => /^[a-z0-9_.-]+\.exe$/i.test((value || "").trim()), []);
+
+  const normalizeDurations = useCallback((workSeconds, breakSeconds) => {
+    let nextWorkSeconds = Math.max(1, Math.round(Number(workSeconds || 1)));
+    let nextBreakSeconds = Math.max(1, Math.round(Number(breakSeconds || 1)));
+
+    if (nextWorkSeconds - nextBreakSeconds < MIN_WORK_BREAK_GAP_SECONDS) {
+      nextBreakSeconds = Math.max(1, nextWorkSeconds - MIN_WORK_BREAK_GAP_SECONDS);
+      if (nextWorkSeconds - nextBreakSeconds < MIN_WORK_BREAK_GAP_SECONDS) {
+        nextWorkSeconds = nextBreakSeconds + MIN_WORK_BREAK_GAP_SECONDS;
+      }
+    }
+
+    return {
+      workDurationSeconds: nextWorkSeconds,
+      breakDurationSeconds: nextBreakSeconds,
+    };
+  }, []);
+
+  const applyFocusState = useCallback((state) => {
+    setFocusModeEnabled(!!state.focusModeEnabled);
+    setWorkDurationSeconds(Math.max(1, Number(state.workDurationSeconds || 1200)));
+    setBreakDurationSeconds(Math.max(1, Number(state.breakDurationSeconds || 20)));
+    setFocusAction(state.focusAction || "NOTIFICATION");
+    const phase = state.currentPhase || "OFF";
+    setIsBreakPhase(phase === "BREAK");
+    const phaseEndsAtEpochMs = state.phaseEndsAtEpochMs || 0;
+    const remaining = Math.max(0, Math.floor((phaseEndsAtEpochMs - (state.serverTimeEpochMs || Date.now())) / 1000));
+    setTimeUntilNextBlock(remaining);
+  }, []);
+
   const normalizedBlockedApps = useMemo(() => blockedApps.map((app) => app.toLowerCase()), [blockedApps]);
 
   const filteredApplications = installedApps
-    .filter((app) => app.blockable)
+    .filter((app) => isValidExecutableName(app.executableName))
     .filter((app) => {
       const query = searchQuery.toLowerCase().trim();
       if (!query) return true;
@@ -78,6 +160,21 @@ function Block() {
         (app.executableName || "").toLowerCase().includes(query)
       );
     });
+
+  const manualExecutableCandidate = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query || !isValidExecutableName(query)) {
+      return null;
+    }
+    if (normalizedBlockedApps.includes(query)) {
+      return null;
+    }
+    const alreadyInInstalled = installedApps.some((app) => (app.executableName || "").toLowerCase() === query);
+    if (alreadyInInstalled) {
+      return null;
+    }
+    return query;
+  }, [installedApps, isValidExecutableName, normalizedBlockedApps, searchQuery]);
 
   const fetchInstalledApps = useCallback(async () => {
     setIsLoadingApps(true);
@@ -100,77 +197,50 @@ function Block() {
     }
   }, [setErrorMessage]);
 
-  const fetchFocusState = useCallback(async () => {
+  const fetchFocusState = useCallback(async (showError = true) => {
     try {
       const state = await getFocusState();
-      setFocusModeEnabled(!!state.focusModeEnabled);
-      setIsBlocked(!!state.isBlocking);
-      setWorkDurationMinutes(Math.max(1, Math.round((state.workDurationSeconds || 1200) / 60)));
-      setBreakDurationSeconds(Math.max(1, state.breakDurationSeconds || 20));
-      setFocusAction(state.focusAction || "NOTIFICATION");
-      const remaining = Math.max(0, Math.floor(((state.nextActionAtEpochMs || 0) - (state.serverTimeEpochMs || Date.now())) / 1000));
-      setTimeUntilNextBlock(remaining);
+      applyFocusState(state);
     } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, "No se pudo obtener el estado de foco"));
+      if (showError) {
+        setErrorMessage(getApiErrorMessage(error, "No se pudo obtener el estado de foco"));
+      }
     }
-  }, [setErrorMessage]);
+  }, [applyFocusState, setErrorMessage]);
 
   useEffect(() => {
     fetchBlockedApps();
     fetchInstalledApps();
-    fetchFocusState();
+    fetchFocusState(true);
 
+    const refreshInterval = setInterval(() => fetchFocusState(false), 20000);
+    return () => clearInterval(refreshInterval);
+  }, [fetchBlockedApps, fetchFocusState, fetchInstalledApps]);
+
+  useEffect(() => {
     const socket = new SockJS("http://localhost:8080/ws");
     const stompClient = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
+      debug: () => {},
       onConnect: () => {
-        stompClient.subscribe("/topic/block", (message) => {
-          if (message.body === "BLOCK_SCREEN") {
-            window.electronAPI?.startBlock();
-          }
-        });
-
         stompClient.subscribe("/topic/focus-state", (message) => {
           try {
             const state = JSON.parse(message.body);
-            setFocusModeEnabled(!!state.focusModeEnabled);
-            setIsBlocked(!!state.isBlocking);
-            setFocusAction(state.focusAction || "NOTIFICATION");
-            setWorkDurationMinutes(Math.max(1, Math.round((state.workDurationSeconds || 1200) / 60)));
-            setBreakDurationSeconds(Math.max(1, state.breakDurationSeconds || 20));
-            const remaining = Math.max(0, Math.floor(((state.nextActionAtEpochMs || 0) - (state.serverTimeEpochMs || Date.now())) / 1000));
-            setTimeUntilNextBlock(remaining);
+            applyFocusState(state);
           } catch (error) {
             console.error("No se pudo parsear focus-state", error);
-          }
-        });
-
-        stompClient.subscribe("/topic/focus-events", (message) => {
-          try {
-            const event = JSON.parse(message.body);
-            if (event.type === "FOCUS_NOTIFICATION") {
-              if (window.electronAPI?.showReminderWindow) {
-                window.electronAPI.showReminderWindow({
-                  title: event.title,
-                  description: event.message,
-                  startTime: new Date().toISOString(),
-                  allDay: false,
-                });
-              } else if (window.Notification && Notification.permission === "granted") {
-                new Notification(event.title, { body: event.message });
-              }
-            }
-          } catch (error) {
-            console.error("No se pudo parsear focus-event", error);
           }
         });
       },
     });
 
     stompClient.activate();
-    return () => stompClient.deactivate();
-  }, [fetchBlockedApps, fetchFocusState, fetchInstalledApps]);
+
+    return () => {
+      stompClient.deactivate();
+    };
+  }, [applyFocusState]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -193,11 +263,15 @@ function Block() {
   }, []);
 
   const saveFocusSettings = async (next) => {
+    const normalized = normalizeDurations(next.workDurationSeconds, next.breakDurationSeconds);
+    setWorkDurationSeconds(normalized.workDurationSeconds);
+    setBreakDurationSeconds(normalized.breakDurationSeconds);
+
     try {
       await updateFocusSettings({
         focusModeEnabled: next.focusModeEnabled,
-        workDurationSeconds: Math.max(1, next.workDurationMinutes) * 60,
-        breakDurationSeconds: Math.max(1, next.breakDurationSeconds),
+        workDurationSeconds: normalized.workDurationSeconds,
+        breakDurationSeconds: normalized.breakDurationSeconds,
         focusAction: next.focusAction,
       });
     } catch (error) {
@@ -205,10 +279,23 @@ function Block() {
     }
   };
 
+  const resolveExecutableForBlocking = useCallback((application) => {
+    if (typeof application === "string") {
+      return application.trim().toLowerCase();
+    }
+
+    const resolvedName = (application?.executableName || "").trim().toLowerCase();
+    if (isValidExecutableName(resolvedName)) {
+      return resolvedName;
+    }
+
+    return "";
+  }, [isValidExecutableName]);
+
   const addBlockedApp = async (application) => {
-    const executableName = typeof application === "string" ? application : application?.executableName || "";
+    const executableName = resolveExecutableForBlocking(application);
     if (!executableName) {
-      setErrorMessage("No se puede bloquear esta aplicación porque no tiene ejecutable principal resuelto");
+      setErrorMessage("No se puede bloquear esta aplicación porque no tiene ejecutable válido");
       return;
     }
     if (normalizedBlockedApps.includes(executableName.toLowerCase())) {
@@ -256,8 +343,9 @@ function Block() {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const progressPercentage = workDurationMinutes > 0
-    ? ((workDurationMinutes * 60 - timeUntilNextBlock) / (workDurationMinutes * 60)) * 100
+  const currentPhaseDuration = isBreakPhase ? breakDurationSeconds : workDurationSeconds;
+  const progressPercentage = currentPhaseDuration > 0
+    ? ((currentPhaseDuration - timeUntilNextBlock) / currentPhaseDuration) * 100
     : 0;
 
   const modeLabel = focusModeEnabled ? "Focus mode" : "Off";
@@ -274,17 +362,17 @@ function Block() {
 
         <div className="timer-card">
           <div className="timer-progress-ring">
-            <svg className="timer-ring" viewBox="0 0 120 120">
+            <svg className={`timer-ring ${isBreakPhase ? "timer-ring-resting" : ""}`} viewBox="0 0 120 120">
               <circle className="timer-ring-bg" cx="60" cy="60" r="54" fill="none" strokeWidth="8" />
               <circle className="timer-ring-progress" cx="60" cy="60" r="54" fill="none" strokeWidth="8" strokeDasharray={`${2 * Math.PI * 54}`} strokeDashoffset={`${2 * Math.PI * 54 * (1 - progressPercentage / 100)}`} transform="rotate(-90 60 60)" />
             </svg>
             <div className="timer-display">
               <span className="timer-value">{formatTime(timeUntilNextBlock)}</span>
-              <span className="timer-label">próximo descanso</span>
+              <span className="timer-label">{isBreakPhase ? "descansando" : "próximo descanso"}</span>
             </div>
           </div>
           <div className="timer-status">
-            {isBlocked ? <span className="status-badge status-resting">Descansando</span> : <span className="status-badge status-working">En actividad: {modeLabel}</span>}
+            {isBreakPhase ? <span className="status-badge status-resting">Descansando</span> : <span className="status-badge status-working">{modeLabel}</span>}
           </div>
         </div>
 
@@ -296,7 +384,7 @@ function Block() {
               onChange={(e) => {
                 const enabled = e.target.value === "FOCUS";
                 setFocusModeEnabled(enabled);
-                saveFocusSettings({ focusModeEnabled: enabled, workDurationMinutes, breakDurationSeconds, focusAction });
+                saveFocusSettings({ focusModeEnabled: enabled, workDurationSeconds, breakDurationSeconds, focusAction });
               }}
             >
               <option value="FOCUS">Focus mode</option>
@@ -304,24 +392,26 @@ function Block() {
             </select>
           </div>
           <div className="focus-field">
-            <label>Trabajo (min)</label>
-            <input
-              type="number"
-              min="1"
-              value={workDurationMinutes}
-              onChange={(e) => setWorkDurationMinutes(Number(e.target.value || 1))}
-              onBlur={() => saveFocusSettings({ focusModeEnabled, workDurationMinutes, breakDurationSeconds, focusAction })}
+            <label>Trabajo</label>
+            <DurationSelector
+              valueSeconds={workDurationSeconds}
+              onChange={(nextWorkDurationSeconds) => {
+                setWorkDurationSeconds(nextWorkDurationSeconds);
+                saveFocusSettings({ focusModeEnabled, workDurationSeconds: nextWorkDurationSeconds, breakDurationSeconds, focusAction });
+              }}
             />
+            <small>{formatDurationCaption(workDurationSeconds)}</small>
           </div>
           <div className="focus-field">
-            <label>Descanso (s)</label>
-            <input
-              type="number"
-              min="1"
-              value={breakDurationSeconds}
-              onChange={(e) => setBreakDurationSeconds(Number(e.target.value || 1))}
-              onBlur={() => saveFocusSettings({ focusModeEnabled, workDurationMinutes, breakDurationSeconds, focusAction })}
+            <label>Descanso</label>
+            <DurationSelector
+              valueSeconds={breakDurationSeconds}
+              onChange={(nextBreakDurationSeconds) => {
+                setBreakDurationSeconds(nextBreakDurationSeconds);
+                saveFocusSettings({ focusModeEnabled, workDurationSeconds, breakDurationSeconds: nextBreakDurationSeconds, focusAction });
+              }}
             />
+            <small>{formatDurationCaption(breakDurationSeconds)}</small>
           </div>
           <div className="focus-field">
             <label>Al terminar</label>
@@ -329,7 +419,7 @@ function Block() {
               value={focusAction}
               onChange={(e) => {
                 setFocusAction(e.target.value);
-                saveFocusSettings({ focusModeEnabled, workDurationMinutes, breakDurationSeconds, focusAction: e.target.value });
+                saveFocusSettings({ focusModeEnabled, workDurationSeconds, breakDurationSeconds, focusAction: e.target.value });
               }}
             >
               <option value="NOTIFICATION">Notificación</option>
@@ -351,25 +441,40 @@ function Block() {
                   <span className="search-icon"><SearchIcon /></span>
                   <input ref={searchInputRef} type="text" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setSelectedIndex(-1); setIsDropdownOpen(true); }} onFocus={() => setIsDropdownOpen(true)} placeholder="Buscar aplicación para bloquear..." className="search-input" />
                   {searchQuery && <button className="search-clear" onClick={() => { setSearchQuery(""); searchInputRef.current?.focus(); }}><CloseIcon /></button>}
-                  <button className="search-refresh" onClick={fetchInstalledApps} disabled={isLoadingApps} title="Actualizar lista de aplicaciones"><RefreshIcon /></button>
                 </div>
 
                 {isDropdownOpen && (
                   <div className="search-dropdown">
                     {isLoadingApps ? (
                       <div className="dropdown-loading"><div className="loading-spinner"></div><span>Cargando aplicaciones...</span></div>
-                    ) : filteredApplications.length > 0 ? (
+                    ) : filteredApplications.length > 0 || manualExecutableCandidate ? (
                       <ul className="process-list">
                         {filteredApplications.map((application, index) => {
                           const isAlreadyBlocked = normalizedBlockedApps.includes((application.executableName || "").toLowerCase());
                           return (
                             <li key={`${application.displayName}-${application.executableName || index}`} className={`process-item ${index === selectedIndex ? "selected" : ""} ${isAlreadyBlocked ? "already-blocked" : ""}`} onClick={() => !isAlreadyBlocked && addBlockedApp(application)} onMouseEnter={() => setSelectedIndex(index)}>
                               <div className="process-icon">{application.iconBase64 ? <img src={application.iconBase64} alt="" /> : <span className="category-icon">{CategoryIcons.other}</span>}</div>
-                              <div className="process-info"><span className="process-name">{application.displayName}</span><span className="process-exe">{application.executableName}</span></div>
+                              <div className="process-info"><span className="process-name">{application.displayName}</span><span className="process-exe">{resolveExecutableForBlocking(application)}</span></div>
                               <span className="process-category cat-other">instalada</span>
                             </li>
                           );
                         })}
+                        {manualExecutableCandidate && (
+                          <li
+                            key={`manual-${manualExecutableCandidate}`}
+                            className="process-item"
+                            onClick={() => addBlockedApp(manualExecutableCandidate)}
+                          >
+                            <div className="process-icon">
+                              <span className="category-icon">{CategoryIcons.other}</span>
+                            </div>
+                            <div className="process-info">
+                              <span className="process-name">Añadir manualmente</span>
+                              <span className="process-exe">{manualExecutableCandidate}</span>
+                            </div>
+                            <span className="process-category cat-productivity">manual</span>
+                          </li>
+                        )}
                       </ul>
                     ) : searchQuery ? (<div className="dropdown-empty"><p>No se encontraron aplicaciones instaladas</p></div>) : (
                       <div className="dropdown-hint"><p>Escribe para buscar entre las aplicaciones instaladas</p></div>
