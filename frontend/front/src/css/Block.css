@@ -759,3 +759,14 @@
   color: var(--text-primary);
   padding: 0.5rem 0.6rem;
 }
+
+.duration-selector {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.focus-field small {
+  font-size: 0.72rem;
+  color: color-mix(in srgb, var(--text-primary) 60%, transparent);
+}
