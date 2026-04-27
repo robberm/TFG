@@ -117,6 +117,8 @@ function Block() {
   const searchInputRef = useRef(null);
   const dropdownRef = useRef(null);
 
+  const isValidExecutableName = useCallback((value) => /^[a-z0-9_.-]+\.exe$/i.test((value || "").trim()), []);
+
   const normalizeDurations = useCallback((workSeconds, breakSeconds) => {
     let nextWorkSeconds = Math.max(1, Math.round(Number(workSeconds || 1)));
     let nextBreakSeconds = Math.max(1, Math.round(Number(breakSeconds || 1)));
@@ -149,7 +151,7 @@ function Block() {
   const normalizedBlockedApps = useMemo(() => blockedApps.map((app) => app.toLowerCase()), [blockedApps]);
 
   const filteredApplications = installedApps
-    .filter((app) => app.blockable)
+    .filter((app) => app.blockable || (app.executableName || "").toLowerCase().endsWith(".exe"))
     .filter((app) => {
       const query = searchQuery.toLowerCase().trim();
       if (!query) return true;
@@ -158,6 +160,21 @@ function Block() {
         (app.executableName || "").toLowerCase().includes(query)
       );
     });
+
+  const manualExecutableCandidate = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query || !isValidExecutableName(query)) {
+      return null;
+    }
+    if (normalizedBlockedApps.includes(query)) {
+      return null;
+    }
+    const alreadyInInstalled = installedApps.some((app) => (app.executableName || "").toLowerCase() === query);
+    if (alreadyInInstalled) {
+      return null;
+    }
+    return query;
+  }, [installedApps, isValidExecutableName, normalizedBlockedApps, searchQuery]);
 
   const fetchInstalledApps = useCallback(async () => {
     setIsLoadingApps(true);
@@ -418,7 +435,7 @@ function Block() {
                   <div className="search-dropdown">
                     {isLoadingApps ? (
                       <div className="dropdown-loading"><div className="loading-spinner"></div><span>Cargando aplicaciones...</span></div>
-                    ) : filteredApplications.length > 0 ? (
+                    ) : filteredApplications.length > 0 || manualExecutableCandidate ? (
                       <ul className="process-list">
                         {filteredApplications.map((application, index) => {
                           const isAlreadyBlocked = normalizedBlockedApps.includes((application.executableName || "").toLowerCase());
@@ -430,6 +447,22 @@ function Block() {
                             </li>
                           );
                         })}
+                        {manualExecutableCandidate && (
+                          <li
+                            key={`manual-${manualExecutableCandidate}`}
+                            className="process-item"
+                            onClick={() => addBlockedApp(manualExecutableCandidate)}
+                          >
+                            <div className="process-icon">
+                              <span className="category-icon">{CategoryIcons.other}</span>
+                            </div>
+                            <div className="process-info">
+                              <span className="process-name">Añadir manualmente</span>
+                              <span className="process-exe">{manualExecutableCandidate}</span>
+                            </div>
+                            <span className="process-category cat-productivity">manual</span>
+                          </li>
+                        )}
                       </ul>
                     ) : searchQuery ? (<div className="dropdown-empty"><p>No se encontraron aplicaciones instaladas</p></div>) : (
                       <div className="dropdown-hint"><p>Escribe para buscar entre las aplicaciones instaladas</p></div>
