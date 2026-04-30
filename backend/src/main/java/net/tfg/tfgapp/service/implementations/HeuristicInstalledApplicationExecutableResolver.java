@@ -1,7 +1,5 @@
 package net.tfg.tfgapp.service.implementations;
 
-
-
 import net.tfg.tfgapp.DTOs.apprestrict.InstalledApplicationRegistryEntry;
 import net.tfg.tfgapp.DTOs.apprestrict.ResolvedExecutableDTO;
 import net.tfg.tfgapp.service.interfaces.InstalledApplicationExecutableResolver;
@@ -12,6 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 @Service
@@ -30,12 +30,40 @@ public class HeuristicInstalledApplicationExecutableResolver implements Installe
             "repair.exe"
     );
 
+    private static final Pattern EXECUTABLE_PATTERN = Pattern.compile("(?i)([a-z]:\\\\[^\"\\n\\r]*?\\.exe)");
+
     @Override
     public ResolvedExecutableDTO resolveExecutable(InstalledApplicationRegistryEntry application) {
+        String resolvedFromKnownRules = null;
+        try {
+            resolvedFromKnownRules = resolveFromKnownRules(application);
+        } catch (Exception ignored) {
+            resolvedFromKnownRules = null;
+        }
+
+        if (isUsableExecutable(resolvedFromKnownRules)) {
+            File executableFile = new File(resolvedFromKnownRules);
+            return new ResolvedExecutableDTO(
+                    executableFile.getName().toLowerCase(),
+                    executableFile.getAbsolutePath(),
+                    true
+            );
+        }
+
         String executableFromIcon = extractExecutablePathFromDisplayIcon(application.getDisplayIcon());
 
         if (isUsableExecutable(executableFromIcon)) {
             File executableFile = new File(executableFromIcon);
+            return new ResolvedExecutableDTO(
+                    executableFile.getName().toLowerCase(),
+                    executableFile.getAbsolutePath(),
+                    true
+            );
+        }
+
+        String executableFromUninstall = extractExecutablePathFromUninstallString(application.getUninstallString());
+        if (isUsableExecutable(executableFromUninstall)) {
+            File executableFile = new File(executableFromUninstall);
             return new ResolvedExecutableDTO(
                     executableFile.getName().toLowerCase(),
                     executableFile.getAbsolutePath(),
@@ -60,19 +88,47 @@ public class HeuristicInstalledApplicationExecutableResolver implements Installe
         return new ResolvedExecutableDTO(null, null, false);
     }
 
-    /**
-     * Intenta extraer una ruta ejecutable real a partir del campo DisplayIcon del registro.
-     * Muchas entradas incluyen el exe seguido de una coma y un índice de recurso.
-     *
-     * @param displayIcon valor raw del registro.
-     * @return ruta del exe si parece válida, null en caso contrario.
-     */
-    private String extractExecutablePathFromDisplayIcon(String displayIcon) {
-        if (displayIcon == null || displayIcon.isBlank()) {
+    private String resolveFromKnownRules(InstalledApplicationRegistryEntry application) {
+        String displayName = normalize(application.getDisplayName());
+        String installLocation = sanitizePath(expandEnvironmentVariables(application.getInstallLocation()));
+        String uninstallString = application.getUninstallString() == null ? "" : application.getUninstallString().toLowerCase();
+
+        if (uninstallString.contains("steam://")) {
             return null;
         }
 
-        String cleaned = displayIcon.trim();
+        if (displayName.contains("steam") && installLocation != null && !installLocation.isBlank()) {
+            return buildPathSafely(installLocation, "steam.exe");
+        }
+
+        if (displayName.contains("leagueoflegends") && installLocation != null && !installLocation.isBlank()) {
+            return buildPathSafely(installLocation, "LeagueClient.exe");
+        }
+
+        if (displayName.contains("riotclient") && installLocation != null && !installLocation.isBlank()) {
+            return buildPathSafely(installLocation, "RiotClientServices.exe");
+        }
+
+        return null;
+    }
+
+    private String extractExecutablePathFromDisplayIcon(String displayIcon) {
+        return extractExecutablePath(displayIcon);
+    }
+
+    private String extractExecutablePathFromUninstallString(String uninstallString) {
+        if (uninstallString != null && uninstallString.toLowerCase().contains("steam://")) {
+            return null;
+        }
+        return extractExecutablePath(uninstallString);
+    }
+
+    private String extractExecutablePath(String rawValue) {
+        if (rawValue == null || rawValue.isBlank()) {
+            return null;
+        }
+
+        String cleaned = expandEnvironmentVariables(rawValue.trim());
 
         if (cleaned.startsWith("\"")) {
             int closingQuoteIndex = cleaned.indexOf("\"", 1);
@@ -88,21 +144,56 @@ public class HeuristicInstalledApplicationExecutableResolver implements Installe
 
         cleaned = cleaned.trim();
 
-        if (!cleaned.toLowerCase().endsWith(".exe")) {
+        if (cleaned.toLowerCase().endsWith(".exe")) {
+            return cleaned;
+        }
+
+        Matcher matcher = EXECUTABLE_PATTERN.matcher(cleaned);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+
+        return null;
+    }
+
+    private String expandEnvironmentVariables(String value) {
+        if (value == null) {
             return null;
         }
 
-        return cleaned;
+        String expanded = value;
+
+        for (String envVar : System.getenv().keySet()) {
+            String marker = "%" + envVar + "%";
+            if (expanded.contains(marker)) {
+                expanded = expanded.replace(marker, System.getenv(envVar));
+            }
+        }
+
+        return expanded;
     }
 
-    /**
-     * Busca un ejecutable razonable dentro de la carpeta de instalación.
-     * Se recorren niveles superficiales para evitar coste innecesario y se puntúan los candidatos.
-     *
-     * @param installLocation carpeta de instalación.
-     * @param displayName nombre visible de la aplicación.
-     * @return ruta del ejecutable mejor puntuado o null.
-     */
+    private String sanitizePath(String path) {
+        if (path == null) {
+            return null;
+        }
+
+        String trimmed = path.trim();
+        if (trimmed.startsWith("\"") && trimmed.endsWith("\"") && trimmed.length() > 1) {
+            return trimmed.substring(1, trimmed.length() - 1).trim();
+        }
+
+        return trimmed;
+    }
+
+    private String buildPathSafely(String directory, String executableName) {
+        try {
+            return new File(directory, executableName).getAbsolutePath();
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
     private String resolveFromInstallLocation(String installLocation, String displayName) {
         if (installLocation == null || installLocation.isBlank()) {
             return null;
@@ -127,12 +218,6 @@ public class HeuristicInstalledApplicationExecutableResolver implements Installe
         }
     }
 
-    /**
-     * Determina si el ejecutable encontrado es utilizable para bloqueo.
-     *
-     * @param executablePath ruta candidata.
-     * @return true si existe, es fichero y no es un ejecutable descartado.
-     */
     private boolean isUsableExecutable(String executablePath) {
         if (executablePath == null || executablePath.isBlank()) {
             return false;
@@ -145,15 +230,6 @@ public class HeuristicInstalledApplicationExecutableResolver implements Installe
                 && !isExcludedExecutable(file.getName());
     }
 
-    /**
-     * Puntúa un ejecutable candidato según su parecido con el nombre visible
-     * y su proximidad a la raíz de instalación.
-     *
-     * @param file ejecutable candidato.
-     * @param displayName nombre visible de la aplicación.
-     * @param installDir carpeta raíz de instalación.
-     * @return puntuación del candidato.
-     */
     private int scoreExecutableCandidate(File file, String displayName, File installDir) {
         int score = 0;
 
@@ -180,22 +256,10 @@ public class HeuristicInstalledApplicationExecutableResolver implements Installe
         return score;
     }
 
-    /**
-     * Indica si un ejecutable corresponde a un binario auxiliar que no debería usarse como principal.
-     *
-     * @param fileName nombre del fichero.
-     * @return true si debe excluirse.
-     */
     private boolean isExcludedExecutable(String fileName) {
         return EXCLUDED_EXECUTABLE_NAMES.contains(fileName.toLowerCase());
     }
 
-    /**
-     * Normaliza un texto para comparaciones heurísticas.
-     *
-     * @param value texto de entrada.
-     * @return texto en minúsculas, sin espacios, guiones ni guiones bajos.
-     */
     private String normalize(String value) {
         if (value == null) {
             return "";

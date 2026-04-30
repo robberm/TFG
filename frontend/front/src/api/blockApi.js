@@ -26,3 +26,12 @@ export const resetBlockedApps = () =>
     method: "DELETE",
     includeJson: false,
   });
+
+export const getFocusState = () =>
+  apiRequest("/api/block/focus-state", { method: "GET", includeJson: false });
+
+export const updateFocusSettings = (payload) =>
+  apiRequest("/api/block/focus-settings", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
