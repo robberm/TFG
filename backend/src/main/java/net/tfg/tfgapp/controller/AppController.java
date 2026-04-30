@@ -5,7 +5,6 @@ import net.tfg.tfgapp.DTOs.apprestrict.InstalledApplicationDTO;
 import net.tfg.tfgapp.service.AppRestrictionService;
 import net.tfg.tfgapp.service.BlockingService;
 import net.tfg.tfgapp.service.InstalledApplicationService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,12 +27,6 @@ public class AppController {
         this.installedApplicationService = installedApplicationService;
     }
 
-    /**
-     * Devuelve el catálogo de aplicaciones instaladas detectadas en Windows.
-     * Cada aplicación incluye su nombre visible y, cuando se ha podido deducir, su ejecutable principal.
-     *
-     * @return lista de aplicaciones instaladas.
-     */
     @GetMapping("/installed-apps")
     public List<InstalledApplicationDTO> getInstalledApplications() {
         return installedApplicationService.getInstalledApplicationsDetailed();
@@ -44,34 +37,16 @@ public class AppController {
         return restrictionService.getBlockedApps();
     }
 
-    /**
-     * Añade una aplicación a la lista bloqueada usando el ejecutable principal resuelto.
-     *
-     * @param request cuerpo con el nombre del ejecutable a bloquear.
-     * @return mensaje de confirmación o error.
-     */
     @PostMapping("/blocked-apps")
     public ResponseEntity<String> addBlockedApp(@RequestBody BlockedApplicationRequest request) {
-        try {
-            restrictionService.addBlockedApp(request.getExecutableName());
-            return ResponseEntity.ok("Aplicación añadida correctamente");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }
+        restrictionService.addBlockedApp(request.getExecutableName());
+        return ResponseEntity.ok("Aplicación añadida correctamente");
     }
 
     @DeleteMapping("/blocked-apps/{appName}")
     public ResponseEntity<String> removeBlockedApp(@PathVariable String appName) {
-        try {
-            restrictionService.removeBlockedApp(appName);
-            return ResponseEntity.ok("Aplicación borrada correctamente");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }
+        restrictionService.removeBlockedApp(appName);
+        return ResponseEntity.ok("Aplicación borrada correctamente");
     }
 
     @GetMapping("/game-mode")
@@ -86,13 +61,7 @@ public class AppController {
 
     @DeleteMapping("/blocked-apps/reset")
     public ResponseEntity<String> resetBlockedApps() {
-        try {
-            restrictionService.resetBlockedApps();
-            return ResponseEntity.ok("Configuración completamente reseteada a valores por defecto");
-        } catch (RuntimeException e) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al resetear: " + e.getMessage());
-        }
+        restrictionService.resetBlockedApps();
+        return ResponseEntity.ok("Configuración completamente reseteada a valores por defecto");
     }
 }

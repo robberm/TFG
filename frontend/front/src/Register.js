@@ -2,12 +2,14 @@ import React, { useState, useRef } from "react";
 import "./css/App.css";
 import { useNavigate } from "react-router-dom";
 import PasswordInput from "./components/PasswordInput";
+import { getApiErrorMessage } from "./api/apiClient";
+import { registerActiveSessionUser, registerUser } from "./api/authApi";
 
 const Register = () => {
   // Definir estado para username y password
   const [registerUsername, setRegisterUsername] = useState(""); // Estado para el nombre de usuario
   const [registerPw, setRegisterPw] = useState(""); // Estado para la contraseña
-  const [error, setError] = useState(null); // Estado para el mensaje de error
+  const [error, setError] = useState("");
 
   // Usamos useRef para el campo de contraseña
   const passwordInputRef = useRef(null);
@@ -35,39 +37,21 @@ const Register = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:8080/users/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: normalizedUsername,
-          password: normalizedPassword,
-        }), // Enviamos datos para el registro
-      });
+      setError("");
+      const data = await registerUser(normalizedUsername, normalizedPassword);
+      const token = data.token.trim();
 
-      if (response.ok) {
-        const data = await response.json();
-        const token = data.token.trim();
+      localStorage.setItem("token", token);
+      localStorage.setItem("username", data.username);
 
-        localStorage.setItem("token", token);
-        localStorage.setItem("username", data.username);
+      //  Marco sesión activa en backend
+      await registerActiveSessionUser();
 
-        //  Marco sesión activa en backend 
-        await fetch("http://localhost:8080/session/active-user", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        // 3) Ir a home ya logged in
-        navigate("/home");
-      } else {
-        const errorMessage = await response.text();
-        setError(errorMessage);
-      }
+      // 3) Ir a home ya logged in
+      navigate("/home");
     } catch (err) {
       console.log(err);
-      setError("Error query, try again.");
+      setError(getApiErrorMessage(err, "Error de conexión, inténtalo de nuevo."));
     }
   };
 
@@ -117,8 +101,7 @@ const Register = () => {
         La contraseña debe tener al menos 10 caracteres, incluir letras, un
         número y un símbolo
       </h4>
-      {error && <div className="error">{error}</div>}{" "}
-      {/* Muestra el error si existe */}
+      {error && <div className="error">{error}</div>}
     </div>
   );
 };

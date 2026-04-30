@@ -48,30 +48,33 @@ const parseReminderDate = (value) => {
 
 const RemindersPanel = ({ todayEvents, isLoadingTodayEvents }) => {
   const reminderEvents = useMemo(() => {
-    return [...todayEvents]
-      .filter(
-        (event) =>
-          event.reminderMinutesBefore !== null &&
-          event.reminderMinutesBefore !== undefined,
-      )
+    const hasReminder = (event) => {
+      const listHasValues =
+        Array.isArray(event.reminderMinutesBeforeList) &&
+        event.reminderMinutesBeforeList.length > 0;
+      const legacyHasValue =
+        event.reminderMinutesBefore !== null &&
+        event.reminderMinutesBefore !== undefined;
+
+      return listHasValues || legacyHasValue;
+    };
+
+    const uniqueByEventId = new Map();
+    [...todayEvents]
+      .filter(hasReminder)
+      .forEach((event) => {
+        if (!uniqueByEventId.has(event.id)) {
+          uniqueByEventId.set(event.id, event);
+        }
+      });
+
+    return [...uniqueByEventId.values()]
       .sort((a, b) => {
         const aDate = parseReminderDate(a.startTime);
         const bDate = parseReminderDate(b.startTime);
         return aDate - bDate;
       });
   }, [todayEvents]);
-
-  const getReminderLabel = (minutes) => {
-    if (minutes === 1440) {
-      return "24h antes";
-    }
-
-    if (minutes === 10) {
-      return "10 min antes";
-    }
-
-    return `${minutes} min antes`;
-  };
 
   return (
     <div className="remindersSection">
@@ -98,11 +101,6 @@ const RemindersPanel = ({ todayEvents, isLoadingTodayEvents }) => {
                 </div>
 
                 <div className="reminderCardTitle">{event.title}</div>
-
-                <div className="reminderCardBadge">
-                  Reminder: {getReminderLabel(event.reminderMinutesBefore)}
-                </div>
-
                 {event.location && (
                   <div className="reminderCardLocation">
                     📍 {event.location}

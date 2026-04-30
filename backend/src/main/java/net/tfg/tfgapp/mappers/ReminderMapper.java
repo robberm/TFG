@@ -14,6 +14,10 @@ public class ReminderMapper {
      * @return dto del reminder
      */
     public ReminderDTO toDto(Event event) {
+        return toDto(event, event.getReminderMinutesBefore());
+    }
+
+    public ReminderDTO toDto(Event event, Integer reminderMinutesBefore) {
         ReminderDTO dto = new ReminderDTO();
         dto.setEventId(event.getId());
         dto.setTitle(event.getTitle());
@@ -22,7 +26,7 @@ public class ReminderMapper {
         dto.setStartTime(event.getStartTime());
         dto.setEndTime(event.getEndTime());
         dto.setAllDay(Boolean.TRUE.equals(event.getIsAllDay()));
-        dto.setReminderMinutesBefore(event.getReminderMinutesBefore());
+        dto.setReminderMinutesBefore(reminderMinutesBefore);
         dto.setCategory(event.getCategory() != null ? event.getCategory().name() : null);
         return dto;
     }

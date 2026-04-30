@@ -5,8 +5,7 @@ import net.tfg.tfgapp.DTOs.objectives.HabitRequest;
 import net.tfg.tfgapp.domains.Habit;
 import net.tfg.tfgapp.domains.ObjectiveLog;
 import net.tfg.tfgapp.domains.User;
-
-
+import net.tfg.tfgapp.exception.ApiException;
 import net.tfg.tfgapp.security.JwtUtil;
 import net.tfg.tfgapp.service.interfaces.IHabitService;
 import net.tfg.tfgapp.service.interfaces.IUserService;
@@ -46,11 +45,11 @@ public class HabitController {
         Habit habit = habitService.findById(id);
 
         if (habit == null) {
-            return ResponseEntity.notFound().build();
+            throw new ApiException(HttpStatus.NOT_FOUND, "Hábito no encontrado.");
         }
 
         if (!habit.getUser().getUsername().equals(username)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso para acceder a este hábito.");
+            throw new SecurityException("No tienes permiso para acceder a este hábito.");
         }
 
         return ResponseEntity.ok(habit);
@@ -59,19 +58,15 @@ public class HabitController {
     @PostMapping
     public ResponseEntity<?> createHabit(@RequestHeader("Authorization") String token,
                                          @RequestBody HabitRequest request) {
-        try {
-            String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
-            User user = userService.getUserByUsername(username);
+        String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
+        User user = userService.getUserByUsername(username);
 
-            if (user == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario no encontrado.");
-            }
-
-            Habit createdHabit = habitService.createHabit(request, user);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdHabit);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Hubo un fallo al crear el hábito: " + e.getMessage());
+        if (user == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Usuario no encontrado.");
         }
+
+        Habit createdHabit = habitService.createHabit(request, user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdHabit);
     }
 
     @PutMapping("/{id}")
@@ -82,11 +77,11 @@ public class HabitController {
         Habit existingHabit = habitService.findById(id);
 
         if (existingHabit == null) {
-            return ResponseEntity.notFound().build();
+            throw new ApiException(HttpStatus.NOT_FOUND, "Hábito no encontrado.");
         }
 
         if (!existingHabit.getUser().getUsername().equals(username)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            throw new SecurityException("No tienes permiso para actualizar este hábito.");
         }
 
         return ResponseEntity.ok(habitService.updateHabit(existingHabit, request));
@@ -100,11 +95,11 @@ public class HabitController {
         Habit habit = habitService.findById(id);
 
         if (habit == null) {
-            return ResponseEntity.notFound().build();
+            throw new ApiException(HttpStatus.NOT_FOUND, "Hábito no encontrado.");
         }
 
         if (!habit.getUser().getUsername().equals(username)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            throw new SecurityException("No tienes permiso para actualizar este hábito.");
         }
 
         ObjectiveLog log = habitService.markHabitCompletion(habit, request);
@@ -117,11 +112,11 @@ public class HabitController {
         Habit habit = habitService.findById(id);
 
         if (habit == null) {
-            return ResponseEntity.notFound().build();
+            throw new ApiException(HttpStatus.NOT_FOUND, "Hábito no encontrado.");
         }
 
         if (!habit.getUser().getUsername().equals(username)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            throw new SecurityException("No tienes permiso para eliminar este hábito.");
         }
 
         habitService.deleteById(id);

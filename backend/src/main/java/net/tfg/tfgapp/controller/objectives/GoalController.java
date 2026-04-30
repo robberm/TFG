@@ -5,6 +5,7 @@ import net.tfg.tfgapp.DTOs.objectives.GoalRequest;
 import net.tfg.tfgapp.domains.Goal;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.enumerates.UserRole;
+import net.tfg.tfgapp.exception.ApiException;
 import net.tfg.tfgapp.security.JwtUtil;
 import net.tfg.tfgapp.service.interfaces.IGoalService;
 import net.tfg.tfgapp.service.interfaces.IUserService;
@@ -34,15 +35,11 @@ public class GoalController {
                                         @RequestParam(required = false) Long targetUserId) {
         User actor = getActor(token);
 
-        if (actor == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario no encontrado.");
-        }
-
         if (actor.getRole() == UserRole.ADMIN) {
             if (targetUserId != null) {
                 User managedUser = userService.getUserById(targetUserId);
                 if (!canAccessManagedUser(actor, managedUser)) {
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso sobre ese usuario.");
+                    throw new SecurityException("No tienes permiso sobre ese usuario.");
                 }
                 return ResponseEntity.ok(goalService.getAssignedGoalsForAdminAndUser(actor.getId(), managedUser.getId()));
             }
@@ -58,11 +55,11 @@ public class GoalController {
         Goal goal = goalService.findById(id);
 
         if (goal == null) {
-            return ResponseEntity.notFound().build();
+            throw new ApiException(HttpStatus.NOT_FOUND, "Objetivo no encontrado.");
         }
 
-        if (actor == null || !canAccessGoal(actor, goal)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permiso para acceder a este objetivo.");
+        if (!canAccessGoal(actor, goal)) {
+            throw new SecurityException("No tienes permiso para acceder a este objetivo.");
         }
 
         return ResponseEntity.ok(goal);
@@ -70,31 +67,21 @@ public class GoalController {
 
     @PostMapping
     public ResponseEntity<?> createGoal(@RequestHeader("Authorization") String token, @RequestBody GoalRequest request) {
-        try {
-            User actor = getActor(token);
+        User actor = getActor(token);
 
-            if (actor == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario no encontrado.");
+        List<User> targets = resolveTargetUsers(actor, request);
+        List<Goal> createdGoals = new ArrayList<>();
+
+        for (User target : targets) {
+            Goal createdGoal = goalService.createGoal(request, target);
+            if (actor.getRole() == UserRole.ADMIN) {
+                createdGoal.setAssignedByAdmin(actor);
+                createdGoal = goalService.updateGoal(createdGoal, request);
             }
-
-            List<User> targets = resolveTargetUsers(actor, request);
-            List<Goal> createdGoals = new ArrayList<>();
-
-            for (User target : targets) {
-                Goal createdGoal = goalService.createGoal(request, target);
-                if (actor.getRole() == UserRole.ADMIN) {
-                    createdGoal.setAssignedByAdmin(actor);
-                    createdGoal = goalService.updateGoal(createdGoal, request);
-                }
-                createdGoals.add(createdGoal);
-            }
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdGoals);
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Hubo un fallo al crear el objetivo: " + e.getMessage());
+            createdGoals.add(createdGoal);
         }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdGoals);
     }
 
     @PutMapping("/{id}")
@@ -105,11 +92,11 @@ public class GoalController {
         Goal existingGoal = goalService.findById(id);
 
         if (existingGoal == null) {
-            return ResponseEntity.notFound().build();
+            throw new ApiException(HttpStatus.NOT_FOUND, "Objetivo no encontrado.");
         }
 
-        if (actor == null || !canAccessGoal(actor, existingGoal)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        if (!canAccessGoal(actor, existingGoal)) {
+            throw new SecurityException("No tienes permiso para actualizar este objetivo.");
         }
 
         if (actor.getRole() != UserRole.ADMIN && existingGoal.isAssignedByAdmin()) {
@@ -141,11 +128,11 @@ public class GoalController {
         Goal goal = goalService.findById(id);
 
         if (goal == null) {
-            return ResponseEntity.notFound().build();
+            throw new ApiException(HttpStatus.NOT_FOUND, "Objetivo no encontrado.");
         }
 
-        if (actor == null || !canAccessGoal(actor, goal)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        if (!canAccessGoal(actor, goal)) {
+            throw new SecurityException("No tienes permiso para actualizar este objetivo.");
         }
 
         return ResponseEntity.ok(goalService.updateGoalProgress(goal, request));
@@ -157,16 +144,15 @@ public class GoalController {
         Goal goal = goalService.findById(id);
 
         if (goal == null) {
-            return ResponseEntity.notFound().build();
+            throw new ApiException(HttpStatus.NOT_FOUND, "Objetivo no encontrado.");
         }
 
-        if (actor == null || !canAccessGoal(actor, goal)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        if (!canAccessGoal(actor, goal)) {
+            throw new SecurityException("No tienes permiso para eliminar este objetivo.");
         }
 
         if (actor.getRole() != UserRole.ADMIN && goal.isAssignedByAdmin()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("No puedes eliminar objetivos asignados por administrador.");
+            throw new SecurityException("No puedes eliminar objetivos asignados por administrador.");
         }
 
         goalService.deleteById(id);
@@ -175,7 +161,11 @@ public class GoalController {
 
     private User getActor(String token) {
         String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
-        return userService.getUserByUsername(username);
+        User actor = userService.getUserByUsername(username);
+        if (actor == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Usuario no encontrado.");
+        }
+        return actor;
     }
 
     private List<User> resolveTargetUsers(User actor, GoalRequest request) {
