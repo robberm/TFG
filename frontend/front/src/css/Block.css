@@ -101,6 +101,10 @@
   transition: stroke-dashoffset 1s linear;
 }
 
+.timer-ring-resting .timer-ring-progress {
+  stroke: var(--warning-color);
+}
+
 .timer-display {
   position: absolute;
   top: 50%;
@@ -754,4 +758,15 @@
   background: var(--bg-secondary);
   color: var(--text-primary);
   padding: 0.5rem 0.6rem;
+}
+
+.duration-selector {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.focus-field small {
+  font-size: 0.72rem;
+  color: color-mix(in srgb, var(--text-primary) 60%, transparent);
 }

@@ -34,6 +34,22 @@ public class HeuristicInstalledApplicationExecutableResolver implements Installe
 
     @Override
     public ResolvedExecutableDTO resolveExecutable(InstalledApplicationRegistryEntry application) {
+        String resolvedFromKnownRules = null;
+        try {
+            resolvedFromKnownRules = resolveFromKnownRules(application);
+        } catch (Exception ignored) {
+            resolvedFromKnownRules = null;
+        }
+
+        if (isUsableExecutable(resolvedFromKnownRules)) {
+            File executableFile = new File(resolvedFromKnownRules);
+            return new ResolvedExecutableDTO(
+                    executableFile.getName().toLowerCase(),
+                    executableFile.getAbsolutePath(),
+                    true
+            );
+        }
+
         String executableFromIcon = extractExecutablePathFromDisplayIcon(application.getDisplayIcon());
 
         if (isUsableExecutable(executableFromIcon)) {
@@ -72,11 +88,38 @@ public class HeuristicInstalledApplicationExecutableResolver implements Installe
         return new ResolvedExecutableDTO(null, null, false);
     }
 
+    private String resolveFromKnownRules(InstalledApplicationRegistryEntry application) {
+        String displayName = normalize(application.getDisplayName());
+        String installLocation = sanitizePath(expandEnvironmentVariables(application.getInstallLocation()));
+        String uninstallString = application.getUninstallString() == null ? "" : application.getUninstallString().toLowerCase();
+
+        if (uninstallString.contains("steam://")) {
+            return null;
+        }
+
+        if (displayName.contains("steam") && installLocation != null && !installLocation.isBlank()) {
+            return buildPathSafely(installLocation, "steam.exe");
+        }
+
+        if (displayName.contains("leagueoflegends") && installLocation != null && !installLocation.isBlank()) {
+            return buildPathSafely(installLocation, "LeagueClient.exe");
+        }
+
+        if (displayName.contains("riotclient") && installLocation != null && !installLocation.isBlank()) {
+            return buildPathSafely(installLocation, "RiotClientServices.exe");
+        }
+
+        return null;
+    }
+
     private String extractExecutablePathFromDisplayIcon(String displayIcon) {
         return extractExecutablePath(displayIcon);
     }
 
     private String extractExecutablePathFromUninstallString(String uninstallString) {
+        if (uninstallString != null && uninstallString.toLowerCase().contains("steam://")) {
+            return null;
+        }
         return extractExecutablePath(uninstallString);
     }
 
@@ -114,6 +157,10 @@ public class HeuristicInstalledApplicationExecutableResolver implements Installe
     }
 
     private String expandEnvironmentVariables(String value) {
+        if (value == null) {
+            return null;
+        }
+
         String expanded = value;
 
         for (String envVar : System.getenv().keySet()) {
@@ -124,6 +171,27 @@ public class HeuristicInstalledApplicationExecutableResolver implements Installe
         }
 
         return expanded;
+    }
+
+    private String sanitizePath(String path) {
+        if (path == null) {
+            return null;
+        }
+
+        String trimmed = path.trim();
+        if (trimmed.startsWith("\"") && trimmed.endsWith("\"") && trimmed.length() > 1) {
+            return trimmed.substring(1, trimmed.length() - 1).trim();
+        }
+
+        return trimmed;
+    }
+
+    private String buildPathSafely(String directory, String executableName) {
+        try {
+            return new File(directory, executableName).getAbsolutePath();
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     private String resolveFromInstallLocation(String installLocation, String displayName) {
