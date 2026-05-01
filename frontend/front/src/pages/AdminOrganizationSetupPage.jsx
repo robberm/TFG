@@ -1,7 +1,25 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createAdminOrganization } from "../api/adminApi";
+import { getCurrentUserProfile } from "../api/userApi";
 import "../css/AdminUsers.css";
+
+// Icono de edificio
+const BuildingIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect width="16" height="20" x="4" y="2" rx="2" ry="2"/>
+    <path d="M9 22v-4h6v4"/>
+    <path d="M8 6h.01"/>
+    <path d="M16 6h.01"/>
+    <path d="M12 6h.01"/>
+    <path d="M12 10h.01"/>
+    <path d="M12 14h.01"/>
+    <path d="M16 10h.01"/>
+    <path d="M16 14h.01"/>
+    <path d="M8 10h.01"/>
+    <path d="M8 14h.01"/>
+  </svg>
+);
 
 function AdminOrganizationSetupPage() {
   const [organizationName, setOrganizationName] = useState("");
@@ -22,9 +40,25 @@ function AdminOrganizationSetupPage() {
     setIsSubmitting(true);
 
     try {
-      await createAdminOrganization(normalizedName);
+      const response = await createAdminOrganization(normalizedName);
+      if (response?.organizationId) {
+        localStorage.setItem("organizationId", response.organizationId);
+      }
       navigate("/admin", { replace: true });
     } catch (error) {
+      if (error?.status === 409) {
+        try {
+          const profile = await getCurrentUserProfile({ forceRefresh: true });
+          if (profile?.organizationId) {
+            localStorage.setItem("organizationId", profile.organizationId);
+            navigate("/admin", { replace: true });
+            return;
+          }
+        } catch (_) {
+          // Si falla el refresh, mantenemos el mensaje original de error.
+        }
+      }
+
       setErrorMessage(error.message || "No se pudo crear la organización.");
     } finally {
       setIsSubmitting(false);
@@ -33,7 +67,10 @@ function AdminOrganizationSetupPage() {
 
   return (
     <div className="adminUsersPage">
-      <header className="adminUsersHeader">
+      <header className="adminUsersHeader centered">
+        <div className="adminSetupIcon">
+          <BuildingIcon />
+        </div>
         <h1>Configura tu organización</h1>
         <p>
           Primer acceso detectado: antes de usar la vista admin, debes crear la
@@ -41,7 +78,7 @@ function AdminOrganizationSetupPage() {
         </p>
       </header>
 
-      <section className="adminUsersCard">
+      <section className="adminUsersCard compact">
         <h2>Alta de organización</h2>
 
         <form className="adminUsersForm" onSubmit={handleSubmit}>

@@ -120,62 +120,68 @@ const Home = () => {
     loadGoals();
   }, [isAdmin, selectedUser]);
 
-  if (isAdmin) {
-    return (
-      <>
-        <HomeHeader />
+if (isAdmin) {
+  return (
+    <>
+      <HomeHeader />
 
-        <div className="adminHomeSection">
-          <div className="adminUsersCardsGrid">
-            {managedUsers.length === 0 && (
-              <p className="adminHomeEmptyState">
-                No tienes usuarios subordinados todavía.
-              </p>
-            )}
-
-            {managedUsers.map((user) => (
-              <button
-                key={user.id}
-                type="button"
-                className={`adminUserCard ${selectedUser?.id === user.id ? "selected" : ""}`}
-                onClick={() => setSelectedUser(user)}
-              >
-                {user.profileImagePath ? (
-                  <img
-                    src={resolveProfileImageUrl(user.profileImagePath)}
-                    alt={`Perfil de ${user.username}`}
-                  />
-                ) : (
-                  <div className="adminUserAvatarFallback">
-                    {user.username.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <div>
-                  <strong>{user.username}</strong>
-                  <span>{user.organizationName || "Sin organización"}</span>
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {selectedUser && (
-            <div className="adminGoalsPanel">
-              <header>
-                <h2>{selectedUser.username}</h2>
-                <p>Resumen de goals del usuario subordinado seleccionado.</p>
-              </header>
-
-              {isLoadingAdminGoals ? (
-                <p className="adminHomeEmptyState">Cargando estadísticas...</p>
-              ) : (
-                <AdminGoalsStats goals={selectedUserGoals} />
-              )}
-            </div>
+      <div className="adminHomeSection">
+        <div className="adminUsersCardsGrid">
+          {managedUsers.length === 0 && (
+            <p className="adminHomeEmptyState">
+              No tienes usuarios subordinados todavía.
+            </p>
           )}
+
+          {managedUsers.map((user) => {
+            const isSelected = selectedUser?.id === user.id;
+
+            return (
+              <div
+                key={user.id}
+                className={`adminUserCard ${isSelected ? "expanded" : ""}`}
+                onClick={() => !isSelected && setSelectedUser(user)}
+              >
+                <div className="adminUserCardHeader">
+                  {user.profileImagePath ? (
+                    <img
+                      src={resolveProfileImageUrl(user.profileImagePath)}
+                      alt={user.username}
+                    />
+                  ) : (
+                    <div className="adminUserAvatarFallback">
+                      {user.username.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="adminUserCardInfo">
+                    <strong>{user.username}</strong>
+                    <span>{user.organizationName || "Sin organización"}</span>
+                  </div>
+                  <button
+                    className="adminCloseBtn"
+                    onClick={(e) => { e.stopPropagation(); setSelectedUser(null); }}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="adminUserCardBody">
+                  {isSelected && (
+                    isLoadingAdminGoals ? (
+                      <p className="adminLoadingState">Cargando...</p>
+                    ) : (
+                      <AdminGoalsStats goals={selectedUserGoals} />
+                    )
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
-      </>
-    );
-  }
+      </div>
+    </>
+  );
+}
 
   return (
     <>

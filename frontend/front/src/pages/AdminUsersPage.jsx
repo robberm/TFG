@@ -6,6 +6,25 @@ import {
   getManagedUsers,
 } from "../api/adminApi";
 
+// Iconos
+const RefreshIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+    <path d="M21 3v5h-5"/>
+    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+    <path d="M8 16H3v5"/>
+  </svg>
+);
+
+const UsersIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+);
+
 const initialForm = {
   username: "",
   password: "",
@@ -142,6 +161,7 @@ function AdminUsersPage() {
         <div className="adminUsersListHeader">
           <h2>Usuarios subordinados</h2>
           <button type="button" onClick={loadUsers} disabled={isLoading}>
+            <RefreshIcon />
             Recargar
           </button>
         </div>
@@ -152,9 +172,15 @@ function AdminUsersPage() {
         )}
 
         {isLoading ? (
-          <p className="adminUsersStatus">Cargando usuarios...</p>
+          <div className="adminLoading">
+            <div className="adminSpinner" />
+            <span>Cargando usuarios...</span>
+          </div>
         ) : sortedUsers.length === 0 ? (
-          <p className="adminUsersStatus">No hay usuarios subordinados.</p>
+          <div className="adminEmptyState">
+            <UsersIcon />
+            <p>No hay usuarios subordinados.</p>
+          </div>
         ) : (
           <div className="adminUsersTableWrap">
             <table className="adminUsersTable">
