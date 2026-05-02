@@ -90,3 +90,53 @@ body,
     backdrop-filter 0.3s ease,
     -webkit-backdrop-filter 0.3s ease;
 }
+
+/* ========================================
+   Light theme modal text overrides
+   Centralized here to avoid duplication across feature CSS files.
+   ======================================== */
+body.light .modalHeader h3,
+body.light .modalForm,
+body.light .modalForm .formGroup label,
+body.light .modalForm .checkboxRow,
+body.light .modalForm input,
+body.light .modalForm select,
+body.light .modalForm textarea,
+body.light .modalForm input::placeholder,
+body.light .modalForm textarea::placeholder,
+body.light .closeButton,
+body.light .gcal-modal,
+body.light .gcal-modal-header h3,
+body.light .gcal-form,
+body.light .gcal-form .formGroup label,
+body.light .gcal-form .checkboxRow,
+body.light .gcal-form input,
+body.light .gcal-form select,
+body.light .gcal-form textarea,
+body.light .gcal-form input::placeholder,
+body.light .gcal-form textarea::placeholder,
+body.light .gcal-close-btn,
+body.light .time-selector-label,
+body.light .time-value,
+body.light .gcal-date-display,
+body.light .gcal-toggle-label,
+body.light .gcal-reminders-header span,
+body.light .gcal-reminder-chip,
+body.light .gcal-custom-reminder input {
+  color: #fff !important;
+}
+
+body.light .gcal-modal input,
+body.light .gcal-modal textarea,
+body.light .gcal-modal select,
+body.light .gcal-modal button,
+body.light .gcal-modal span,
+body.light .gcal-modal label,
+body.light .gcal-modal div {
+  color: inherit;
+}
+
+body.light .gcal-modal input::placeholder,
+body.light .gcal-modal textarea::placeholder {
+  color: rgba(255, 255, 255, 0.65) !important;
+}

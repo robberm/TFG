@@ -39,7 +39,7 @@
   padding: 1.5rem 2rem;
   border-bottom: 1px solid var(--border-color);
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   background: linear-gradient(
     180deg,
@@ -685,19 +685,6 @@
   height: 18px;
 }
 
-body.light .gcal-modal-header h3,
-body.light .gcal-form,
-body.light .gcal-form .formGroup label,
-body.light .gcal-form .checkboxRow,
-body.light .gcal-form input,
-body.light .gcal-form select,
-body.light .gcal-form textarea,
-body.light .gcal-form input::placeholder,
-body.light .gcal-form textarea::placeholder,
-body.light .gcal-close-btn {
-  color: #fff !important;
-}
-
 body.translucent .gcal-modal {
   background: var(--card-background);
   border-color: var(--border-color);
@@ -871,23 +858,4 @@ body.translucent .gcal-modal-footer {
   .gcal-footer-right {
     flex-direction: column;
   }
-}
-
-body.light .gcal-modal {
-  color: #fff !important;
-}
-
-body.light .gcal-modal input,
-body.light .gcal-modal textarea,
-body.light .gcal-modal select,
-body.light .gcal-modal button,
-body.light .gcal-modal span,
-body.light .gcal-modal label,
-body.light .gcal-modal div {
-  color: inherit;
-}
-
-body.light .gcal-modal input::placeholder,
-body.light .gcal-modal textarea::placeholder {
-  color: rgba(255, 255, 255, 0.65) !important;
 }

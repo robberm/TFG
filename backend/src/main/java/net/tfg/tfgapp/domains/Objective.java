@@ -54,8 +54,8 @@ public abstract class Objective {
     private List<ObjectiveLog> logs = new ArrayList<>();
 
     @JsonIgnore
-    @Column(name = "is_numeric", nullable = false)
-    private Boolean numeric = false;
+    @Column(name = "is_numeric", nullable = true)
+    private Boolean numeric;
 
     @JsonProperty("assignedByAdmin")
     public boolean isAssignedByAdmin() {
