@@ -57,6 +57,16 @@ public abstract class Objective {
     @Column(name = "is_numeric", nullable = false)
     private Boolean numeric = false;
 
+    @JsonProperty("isNumeric")
+    public boolean isNumeric() {
+        return Boolean.TRUE.equals(numeric);
+    }
+
+    @JsonProperty("isNumeric")
+    public void setNumeric(boolean numeric) {
+        this.numeric = numeric;
+    }
+
     @JsonProperty("assignedByAdmin")
     public boolean isAssignedByAdmin() {
         return assignedByAdmin != null;
@@ -78,6 +88,9 @@ public abstract class Objective {
 
         if (this.active == null) {
             this.active = true;
+        }
+        if (this.numeric == null) {
+            this.numeric = false;
         }
     }
 }

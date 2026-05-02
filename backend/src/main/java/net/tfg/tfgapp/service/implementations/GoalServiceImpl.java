@@ -80,9 +80,16 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
     public Goal updateGoalProgress(Goal goal, GoalProgressRequest request) {
         goal.setValorProgreso(request.getValorProgreso());
 
-        ObjectiveLog log = new ObjectiveLog();
-        log.setObjective(goal);
-        log.setLogDate(LocalDate.now());
+        LocalDate today = LocalDate.now();
+        ObjectiveLog log = objectiveLogRepo
+                .findByObjectiveIdAndLogDate(goal.getId(), today)
+                .orElseGet(() -> {
+                    ObjectiveLog newLog = new ObjectiveLog();
+                    newLog.setObjective(goal);
+                    newLog.setLogDate(today);
+                    return newLog;
+                });
+
         log.setProgressValue(request.getValorProgreso());
         log.setNotes(request.getNotes());
 
