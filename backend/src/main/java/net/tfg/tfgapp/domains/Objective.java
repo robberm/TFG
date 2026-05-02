@@ -53,7 +53,9 @@ public abstract class Objective {
     @OneToMany(mappedBy = "objective", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ObjectiveLog> logs = new ArrayList<>();
 
-
+    @JsonIgnore
+    @Column(name = "is_numeric", nullable = false)
+    private Boolean numeric = false;
 
     @JsonProperty("assignedByAdmin")
     public boolean isAssignedByAdmin() {

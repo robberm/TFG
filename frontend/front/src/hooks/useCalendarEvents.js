@@ -39,9 +39,22 @@ const useCalendarEvents = () => {
     const groupedByBatch = new Map();
 
     incomingEvents.forEach((event) => {
+
+
+            const normalizedStart = event.startTime || "";
+      const normalizedEnd = event.endTime || "";
+      const normalizedCategory = event.category || "";
+      const normalizedTitle = event.title || "";
+      const normalizedDescription = event.description || "";
+      const normalizedLocation = event.location || "";
+
+      const fallbackBulkKey =
+        event.assignedByAdmin &&
+        `bulk-${normalizedStart}-${normalizedEnd}-${normalizedCategory}-${normalizedTitle}-${normalizedDescription}-${normalizedLocation}-${event.assignedByAdminUsername || ""}-${event.isAllDay ? "allDay" : "timed"}`;
+
       const groupKey = event.assignmentBatchId
         ? `batch-${event.assignmentBatchId}`
-        : `event-${event.id}`;
+       : fallbackBulkKey || `event-${event.id}`;
 
       if (!groupedByBatch.has(groupKey)) {
         groupedByBatch.set(groupKey, {
