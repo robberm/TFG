@@ -770,3 +770,13 @@
   font-size: 0.72rem;
   color: color-mix(in srgb, var(--text-primary) 60%, transparent);
 }
+
+.status-badge.status-working {
+  border: none;
+  cursor: pointer;
+}
+
+.status-badge.status-working.locked {
+  cursor: not-allowed;
+  opacity: 0.85;
+}
