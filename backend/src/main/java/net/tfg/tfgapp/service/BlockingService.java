@@ -60,8 +60,10 @@ public class BlockingService {
     }
 
     private void checkForBlock() {
+        long now = System.currentTimeMillis();
+
         if (isOnBreak) {
-            if (System.currentTimeMillis() >= breakEndsAtEpochMs) {
+            if (now >= breakEndsAtEpochMs) {
                 endBreak();
             }
             return;
@@ -71,18 +73,33 @@ public class BlockingService {
             return;
         }
 
-        if (System.currentTimeMillis() >= nextActionAtEpochMs) {
+        // Si el ciclo acaba de activarse (por tag o toggle), programa el próximo descanso.
+        if (nextActionAtEpochMs <= 0) {
+            IStorageService.Config config = storageService.loadConfig();
+            nextActionAtEpochMs = now + toMillis(getWorkDurationSeconds(config));
+            publishFocusState();
+            return;
+        }
+
+        if (now >= nextActionAtEpochMs) {
             executeFocusAction();
         }
     }
 
+
     private boolean shouldStartWorkCycle() {
         IStorageService.Config config = storageService.loadConfig();
 
+
         return !isOnBreak
                 && !pauseScheduledBlocks
-                && config.isFocusModeEnabled();
+                && isEffectiveFocusEnabled(config);
     }
+
+    private boolean isEffectiveFocusEnabled(IStorageService.Config config) {
+        return config.isFocusModeEnabled() || isFocusModeLockedByTag();
+    }
+
 
     private void executeFocusAction() {
         IStorageService.Config config = storageService.loadConfig();
@@ -185,6 +202,11 @@ public class BlockingService {
         );
     }
 
+    public boolean isEffectiveFocusModeEnabled() {
+        IStorageService.Config config = storageService.loadConfig();
+        return isEffectiveFocusEnabled(config);
+    }
+
     public Map<String, Object> getFocusState() {
         IStorageService.Config config = storageService.loadConfig();
         boolean focusModeLockedByTag = isFocusModeLockedByTag();
@@ -225,14 +247,16 @@ public class BlockingService {
             }
         }
 
-        config.setFocusModeEnabled(focusModeEnabled || focusModeLockedByTag);
+        config.setFocusModeEnabled(focusModeEnabled);
+
         config.setWorkDurationSeconds(sanitizedWorkDurationSeconds);
         config.setBreakDurationSeconds(sanitizedBreakDurationSeconds);
         config.setFocusAction(FocusAction.from(action).name());
 
         storageService.saveConfig(config);
+        boolean effectiveFocusEnabled = focusModeEnabled || focusModeLockedByTag;
 
-        if (config.isFocusModeEnabled()) {
+        if (effectiveFocusEnabled) {
             this.nextActionAtEpochMs = System.currentTimeMillis() + toMillis(getWorkDurationSeconds(config));
         } else {
             this.nextActionAtEpochMs = 0;
