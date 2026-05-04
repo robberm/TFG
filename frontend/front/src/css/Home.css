@@ -11,6 +11,43 @@
   font-family: Caoli;
 }
 
+/* Slide-in-bottom effect for username (smooth, window-like expand) */
+.slide-in-bottom {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  overflow: hidden;
+  vertical-align: middle;
+  height: 1em;
+  line-height: 1;
+  transform: translateY(-0.08em); /*número mágico que se alinea con el texto de bienvenida para el usuario*/
+}
+
+.slide-in-bottom .slide-inner {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+  animation: slideUpDown 5s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.slide-in-bottom .slide-original,
+.slide-in-bottom .slide-duplicate {
+  display: block;
+  line-height: 1;
+  margin: 0;
+  padding: 0;
+}
+
+.slide-in-bottom .slide-duplicate {
+  font-weight: 700;
+}
+
+@keyframes slideUpDown {
+  0%, 74% { transform: translateY(0); }
+  80%, 88% { transform: translateY(-50%); }
+  100% { transform: translateY(0); }
+}
 .dashboardHeader {
   margin-bottom: 28px;
 }
@@ -522,6 +559,7 @@
   flex-direction: column;
   gap: 0.5rem;
   min-height: 400px;
+  overflow: hidden;
 }
 
 .adminUserCard {
@@ -534,7 +572,7 @@
   color: var(--text-main);
   cursor: pointer;
   overflow: hidden;
-  transition: all 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   z-index: 1;
 }
 

@@ -204,7 +204,8 @@ public class StorageServiceImpl implements IStorageService {
         if (!extension.equals(".png")
                 && !extension.equals(".jpg")
                 && !extension.equals(".jpeg")
-                && !extension.equals(".webp")) {
+                && !extension.equals(".webp")
+                && !extension.equals(".gif")){
             throw new IllegalArgumentException("Formato de imagen no soportado. Usa png, jpg, jpeg o webp.");
         }
 

@@ -111,6 +111,7 @@ function Block() {
   const [workDurationSeconds, setWorkDurationSeconds] = useState(20 * 60);
   const [breakDurationSeconds, setBreakDurationSeconds] = useState(20);
   const [focusAction, setFocusAction] = useState("NOTIFICATION");
+  const [focusModeLockedByTag, setFocusModeLockedByTag] = useState(false);
   const [timeUntilNextBlock, setTimeUntilNextBlock] = useState(20 * 60);
   const [isBreakPhase, setIsBreakPhase] = useState(false);
 
@@ -141,6 +142,7 @@ function Block() {
     setWorkDurationSeconds(Math.max(1, Number(state.workDurationSeconds || 1200)));
     setBreakDurationSeconds(Math.max(1, Number(state.breakDurationSeconds || 20)));
     setFocusAction(state.focusAction || "NOTIFICATION");
+    setFocusModeLockedByTag(!!state.focusModeLockedByTag);
     const phase = state.currentPhase || "OFF";
     setIsBreakPhase(phase === "BREAK");
     const phaseEndsAtEpochMs = state.phaseEndsAtEpochMs || 0;
@@ -372,25 +374,25 @@ function Block() {
             </div>
           </div>
           <div className="timer-status">
-            {isBreakPhase ? <span className="status-badge status-resting">Descansando</span> : <span className="status-badge status-working">{modeLabel}</span>}
+            {isBreakPhase ? <span className="status-badge status-resting">Descansando</span> : (
+              <button
+                type="button"
+                className={`status-badge status-working ${focusModeLockedByTag ? "locked" : ""}`}
+                onClick={() => {
+                  if (focusModeLockedByTag) return;
+                  const enabled = !focusModeEnabled;
+                  setFocusModeEnabled(enabled);
+                  saveFocusSettings({ focusModeEnabled: enabled, workDurationSeconds, breakDurationSeconds, focusAction });
+                }}
+                title={focusModeLockedByTag ? "Focus mode bloqueado por evento Focus activo" : "Activar/desactivar focus mode"}
+              >
+                {modeLabel}{focusModeLockedByTag ? " 🔒" : ""}
+              </button>
+            )}
           </div>
         </div>
 
         <div className="focus-controls">
-          <div className="focus-field">
-            <label>Modo</label>
-            <select
-              value={focusModeEnabled ? "FOCUS" : "OFF"}
-              onChange={(e) => {
-                const enabled = e.target.value === "FOCUS";
-                setFocusModeEnabled(enabled);
-                saveFocusSettings({ focusModeEnabled: enabled, workDurationSeconds, breakDurationSeconds, focusAction });
-              }}
-            >
-              <option value="FOCUS">Focus mode</option>
-              <option value="OFF">Off</option>
-            </select>
-          </div>
           <div className="focus-field">
             <label>Trabajo</label>
             <DurationSelector

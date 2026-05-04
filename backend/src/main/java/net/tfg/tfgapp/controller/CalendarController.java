@@ -186,7 +186,11 @@ public class CalendarController {
             throw new SecurityException("No puedes eliminar eventos asignados por administrador.");
         }
 
-        eventService.deleteEventById(id);
+        if (actor.getRole() == UserRole.ADMIN) {
+            eventService.deleteAdminAssignedEventCascade(actor.getId(), existingEvent.get());
+        } else {
+            eventService.deleteEventById(id);
+        }
         return ResponseEntity.noContent().build();
     }
 

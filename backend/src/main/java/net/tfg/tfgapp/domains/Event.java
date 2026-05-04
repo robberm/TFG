@@ -42,7 +42,7 @@ private Boolean isAllDay;
 private Integer reminderMinutesBefore;
 
 @ElementCollection(fetch = FetchType.EAGER)
-@CollectionTable(name = "event_reminder_offsets", joinColumns = @JoinColumn(name = "event_id"))
+@CollectionTable(name = "EventsReminders", joinColumns = @JoinColumn(name = "event_id"))
 @Column(name = "minutes_before")
 private List<Integer> reminderMinutesBeforeList = new ArrayList<>();
 
@@ -102,7 +102,8 @@ private User assignedByAdmin;
         PERSONAL("Personal"),
         STUDY("Study"),
         HEALTH("Health"),
-        MANDATORY("Mandatory");
+        MANDATORY("Mandatory"),
+        FOCUS("Focus");
 
         
 

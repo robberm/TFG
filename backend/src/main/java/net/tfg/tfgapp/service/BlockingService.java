@@ -1,7 +1,10 @@
 package net.tfg.tfgapp.service;
 
 import jakarta.annotation.PostConstruct;
+import net.tfg.tfgapp.components.SessionStore;
+import net.tfg.tfgapp.domains.Event;
 import net.tfg.tfgapp.events.BlockingEvent;
+import net.tfg.tfgapp.repos.EventRepo;
 import net.tfg.tfgapp.service.interfaces.IStorageService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
@@ -24,6 +27,8 @@ public class BlockingService {
     private final SimpMessageSendingOperations messagingTemplate;
     private final ApplicationEventPublisher eventPublisher;
     private final IStorageService storageService;
+    private final EventRepo eventRepo;
+    private final SessionStore sessionStore;
 
     private volatile boolean isBlocking = false;
     private volatile boolean isOnBreak = false;
@@ -34,10 +39,14 @@ public class BlockingService {
 
     public BlockingService(SimpMessageSendingOperations messagingTemplate,
                            ApplicationEventPublisher eventPublisher,
-                           IStorageService storageService) {
+                           IStorageService storageService,
+                           EventRepo eventRepo,
+                           SessionStore sessionStore) {
         this.messagingTemplate = messagingTemplate;
         this.eventPublisher = eventPublisher;
         this.storageService = storageService;
+        this.eventRepo = eventRepo;
+        this.sessionStore = sessionStore;
     }
 
     @PostConstruct
@@ -51,8 +60,10 @@ public class BlockingService {
     }
 
     private void checkForBlock() {
+        long now = System.currentTimeMillis();
+
         if (isOnBreak) {
-            if (System.currentTimeMillis() >= breakEndsAtEpochMs) {
+            if (now >= breakEndsAtEpochMs) {
                 endBreak();
             }
             return;
@@ -62,18 +73,33 @@ public class BlockingService {
             return;
         }
 
-        if (System.currentTimeMillis() >= nextActionAtEpochMs) {
+        // Si el ciclo acaba de activarse (por tag o toggle), programa el próximo descanso.
+        if (nextActionAtEpochMs <= 0) {
+            IStorageService.Config config = storageService.loadConfig();
+            nextActionAtEpochMs = now + toMillis(getWorkDurationSeconds(config));
+            publishFocusState();
+            return;
+        }
+
+        if (now >= nextActionAtEpochMs) {
             executeFocusAction();
         }
     }
 
+
     private boolean shouldStartWorkCycle() {
         IStorageService.Config config = storageService.loadConfig();
 
+
         return !isOnBreak
                 && !pauseScheduledBlocks
-                && config.isFocusModeEnabled();
+                && isEffectiveFocusEnabled(config);
     }
+
+    private boolean isEffectiveFocusEnabled(IStorageService.Config config) {
+        return config.isFocusModeEnabled() || isFocusModeLockedByTag();
+    }
+
 
     private void executeFocusAction() {
         IStorageService.Config config = storageService.loadConfig();
@@ -163,11 +189,32 @@ public class BlockingService {
         }
     }
 
+    private boolean isFocusModeLockedByTag() {
+        Long loggedUserId = sessionStore.getLoggedUserId();
+        if (loggedUserId == null) {
+            return false;
+        }
+
+        return eventRepo.existsActiveEventOfCategory(
+                Event.EventCategory.FOCUS,
+                Instant.now().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime(),
+                loggedUserId
+        );
+    }
+
+    public boolean isEffectiveFocusModeEnabled() {
+        IStorageService.Config config = storageService.loadConfig();
+        return isEffectiveFocusEnabled(config);
+    }
+
     public Map<String, Object> getFocusState() {
         IStorageService.Config config = storageService.loadConfig();
+        boolean focusModeLockedByTag = isFocusModeLockedByTag();
+        boolean effectiveFocusEnabled = config.isFocusModeEnabled() || focusModeLockedByTag;
 
         Map<String, Object> state = new HashMap<>();
-        state.put("focusModeEnabled", config.isFocusModeEnabled());
+        state.put("focusModeEnabled", effectiveFocusEnabled);
+        state.put("focusModeLockedByTag", focusModeLockedByTag);
         state.put("isBlocking", isBlocking);
         state.put("isPaused", pauseScheduledBlocks);
         state.put("workDurationSeconds", getWorkDurationSeconds(config));
@@ -175,7 +222,7 @@ public class BlockingService {
         state.put("focusAction", FocusAction.from(config.getFocusAction()).name());
         state.put("nextActionAtEpochMs", nextActionAtEpochMs);
         state.put("breakEndsAtEpochMs", breakEndsAtEpochMs);
-        state.put("currentPhase", !config.isFocusModeEnabled() ? "OFF" : (isOnBreak ? "BREAK" : "WORK"));
+        state.put("currentPhase", !effectiveFocusEnabled ? "OFF" : (isOnBreak ? "BREAK" : "WORK"));
         state.put("phaseEndsAtEpochMs", isOnBreak ? breakEndsAtEpochMs : nextActionAtEpochMs);
         state.put("serverTimeEpochMs", Instant.now().toEpochMilli());
         state.put("lastBlockTime", lastBlockTime);
@@ -191,6 +238,7 @@ public class BlockingService {
 
         int sanitizedWorkDurationSeconds = sanitizeDuration(workDurationSeconds, DEFAULT_WORK_DURATION_SECONDS);
         int sanitizedBreakDurationSeconds = sanitizeDuration(breakDurationSeconds, DEFAULT_BREAK_DURATION_SECONDS);
+        boolean focusModeLockedByTag = isFocusModeLockedByTag();
 
         if (sanitizedWorkDurationSeconds - sanitizedBreakDurationSeconds < MIN_WORK_BREAK_GAP_SECONDS) {
             sanitizedBreakDurationSeconds = Math.max(1, sanitizedWorkDurationSeconds - MIN_WORK_BREAK_GAP_SECONDS);
@@ -200,13 +248,15 @@ public class BlockingService {
         }
 
         config.setFocusModeEnabled(focusModeEnabled);
+
         config.setWorkDurationSeconds(sanitizedWorkDurationSeconds);
         config.setBreakDurationSeconds(sanitizedBreakDurationSeconds);
         config.setFocusAction(FocusAction.from(action).name());
 
         storageService.saveConfig(config);
+        boolean effectiveFocusEnabled = focusModeEnabled || focusModeLockedByTag;
 
-        if (focusModeEnabled) {
+        if (effectiveFocusEnabled) {
             this.nextActionAtEpochMs = System.currentTimeMillis() + toMillis(getWorkDurationSeconds(config));
         } else {
             this.nextActionAtEpochMs = 0;

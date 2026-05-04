@@ -19,9 +19,11 @@ public class AppRestrictionService {
     private static final Map<String, Set<String>> EXECUTABLE_ALIASES = buildExecutableAliases();
 
     private final IStorageService storageService;
+    private final BlockingService blockingService;
 
-    public AppRestrictionService(IStorageService storageService) {
+    public AppRestrictionService(IStorageService storageService, BlockingService blockingService) {
         this.storageService = storageService;
+        this.blockingService = blockingService;
     }
 
     @PostConstruct
@@ -37,7 +39,7 @@ public class AppRestrictionService {
     }
 
     private boolean shouldEnforceRestrictions() {
-        return storageService.loadConfig().isFocusModeEnabled();
+        return blockingService.isEffectiveFocusModeEnabled();
     }
 
     private void enforceRestrictions() {
@@ -105,7 +107,7 @@ public class AppRestrictionService {
      * Se mantiene por compatibilidad retroactiva con endpoints existentes.
      */
     public boolean isGameModeActive() {
-        return storageService.loadConfig().isFocusModeEnabled();
+        return blockingService.isEffectiveFocusModeEnabled();
     }
 
     private String normalizeExecutableName(String executableName) {

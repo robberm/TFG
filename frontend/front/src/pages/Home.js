@@ -86,9 +86,6 @@ const Home = () => {
           const normalizedUsers = Array.isArray(users) ? users : [];
           setManagedUsers(normalizedUsers);
 
-          if (normalizedUsers.length > 0) {
-            setSelectedUser(normalizedUsers[0]);
-          }
         }
       } catch (error) {
         console.error("Error loading home scope:", error);
