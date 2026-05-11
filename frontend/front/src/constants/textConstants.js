@@ -143,6 +143,16 @@ export const TEXT_CONSTANTS = {
     blockResetList: "Reset full list",
     blockNoBlockedApps: "No blocked apps",
     blockAddFromTab: "Add apps from the Add tab",
+    commonCreating: "Creating...",
+    adminOrgSetupTitle: "Set up your organization",
+    adminOrgSetupSubtitle:
+      "First access detected: create your organization before using admin view.",
+    adminOrgCreateTitle: "Create organization",
+    adminOrgName: "Organization name",
+    adminOrgPlaceholder: "Ex: Productive Academy",
+    adminOrgCreateBtn: "Create organization",
+    adminOrgNameRequired: "Organization name is required.",
+    adminOrgCreateError: "Could not create organization.",
     placeholders: {
       newUsername: "Type your new username",
       currentPassword: "Type your current password",
@@ -308,6 +318,16 @@ export const TEXT_CONSTANTS = {
     blockResetList: "Resetear lista completa",
     blockNoBlockedApps: "No hay aplicaciones bloqueadas",
     blockAddFromTab: "Añade aplicaciones desde la pestaña Añadir",
+    commonCreating: "Creando...",
+    adminOrgSetupTitle: "Configura tu organización",
+    adminOrgSetupSubtitle:
+      "Primer acceso detectado: antes de usar la vista admin, debes crear la organización que vas a gestionar.",
+    adminOrgCreateTitle: "Alta de organización",
+    adminOrgName: "Nombre de la organización",
+    adminOrgPlaceholder: "Ej: Academia Productiva",
+    adminOrgCreateBtn: "Crear organización",
+    adminOrgNameRequired: "Debes indicar un nombre para la organización.",
+    adminOrgCreateError: "No se pudo crear la organización.",
     placeholders: {
       newUsername: "Introduce tu nuevo nombre de usuario",
       currentPassword: "Introduce tu contraseña actual",
