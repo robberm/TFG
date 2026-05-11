@@ -6,6 +6,7 @@ import net.tfg.tfgapp.domains.Goal;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.enumerates.UserRole;
 import net.tfg.tfgapp.exception.ApiException;
+import net.tfg.tfgapp.i18n.LanguageResolver;
 import net.tfg.tfgapp.security.JwtUtil;
 import net.tfg.tfgapp.service.interfaces.IGoalService;
 import net.tfg.tfgapp.service.interfaces.IUserService;
@@ -23,17 +24,20 @@ public class GoalController {
     private final IGoalService goalService;
     private final JwtUtil jwtUtil;
     private final IUserService userService;
+    private final LanguageResolver languageResolver;
 
-    public GoalController(IGoalService goalService, JwtUtil jwtUtil, IUserService userService) {
+    public GoalController(IGoalService goalService, JwtUtil jwtUtil, IUserService userService, LanguageResolver languageResolver) {
         this.goalService = goalService;
         this.jwtUtil = jwtUtil;
         this.userService = userService;
+        this.languageResolver = languageResolver;
     }
 
     @GetMapping
     public ResponseEntity<?> getMyGoals(@RequestHeader("Authorization") String token,
+                                        @RequestHeader(value = "Accept-Language", required = false) String language,
                                         @RequestParam(required = false) Long targetUserId) {
-        User actor = getActor(token);
+        User actor = getActor(token, language);
 
         if (actor.getRole() == UserRole.ADMIN) {
             if (targetUserId != null) {
@@ -50,24 +54,28 @@ public class GoalController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getGoalById(@RequestHeader("Authorization") String token, @PathVariable Integer id) {
-        User actor = getActor(token);
+    public ResponseEntity<?> getGoalById(@RequestHeader("Authorization") String token,
+                                       @RequestHeader(value = "Accept-Language", required = false) String language,
+                                       @PathVariable Integer id) {
+        User actor = getActor(token, language);
         Goal goal = goalService.findById(id);
 
         if (goal == null) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "Objetivo no encontrado.");
+            throw new ApiException(HttpStatus.NOT_FOUND, languageResolver.text(language, "goal.notFound"));
         }
 
         if (!canAccessGoal(actor, goal)) {
-            throw new SecurityException("No tienes permiso para acceder a este objetivo.");
+            throw new SecurityException(languageResolver.text(language, "goal.noAccess"));
         }
 
         return ResponseEntity.ok(goal);
     }
 
     @PostMapping
-    public ResponseEntity<?> createGoal(@RequestHeader("Authorization") String token, @RequestBody GoalRequest request) {
-        User actor = getActor(token);
+    public ResponseEntity<?> createGoal(@RequestHeader("Authorization") String token,
+                                        @RequestHeader(value = "Accept-Language", required = false) String language,
+                                        @RequestBody GoalRequest request) {
+        User actor = getActor(token, language);
 
         List<User> targets = resolveTargetUsers(actor, request);
         List<Goal> createdGoals = new ArrayList<>();
@@ -86,17 +94,18 @@ public class GoalController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateGoal(@RequestHeader("Authorization") String token,
+                                        @RequestHeader(value = "Accept-Language", required = false) String language,
                                         @PathVariable Integer id,
                                         @RequestBody GoalRequest request) {
-        User actor = getActor(token);
+        User actor = getActor(token, language);
         Goal existingGoal = goalService.findById(id);
 
         if (existingGoal == null) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "Objetivo no encontrado.");
+            throw new ApiException(HttpStatus.NOT_FOUND, languageResolver.text(language, "goal.notFound"));
         }
 
         if (!canAccessGoal(actor, existingGoal)) {
-            throw new SecurityException("No tienes permiso para actualizar este objetivo.");
+            throw new SecurityException(languageResolver.text(language, "goal.noAccess"));
         }
 
         if (actor.getRole() != UserRole.ADMIN && existingGoal.isAssignedByAdmin()) {
@@ -122,33 +131,36 @@ public class GoalController {
 
     @PatchMapping("/{id}/progress")
     public ResponseEntity<?> updateGoalProgress(@RequestHeader("Authorization") String token,
+                                                @RequestHeader(value = "Accept-Language", required = false) String language,
                                                 @PathVariable Integer id,
                                                 @RequestBody GoalProgressRequest request) {
-        User actor = getActor(token);
+        User actor = getActor(token, language);
         Goal goal = goalService.findById(id);
 
         if (goal == null) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "Objetivo no encontrado.");
+            throw new ApiException(HttpStatus.NOT_FOUND, languageResolver.text(language, "goal.notFound"));
         }
 
         if (!canAccessGoal(actor, goal)) {
-            throw new SecurityException("No tienes permiso para actualizar este objetivo.");
+            throw new SecurityException(languageResolver.text(language, "goal.noAccess"));
         }
 
         return ResponseEntity.ok(goalService.updateGoalProgress(goal, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteGoal(@RequestHeader("Authorization") String token, @PathVariable Integer id) {
-        User actor = getActor(token);
+    public ResponseEntity<?> deleteGoal(@RequestHeader("Authorization") String token,
+                                        @RequestHeader(value = "Accept-Language", required = false) String language,
+                                        @PathVariable Integer id) {
+        User actor = getActor(token, language);
         Goal goal = goalService.findById(id);
 
         if (goal == null) {
-            throw new ApiException(HttpStatus.NOT_FOUND, "Objetivo no encontrado.");
+            throw new ApiException(HttpStatus.NOT_FOUND, languageResolver.text(language, "goal.notFound"));
         }
 
         if (!canAccessGoal(actor, goal)) {
-            throw new SecurityException("No tienes permiso para eliminar este objetivo.");
+            throw new SecurityException(languageResolver.text(language, "goal.noAccess"));
         }
 
         if (actor.getRole() != UserRole.ADMIN && goal.isAssignedByAdmin()) {
@@ -156,14 +168,14 @@ public class GoalController {
         }
 
         goalService.deleteById(id);
-        return ResponseEntity.ok("Objetivo eliminado correctamente.");
+        return ResponseEntity.ok(languageResolver.text(language, "goal.deleted"));
     }
 
-    private User getActor(String token) {
+    private User getActor(String token, String language) {
         String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
         User actor = userService.getUserByUsername(username);
         if (actor == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Usuario no encontrado.");
+            throw new ApiException(HttpStatus.BAD_REQUEST, languageResolver.text(language, "user.notFound"));
         }
         return actor;
     }

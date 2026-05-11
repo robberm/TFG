@@ -2,6 +2,7 @@ package net.tfg.tfgapp.controller;
 
 import net.tfg.tfgapp.DTOs.apprestrict.BlockedApplicationRequest;
 import net.tfg.tfgapp.DTOs.apprestrict.InstalledApplicationDTO;
+import net.tfg.tfgapp.i18n.LanguageResolver;
 import net.tfg.tfgapp.service.AppRestrictionService;
 import net.tfg.tfgapp.service.BlockingService;
 import net.tfg.tfgapp.service.InstalledApplicationService;
@@ -18,13 +19,16 @@ public class AppController {
     private final AppRestrictionService restrictionService;
     private final BlockingService blockingService;
     private final InstalledApplicationService installedApplicationService;
+    private final LanguageResolver languageResolver;
 
     public AppController(AppRestrictionService restrictionService,
                          BlockingService blockingService,
-                         InstalledApplicationService installedApplicationService) {
+                         InstalledApplicationService installedApplicationService,
+                         LanguageResolver languageResolver) {
         this.restrictionService = restrictionService;
         this.blockingService = blockingService;
         this.installedApplicationService = installedApplicationService;
+        this.languageResolver = languageResolver;
     }
 
     @GetMapping("/installed-apps")
@@ -38,15 +42,17 @@ public class AppController {
     }
 
     @PostMapping("/blocked-apps")
-    public ResponseEntity<String> addBlockedApp(@RequestBody BlockedApplicationRequest request) {
+    public ResponseEntity<String> addBlockedApp(@RequestBody BlockedApplicationRequest request,
+                                                @RequestHeader(value = "Accept-Language", required = false) String language) {
         restrictionService.addBlockedApp(request.getExecutableName());
-        return ResponseEntity.ok("Aplicación añadida correctamente");
+        return ResponseEntity.ok(languageResolver.text(language, "apps.blocked.added"));
     }
 
     @DeleteMapping("/blocked-apps/{appName}")
-    public ResponseEntity<String> removeBlockedApp(@PathVariable String appName) {
+    public ResponseEntity<String> removeBlockedApp(@PathVariable String appName,
+                                                   @RequestHeader(value = "Accept-Language", required = false) String language) {
         restrictionService.removeBlockedApp(appName);
-        return ResponseEntity.ok("Aplicación borrada correctamente");
+        return ResponseEntity.ok(languageResolver.text(language, "apps.blocked.removed"));
     }
 
     @GetMapping("/game-mode")
@@ -60,8 +66,8 @@ public class AppController {
     }
 
     @DeleteMapping("/blocked-apps/reset")
-    public ResponseEntity<String> resetBlockedApps() {
+    public ResponseEntity<String> resetBlockedApps(@RequestHeader(value = "Accept-Language", required = false) String language) {
         restrictionService.resetBlockedApps();
-        return ResponseEntity.ok("Configuración completamente reseteada a valores por defecto");
+        return ResponseEntity.ok(languageResolver.text(language, "apps.blocked.reset"));
     }
 }

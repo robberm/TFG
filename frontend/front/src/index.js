@@ -10,11 +10,13 @@ import FocusModeListener from './components/layout/FocusModeListener';
 import './css/index.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import { DarkModeProvider } from './DarkModeContext';
+import { LanguageProvider } from './context/languageContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <DarkModeProvider>
-    <ErrorMessageGenerator>
+  <LanguageProvider>
+    <DarkModeProvider>
+      <ErrorMessageGenerator>
       <ErrorBox />
       <BrowserRouter>
         <FocusModeListener />
@@ -22,6 +24,7 @@ root.render(
           <AppRouter />
         </MainLayout>
       </BrowserRouter>
-    </ErrorMessageGenerator>
-  </DarkModeProvider>
+      </ErrorMessageGenerator>
+    </DarkModeProvider>
+  </LanguageProvider>
 );

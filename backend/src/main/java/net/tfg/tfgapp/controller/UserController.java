@@ -6,6 +6,7 @@ import net.tfg.tfgapp.DTOs.users.LoginRequest;
 import net.tfg.tfgapp.DTOs.users.UserProfileResponse;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.exception.ApiException;
+import net.tfg.tfgapp.i18n.LanguageResolver;
 import net.tfg.tfgapp.security.TokenService;
 import net.tfg.tfgapp.service.interfaces.AccountService;
 import net.tfg.tfgapp.service.interfaces.IUserService;
@@ -25,23 +26,27 @@ public class UserController {
     private final IUserService userService;
     private final TokenService tokenService;
     private final AccountService accountService;
+    private final LanguageResolver languageResolver;
 
     public UserController(IUserService userService,
                           TokenService tokenService,
-                          AccountService accountService) {
+                          AccountService accountService,
+                          LanguageResolver languageResolver) {
         this.userService = userService;
         this.tokenService = tokenService;
         this.accountService = accountService;
+        this.languageResolver = languageResolver;
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> loginUser(@RequestBody LoginRequest request,
+                                       @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
         boolean authenticated = accountService.authenticate(request);
 
         if (!authenticated) {
             throw new ApiException(
                     HttpStatus.UNAUTHORIZED,
-                    "Usuario o contraseña inválida."
+                    languageResolver.text(acceptLanguage, "auth.login.invalidCredentials")
             );
         }
 
@@ -54,7 +59,7 @@ public class UserController {
         response.put("role", user.getRole().name());
         response.put("organizationId", user.getOrganization() != null ? user.getOrganization().getId() : null);
         response.put("organizationName", user.getOrganization() != null ? user.getOrganization().getName() : null);
-        response.put("message", "Log-in correcto!");
+        response.put("message", languageResolver.text(acceptLanguage, "auth.login.success"));
 
         return ResponseEntity.ok(response);
     }
@@ -63,7 +68,8 @@ public class UserController {
      * Registro público para usuarios personales.
      */
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody User newUser) {
+    public ResponseEntity<?> registerUser(@RequestBody User newUser,
+                                          @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
         User user = accountService.register(newUser);
 
         String token = tokenService.generateToken(user.getUsername(), user.getTokenVersion());
@@ -74,14 +80,15 @@ public class UserController {
         response.put("role", user.getRole().name());
         response.put("organizationId", null);
         response.put("organizationName", null);
-        response.put("message", "Usuario registrado correctamente.");
+        response.put("message", languageResolver.text(acceptLanguage, "auth.register.success"));
 
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("change/password")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request,
-                                            @RequestHeader("Authorization") String authHeader) {
+                                            @RequestHeader("Authorization") String authHeader,
+                                            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
         String token = extractAndVerifyToken(authHeader);
         String usernameFromToken = tokenService.extractUsername(token);
 
@@ -89,7 +96,7 @@ public class UserController {
         String newToken = tokenService.generateToken(updatedUser.getUsername(), updatedUser.getTokenVersion());
 
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "Contraseña actualizada correctamente.");
+        response.put("message", languageResolver.text(acceptLanguage, "account.password.changed"));
         response.put("token", newToken);
         response.put("username", updatedUser.getUsername());
         response.put("role", updatedUser.getRole().name());
@@ -101,7 +108,8 @@ public class UserController {
 
     @PostMapping("change/username")
     public ResponseEntity<?> changeUsername(@RequestBody ChangeUsernameRequest request,
-                                            @RequestHeader("Authorization") String authHeader) {
+                                            @RequestHeader("Authorization") String authHeader,
+                                            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
         String token = extractAndVerifyToken(authHeader);
         String usernameFromToken = tokenService.extractUsername(token);
 
@@ -109,7 +117,7 @@ public class UserController {
         String newToken = tokenService.generateToken(updatedUser.getUsername(), updatedUser.getTokenVersion());
 
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "Username actualizado correctamente.");
+        response.put("message", languageResolver.text(acceptLanguage, "account.username.changed"));
         response.put("token", newToken);
         response.put("username", updatedUser.getUsername());
         response.put("role", updatedUser.getRole().name());
@@ -130,28 +138,30 @@ public class UserController {
 
     @PutMapping(value = "/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateProfileImage(@RequestParam("file") MultipartFile file,
-                                                @RequestHeader("Authorization") String authHeader) {
+                                                @RequestHeader("Authorization") String authHeader,
+                                                @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
         String token = extractAndVerifyToken(authHeader);
         String usernameFromToken = tokenService.extractUsername(token);
 
         User updatedUser = accountService.updateProfileImage(usernameFromToken, file);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "Imagen de perfil actualizada correctamente.");
+        response.put("message", languageResolver.text(acceptLanguage, "profile.image.updated"));
         response.put("profileImagePath", updatedUser.getProfileImagePath());
 
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/profile-image")
-    public ResponseEntity<?> deleteProfileImage(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<?> deleteProfileImage(@RequestHeader("Authorization") String authHeader,
+                                                @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
         String token = extractAndVerifyToken(authHeader);
         String usernameFromToken = tokenService.extractUsername(token);
 
         accountService.removeProfileImage(usernameFromToken);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "Imagen de perfil eliminada correctamente.");
+        response.put("message", languageResolver.text(acceptLanguage, "profile.image.deleted"));
         response.put("profileImagePath", null);
 
         return ResponseEntity.ok(response);
