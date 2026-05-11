@@ -458,7 +458,7 @@ const EventModal = ({
                     onChange={handleChange}
                     required
                   >
-                    <option value="">Selecciona usuario subordinado</option>
+                    <option value="">{t.calendarSelectManagedUser}</option>
                     {managedUsers.map((user) => (
                       <option key={user.id} value={user.id}>
                         {user.username}
@@ -573,7 +573,7 @@ const EventModal = ({
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              Más opciones
+              {t.calendarMoreOptions}
             </button>
           )}
 
@@ -628,7 +628,7 @@ const EventModal = ({
               </div>
 
               <div className="formGroup">
-                <label>Reminders</label>
+                <label>{t.calendarReminders}</label>
                 <div className="gcal-reminder-presets">
                   {REMINDER_PRESETS.map((minutes) => {
                     const isSelected = reminderMinutesBeforeList.includes(minutes);
@@ -657,7 +657,7 @@ const EventModal = ({
                     value={customReminderMinutes}
                     disabled={isAssignedEventReadOnly}
                     onChange={(e) => setCustomReminderMinutes(e.target.value)}
-                    placeholder="Minutos personalizados"
+                    placeholder={t.calendarCustomMinutes}
                   />
                   <button
                     type="button"
@@ -669,7 +669,7 @@ const EventModal = ({
                 </div>
                 <div className="gcal-reminder-list">
                   {reminderMinutesBeforeList.length === 0 ? (
-                    <span>Sin alertas.</span>
+                    <span>{t.calendarNoReminders}</span>
                   ) : (
                     reminderMinutesBeforeList.map((minutes) => (
                       <button
@@ -736,7 +736,7 @@ const EventModal = ({
                   <polyline points="3,6 5,6 21,6" />
                   <path d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2" />
                 </svg>
-                Eliminar
+                {t.commonDelete}
               </button>
             )}
             <div className="gcal-footer-right">
@@ -745,11 +745,11 @@ const EventModal = ({
                 className="gcal-cancel-btn"
                 onClick={onClose}
               >
-                Cancelar
+                {t.commonCancel}
               </button>
               {!isAssignedEventReadOnly && (
                 <button type="submit" className="gcal-save-btn">
-                  {event ? "Guardar" : "Crear"}
+                  {event ? t.commonSave : t.commonCreate}
                 </button>
               )}
             </div>

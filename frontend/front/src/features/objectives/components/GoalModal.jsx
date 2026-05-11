@@ -261,7 +261,7 @@ const GoalModal = ({
                   onChange={(event) =>
                     handleChange("description", event.target.value)
                   }
-                  placeholder="Describe tu objetivo..."
+                  placeholder={t.goalDescriptionPlaceholder}
                 />
               </div>
 
@@ -271,7 +271,7 @@ const GoalModal = ({
                   <input
                     id="goal-status"
                     type="text"
-                    value={initialData?.status === "Done" ? "Completado" : initialData?.status === "InProgress" ? "En progreso" : "Sin empezar"}
+                    value={initialData?.status === "Done" ? t.goalStatusDone : initialData?.status === "InProgress" ? t.goalStatusInProgress : t.goalStatusNotStarted}
                     readOnly
                     disabled
                   />
@@ -283,9 +283,9 @@ const GoalModal = ({
                       handleChange("status", event.target.value)
                     }
                   >
-                    <option value="NotStarted">Sin empezar</option>
-                    <option value="InProgress">En progreso</option>
-                    <option value="Done">Completado</option>
+                    <option value="NotStarted">{t.goalStatusNotStarted}</option>
+                    <option value="InProgress">{t.goalStatusInProgress}</option>
+                    <option value="Done">{t.goalStatusDone}</option>
                   </select>
                 )}
 
@@ -299,7 +299,7 @@ const GoalModal = ({
                       handleNumericToggle(event.target.checked)
                     }
                   />
-                  Objetivo numérico
+                  {t.goalNumericObjective}
                 </label>
 
                 <label className="checkboxRow" htmlFor="goal-active">
@@ -312,7 +312,7 @@ const GoalModal = ({
                       handleChange("active", event.target.checked)
                     }
                   />
-                  Activo
+                  {t.commonActive}
                 </label>
               </div>
             </div>
@@ -321,7 +321,7 @@ const GoalModal = ({
               <>
                 <div className="formRow">
                   <div className="formGroup">
-                    <label htmlFor="goal-progress">Valor actual</label>
+                    <label htmlFor="goal-progress">{t.goalCurrentValue}</label>
                     <input
                       id="goal-progress"
                       type="number"
@@ -330,12 +330,12 @@ const GoalModal = ({
                       onChange={(event) =>
                         handleChange("valorProgreso", event.target.value)
                       }
-                      placeholder="0"
+                      placeholder={t.goalCurrentValuePlaceholder}
                     />
                   </div>
 
                   <div className="formGroup">
-                    <label htmlFor="goal-target">Valor objetivo</label>
+                    <label htmlFor="goal-target">{t.goalTargetValue}</label>
                     <input
                       id="goal-target"
                       type="number"
@@ -345,14 +345,14 @@ const GoalModal = ({
                       onChange={(event) =>
                         handleChange("valorObjetivo", event.target.value)
                       }
-                      placeholder="100"
+                      placeholder={t.goalTargetValuePlaceholder}
                     />
                   </div>
                 </div>
 
                 <div className="formRow singleColumn">
                   <div className="formGroup">
-                    <label htmlFor="goal-notes">Nota del progreso</label>
+                    <label htmlFor="goal-notes">{t.goalProgressNote}</label>
                     <textarea
                       id="goal-notes"
                       rows="2"
@@ -360,7 +360,7 @@ const GoalModal = ({
                       onChange={(event) =>
                         handleChange("notes", event.target.value)
                       }
-                      placeholder="Opcional: nota para el historial de progreso"
+                      placeholder={t.goalProgressNotePlaceholder}
                     />
                   </div>
                 </div>
