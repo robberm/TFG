@@ -328,7 +328,7 @@ function Block() {
       await resetBlockedApps();
       await fetchBlockedApps();
     } catch (error) {
-      setErrorMessage(getApiErrorMessage(error, "Error al resetear la lista"));
+      setErrorMessage(getApiErrorMessage(error, t.blockResetError));
     }
   };
 

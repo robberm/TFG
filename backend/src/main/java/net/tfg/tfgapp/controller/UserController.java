@@ -89,7 +89,7 @@ public class UserController {
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request,
                                             @RequestHeader("Authorization") String authHeader,
                                             @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
-        String token = extractAndVerifyToken(authHeader);
+        String token = extractAndVerifyToken(authHeader, acceptLanguage);
         String usernameFromToken = tokenService.extractUsername(token);
 
         User updatedUser = accountService.changePassword(usernameFromToken, request);
@@ -110,7 +110,7 @@ public class UserController {
     public ResponseEntity<?> changeUsername(@RequestBody ChangeUsernameRequest request,
                                             @RequestHeader("Authorization") String authHeader,
                                             @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
-        String token = extractAndVerifyToken(authHeader);
+        String token = extractAndVerifyToken(authHeader, acceptLanguage);
         String usernameFromToken = tokenService.extractUsername(token);
 
         User updatedUser = accountService.changeUsername(usernameFromToken, request);
@@ -129,7 +129,7 @@ public class UserController {
 
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUserProfile(@RequestHeader("Authorization") String authHeader) {
-        String token = extractAndVerifyToken(authHeader);
+        String token = extractAndVerifyToken(authHeader, null);
         String usernameFromToken = tokenService.extractUsername(token);
 
         UserProfileResponse response = accountService.getProfileData(usernameFromToken);
@@ -140,7 +140,7 @@ public class UserController {
     public ResponseEntity<?> updateProfileImage(@RequestParam("file") MultipartFile file,
                                                 @RequestHeader("Authorization") String authHeader,
                                                 @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
-        String token = extractAndVerifyToken(authHeader);
+        String token = extractAndVerifyToken(authHeader, acceptLanguage);
         String usernameFromToken = tokenService.extractUsername(token);
 
         User updatedUser = accountService.updateProfileImage(usernameFromToken, file);
@@ -155,7 +155,7 @@ public class UserController {
     @DeleteMapping("/profile-image")
     public ResponseEntity<?> deleteProfileImage(@RequestHeader("Authorization") String authHeader,
                                                 @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
-        String token = extractAndVerifyToken(authHeader);
+        String token = extractAndVerifyToken(authHeader, acceptLanguage);
         String usernameFromToken = tokenService.extractUsername(token);
 
         accountService.removeProfileImage(usernameFromToken);
@@ -167,26 +167,26 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    private String extractAndVerifyToken(String authHeader) {
+    private String extractAndVerifyToken(String authHeader, String acceptLanguage) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "Token de autenticación no proporcionado o formato incorrecto.");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, languageResolver.text(acceptLanguage, "errors.auth.tokenMissing"));
         }
 
         String token = authHeader.replace("Bearer ", "").trim();
 
         if (!tokenService.validateToken(token)) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "Token de autenticación inválido o expirado.");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, languageResolver.text(acceptLanguage, "errors.auth.tokenInvalid"));
         }
 
         String username = tokenService.extractUsername(token);
         User user = userService.getUserByUsername(username);
 
         if (user == null) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "Usuario asociado al token no encontrado.");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, languageResolver.text(acceptLanguage, "errors.auth.userNotFound"));
         }
 
         if (!tokenService.validateToken(token, user.getUsername(), user.getTokenVersion())) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "Token revocado o no válido.");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, languageResolver.text(acceptLanguage, "errors.auth.tokenRevoked"));
         }
 
         return token;
