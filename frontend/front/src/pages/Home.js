@@ -9,8 +9,9 @@ import { getCurrentUserProfile } from "../api/userApi";
 import { getManagedUsers, getManagedUserGoals } from "../api/adminApi";
 import { calculateGlobalGoalsProgress } from "../features/objectives/utils/objectiveHelpers";
 import { resolveProfileImageUrl } from "../utils/profileImage";
+import { useLanguage } from "../context/languageContext";
 
-const AdminGoalsStats = ({ goals }) => {
+const AdminGoalsStats = ({ goals, t }) => {
   const metrics = useMemo(() => {
     const total = goals.length;
     const completed = goals.filter((goal) => goal.status === "Done").length;
@@ -30,22 +31,22 @@ const AdminGoalsStats = ({ goals }) => {
 
   return (
     <section className="adminGoalsStats">
-      <h3>Estadísticas de goals</h3>
+      <h3>{t.homeGoalsStats}</h3>
       <div className="adminGoalsStatsGrid">
         <article className="adminGoalsMetricCard">
-          <span>Total</span>
+          <span>{t.homeTotal}</span>
           <strong>{metrics.total}</strong>
         </article>
         <article className="adminGoalsMetricCard">
-          <span>Activos</span>
+          <span>{t.homeActive}</span>
           <strong>{metrics.active}</strong>
         </article>
         <article className="adminGoalsMetricCard">
-          <span>En progreso</span>
+          <span>{t.homeInProgress}</span>
           <strong>{metrics.inProgress}</strong>
         </article>
         <article className="adminGoalsMetricCard">
-          <span>Completados</span>
+          <span>{t.homeDone}</span>
           <strong>{metrics.completed}</strong>
         </article>
       </div>
@@ -57,13 +58,14 @@ const AdminGoalsStats = ({ goals }) => {
             style={{ width: `${metrics.progress}%` }}
           ></div>
         </div>
-        <span className="progressText">Avance global del usuario seleccionado</span>
+        <span className="progressText">{t.homeGlobalProgress}</span>
       </div>
     </section>
   );
 };
 
 const Home = () => {
+  const { t } = useLanguage();
   const { todayEvents, refreshTodayEvents, isLoadingTodayEvents } =
     useTodayEvents();
 
@@ -86,9 +88,6 @@ const Home = () => {
           const normalizedUsers = Array.isArray(users) ? users : [];
           setManagedUsers(normalizedUsers);
 
-          if (normalizedUsers.length > 0) {
-            setSelectedUser(normalizedUsers[0]);
-          }
         }
       } catch (error) {
         console.error("Error loading home scope:", error);
@@ -120,62 +119,68 @@ const Home = () => {
     loadGoals();
   }, [isAdmin, selectedUser]);
 
-  if (isAdmin) {
-    return (
-      <>
-        <HomeHeader />
+if (isAdmin) {
+  return (
+    <>
+      <HomeHeader />
 
-        <div className="adminHomeSection">
-          <div className="adminUsersCardsGrid">
-            {managedUsers.length === 0 && (
-              <p className="adminHomeEmptyState">
-                No tienes usuarios subordinados todavía.
-              </p>
-            )}
-
-            {managedUsers.map((user) => (
-              <button
-                key={user.id}
-                type="button"
-                className={`adminUserCard ${selectedUser?.id === user.id ? "selected" : ""}`}
-                onClick={() => setSelectedUser(user)}
-              >
-                {user.profileImagePath ? (
-                  <img
-                    src={resolveProfileImageUrl(user.profileImagePath)}
-                    alt={`Perfil de ${user.username}`}
-                  />
-                ) : (
-                  <div className="adminUserAvatarFallback">
-                    {user.username.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <div>
-                  <strong>{user.username}</strong>
-                  <span>{user.organizationName || "Sin organización"}</span>
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {selectedUser && (
-            <div className="adminGoalsPanel">
-              <header>
-                <h2>{selectedUser.username}</h2>
-                <p>Resumen de goals del usuario subordinado seleccionado.</p>
-              </header>
-
-              {isLoadingAdminGoals ? (
-                <p className="adminHomeEmptyState">Cargando estadísticas...</p>
-              ) : (
-                <AdminGoalsStats goals={selectedUserGoals} />
-              )}
-            </div>
+      <div className="adminHomeSection">
+        <div className="adminUsersCardsGrid">
+          {managedUsers.length === 0 && (
+            <p className="adminHomeEmptyState">
+              {t.homeNoManagedUsers}
+            </p>
           )}
+
+          {managedUsers.map((user) => {
+            const isSelected = selectedUser?.id === user.id;
+
+            return (
+              <div
+                key={user.id}
+                className={`adminUserCard ${isSelected ? "expanded" : ""}`}
+                onClick={() => !isSelected && setSelectedUser(user)}
+              >
+                <div className="adminUserCardHeader">
+                  {user.profileImagePath ? (
+                    <img
+                      src={resolveProfileImageUrl(user.profileImagePath)}
+                      alt={user.username}
+                    />
+                  ) : (
+                    <div className="adminUserAvatarFallback">
+                      {user.username.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="adminUserCardInfo">
+                    <strong>{user.username}</strong>
+                    <span>{user.organizationName || t.homeNoOrganization}</span>
+                  </div>
+                  <button
+                    className="adminCloseBtn"
+                    onClick={(e) => { e.stopPropagation(); setSelectedUser(null); }}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="adminUserCardBody">
+                  {isSelected && (
+                    isLoadingAdminGoals ? (
+                      <p className="adminLoadingState">{t.homeLoading}</p>
+                    ) : (
+                      <AdminGoalsStats goals={selectedUserGoals} t={t} />
+                    )
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
-      </>
-    );
-  }
+      </div>
+    </>
+  );
+}
 
   return (
     <>

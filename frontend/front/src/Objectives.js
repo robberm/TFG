@@ -23,6 +23,7 @@ import HabitModal from "./features/objectives/components/HabitModal";
 import GoalsSection from "./features/objectives/components/GoalsSection";
 import HabitsSection from "./features/objectives/components/HabitsSection";
 import ObjectivesDashboard from "./features/objectives/components/ObjectivesDashboard";
+import { useLanguage } from "./context/languageContext";
 
 import {
   buildHabitCompletionMap,
@@ -33,6 +34,7 @@ import {
 } from "./features/objectives/utils/objectiveHelpers";
 
 const Objectives = () => {
+  const { t } = useLanguage();
   const { setErrorMessage } = useError();
 
   const [goals, setGoals] = useState([]);
@@ -116,7 +118,7 @@ const Objectives = () => {
         }
       } catch (error) {
         setErrorMessage(
-          error.message || "No se pudo cargar la pantalla de objetivos.",
+          error.message || t.objectivesLoadError,
         );
       } finally {
         if (showLoader) {
@@ -132,7 +134,7 @@ const Objectives = () => {
       try {
         await loadSessionScope();
       } catch (error) {
-        setErrorMessage(error.message || "No se pudo cargar el contexto.");
+        setErrorMessage(error.message || t.objectivesContextError);
       }
     };
 
@@ -192,14 +194,14 @@ const Objectives = () => {
    */
   const handleGoalSubmit = async (payload) => {
     if (!payload.titulo.trim()) {
-      setErrorMessage("El titulo del goal es obligatorio.");
+      setErrorMessage(t.objectivesGoalTitleRequired);
       return;
     }
 
     if (isAdmin) {
       const invalidSingle = !payload.assignToAllUsers && (!payload.targetUserIds || payload.targetUserIds.length === 0) && !payload.targetUserId;
       if (invalidSingle) {
-        setErrorMessage("Debes seleccionar al menos un usuario subordinado.");
+        setErrorMessage(t.objectivesSelectUserRequired);
         return;
       }
     }
@@ -232,7 +234,7 @@ const Objectives = () => {
         ) {
           await updateGoalProgress(selectedGoal.id, {
             valorProgreso: nextProgress,
-            notes: payload.notes || "Actualizacion de progreso desde frontend.",
+            notes: payload.notes || t.objectivesProgressUpdateNote,
           });
         }
       } else {
@@ -254,7 +256,7 @@ const Objectives = () => {
       closeGoalModal();
       await loadObjectivesData(false);
     } catch (error) {
-      setErrorMessage(error.message || "No se pudo guardar el goal.");
+      setErrorMessage(error.message || t.objectivesGoalSaveError);
     } finally {
       setIsSubmittingGoal(false);
     }
@@ -265,7 +267,7 @@ const Objectives = () => {
    */
   const handleHabitSubmit = async (payload) => {
     if (!payload.titulo.trim()) {
-      setErrorMessage("El titulo del habito es obligatorio.");
+      setErrorMessage(t.objectivesHabitTitleRequired);
       return;
     }
 
@@ -281,7 +283,7 @@ const Objectives = () => {
       closeHabitModal();
       await loadObjectivesData(false);
     } catch (error) {
-      setErrorMessage(error.message || "No se pudo guardar el habito.");
+      setErrorMessage(error.message || t.objectivesHabitSaveError);
     } finally {
       setIsSubmittingHabit(false);
     }
@@ -292,7 +294,7 @@ const Objectives = () => {
    */
   const handleGoalDelete = async (goal) => {
     const confirmed = window.confirm(
-      `Seguro que quieres eliminar "${goal.titulo}"?`,
+      `${t.objectivesDeleteGoalConfirmPrefix} "${goal.titulo}"?`,
     );
     if (!confirmed) return;
 
@@ -300,7 +302,7 @@ const Objectives = () => {
       await deleteGoal(goal.id);
       await loadObjectivesData(false);
     } catch (error) {
-      setErrorMessage(error.message || "No se pudo eliminar el goal.");
+      setErrorMessage(error.message || t.objectivesGoalDeleteError);
     }
   };
 
@@ -309,7 +311,7 @@ const Objectives = () => {
    */
   const handleHabitDelete = async (habit) => {
     const confirmed = window.confirm(
-      `Seguro que quieres eliminar "${habit.titulo}"?`,
+      `${t.objectivesDeleteHabitConfirmPrefix} "${habit.titulo}"?`,
     );
     if (!confirmed) return;
 
@@ -317,7 +319,7 @@ const Objectives = () => {
       await deleteHabit(habit.id);
       await loadObjectivesData(false);
     } catch (error) {
-      setErrorMessage(error.message || "No se pudo eliminar el habito.");
+      setErrorMessage(error.message || t.objectivesHabitDeleteError);
     }
   };
 
@@ -377,14 +379,14 @@ const Objectives = () => {
         date: todayIso,
         completed: shouldComplete,
         notes: shouldComplete
-          ? "Marcado como completado hoy."
-          : "Desmarcado desde frontend.",
+          ? t.objectivesHabitMarkedTodayNote
+          : t.objectivesHabitUnmarkedFrontendNote,
       });
 
       await loadObjectivesData(false);
     } catch (error) {
       await loadObjectivesData(false);
-      setErrorMessage(error.message || "No se pudo actualizar el habito.");
+      setErrorMessage(error.message || t.objectivesHabitUpdateError);
     } finally {
       setIsHabitUpdating(false);
     }
@@ -394,18 +396,18 @@ const Objectives = () => {
     <div className="objectivesPage">
       <div className="pageHeader objectivesHeader">
         <div>
-          <h1>Objetivos</h1>
+          <h1>{t.objectivesTitle}</h1>
           <p>
             {isAdmin
-              ? "Asigna y supervisa goals de tus usuarios subordinados."
-              : "Goals a largo plazo, habitos diarios y estadisticas"}
+              ? t.objectivesAdminSubtitle
+              : t.objectivesSubtitle}
           </p>
         </div>
       </div>
 
       {isAdmin && (
         <div className="adminScopeSelector">
-          <label htmlFor="managed-user-goals">Usuario subordinado</label>
+          <label htmlFor="managed-user-goals">{t.objectivesManagedUserLabel}</label>
           <select
             id="managed-user-goals"
             value={selectedManagedUserId ?? ""}
@@ -415,9 +417,9 @@ const Objectives = () => {
               )
             }
           >
-            <option value="">Todos los asignados</option>
+            <option value="">{t.objectivesAllAssignedOption}</option>
             {managedUsers.length === 0 && (
-              <option value="">Sin usuarios subordinados</option>
+              <option value="">{t.objectivesNoManagedUsersOption}</option>
             )}
             {managedUsers.map((user) => (
               <option key={user.id} value={user.id}>
@@ -431,7 +433,7 @@ const Objectives = () => {
       {isLoading ? (
         <div className="objectivesLoadingState">
           <span className="loaderDot"></span>
-          <span>Cargando objetivos...</span>
+          <span>{t.objectivesLoading}</span>
         </div>
       ) : (
         <>

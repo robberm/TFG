@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -118,6 +119,38 @@ public class EventService {
 
         reminderScheduler.cancelReminder(id);
         eventRepo.deleteById(id);
+    }
+
+    public void deleteAdminAssignedEventCascade(Long adminId, Event event) {
+        if (event == null || event.getId() == null) {
+            return;
+        }
+
+        if (event.getAssignedByAdmin() == null || !Objects.equals(event.getAssignedByAdmin().getId(), adminId)) {
+            deleteEventById(event.getId());
+            return;
+        }
+
+        if (event.getAssignmentBatchId() != null && !event.getAssignmentBatchId().isBlank()) {
+            List<Event> groupedEvents = eventRepo.findByAssignedByAdmin_IdAndAssignmentBatchId(
+                    event.getAssignedByAdmin().getId(),
+                    event.getAssignmentBatchId()
+            );
+
+            if (!groupedEvents.isEmpty() && event.getStartTime() != null && event.getEndTime() != null) {
+                groupedEvents = groupedEvents.stream()
+                        .filter(candidate -> Objects.equals(candidate.getStartTime(), event.getStartTime())
+                                && Objects.equals(candidate.getEndTime(), event.getEndTime()))
+                        .toList();
+            }
+
+            if (!groupedEvents.isEmpty()) {
+                groupedEvents.forEach(candidate -> deleteEventById(candidate.getId()));
+                return;
+            }
+        }
+
+        deleteEventById(event.getId());
     }
 
     public List<String> getCategories() {

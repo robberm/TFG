@@ -111,6 +111,7 @@ function createMainWindow({
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: true,
+      backgroundThrottling: false,
     },
   });
 
@@ -198,7 +199,9 @@ function recreateMainWindow({ transparentMode, route = "/" }) {
   });
 }
 
-function createBlockWindow() {
+function createBlockWindow(payload = {}) {
+  const durationSeconds = Math.max(1, Number(payload?.durationSeconds || 20));
+
   blockWindow = new BrowserWindow({
     fullscreen: true,
     frame: false,
@@ -215,16 +218,17 @@ function createBlockWindow() {
   blockWindow.setVisibleOnAllWorkspaces(true);
   blockWindow.loadFile(path.join(__dirname, "..", "public", "block.html"));
 
-  exec(
-    "powershell -ExecutionPolicy Bypass -File C:\\TFGrmg\\TFG\\tools\\blockScreen.ps1",
-  );
+  if (process.platform === "win32") {
+    const scriptPath = path.resolve(__dirname, "..", "..", "..", "tools", "blockScreen.ps1");
+    exec(`powershell -ExecutionPolicy Bypass -File "${scriptPath}"`);
+  }
 
   setTimeout(() => {
     if (blockWindow) {
       blockWindow.close();
       blockWindow = null;
     }
-  }, 21000);
+  }, durationSeconds * 1000);
 }
 
 function escapeHtml(value = "") {

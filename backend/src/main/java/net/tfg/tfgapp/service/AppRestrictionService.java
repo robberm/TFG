@@ -1,16 +1,14 @@
 package net.tfg.tfgapp.service;
 
-
-
-
 import jakarta.annotation.PostConstruct;
 import net.tfg.tfgapp.service.interfaces.IStorageService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import net.tfg.tfgapp.utils.WindowsUtils;
+import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -18,14 +16,14 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class AppRestrictionService {
+    private static final Map<String, Set<String>> EXECUTABLE_ALIASES = buildExecutableAliases();
 
-    @Autowired
     private final IStorageService storageService;
+    private final BlockingService blockingService;
 
-    private volatile boolean gameModeActive = false;
-
-    public AppRestrictionService(IStorageService storageService) {
+    public AppRestrictionService(IStorageService storageService, BlockingService blockingService) {
         this.storageService = storageService;
+        this.blockingService = blockingService;
     }
 
     @PostConstruct
@@ -34,59 +32,26 @@ public class AppRestrictionService {
         scheduler.scheduleAtFixedRate(this::checkSystemState, 0, 5, TimeUnit.SECONDS);
     }
 
-    /**
-     * Revisa periódicamente el estado del sistema y aplica restricciones si corresponde.
-     * Primero recalcula el game mode para que la decisión de bloqueo use un estado actualizado.
-     */
     private void checkSystemState() {
-        refreshGameModeState();
-
         if (shouldEnforceRestrictions()) {
             enforceRestrictions();
         }
     }
 
-    /**
-     * Recalcula si el game mode está activo.
-     * Se considera activo cuando hay un juego configurado ejecutándose
-     * y además la aplicación en primer plano está a pantalla completa.
-     */
-    private void refreshGameModeState() {
-        IStorageService.Config config = storageService.loadConfig();
-
-        this.gameModeActive = WindowsUtils.getRunningProcesses().stream()
-                .anyMatch(process -> config.getGames().contains(process))
-                && WindowsUtils.isAppFullscreen();
-    }
-
-    /**
-     * Determina si deben aplicarse las restricciones de aplicaciones.
-     * Ahora mismo la condición principal es que no esté activo el game mode.
-     *
-     * @return true si procede forzar el cierre de aplicaciones bloqueadas.
-     */
     private boolean shouldEnforceRestrictions() {
-        return !gameModeActive;
+        return blockingService.isEffectiveFocusModeEnabled();
     }
 
-    /**
-     * Fuerza el cierre de las aplicaciones que estén configuradas como bloqueadas
-     * y actualmente estén en ejecución.
-     */
     private void enforceRestrictions() {
         IStorageService.Config config = storageService.loadConfig();
+        Set<String> blockedExecutables = normalizeBlockedExecutables(config.getBlockedApps());
 
         WindowsUtils.getRunningProcesses().stream()
-                .filter(config.getBlockedApps()::contains)
+                .map(this::normalizeExecutableNameSafely)
+                .filter(blockedExecutables::contains)
                 .forEach(WindowsUtils::killProcess);
     }
 
-    /**
-     * Añade un ejecutable a la lista de aplicaciones bloqueadas.
-     * El sistema bloquea por nombre de proceso y no por nombre bonito de la aplicación.
-     *
-     * @param executableName nombre del proceso principal, por ejemplo "discord.exe".
-     */
     public void addBlockedApp(String executableName) {
         String cleanExecutableName = normalizeExecutableName(executableName);
 
@@ -103,11 +68,6 @@ public class AppRestrictionService {
         storageService.saveConfig(config);
     }
 
-    /**
-     * Elimina un ejecutable de la lista de aplicaciones bloqueadas.
-     *
-     * @param executableName nombre del proceso principal a eliminar.
-     */
     public void removeBlockedApp(String executableName) {
         String cleanExecutableName = normalizeExecutableName(executableName);
 
@@ -122,11 +82,8 @@ public class AppRestrictionService {
         storageService.saveConfig(config);
     }
 
-    /**
-     * Restablece la configuración por defecto de aplicaciones bloqueadas y juegos.
-     */
     public void resetBlockedApps() {
-        IStorageService.Config config = new IStorageService.Config();
+        IStorageService.Config config = storageService.loadConfig();
         config.setBlockedApps(new HashSet<>(Set.of(
                 "valorant.exe",
                 "leagueoflegends.exe",
@@ -142,31 +99,17 @@ public class AppRestrictionService {
         storageService.saveConfig(config);
     }
 
-    /**
-     * Devuelve la lista actual de ejecutables bloqueados en modo solo lectura.
-     *
-     * @return conjunto inmodificable de ejecutables bloqueados.
-     */
     public Set<String> getBlockedApps() {
         return Collections.unmodifiableSet(storageService.loadConfig().getBlockedApps());
     }
 
     /**
-     * Indica si el sistema considera que el game mode está activo.
-     *
-     * @return true si hay juego detectado a pantalla completa.
+     * Se mantiene por compatibilidad retroactiva con endpoints existentes.
      */
-
     public boolean isGameModeActive() {
-        return gameModeActive;
+        return blockingService.isEffectiveFocusModeEnabled();
     }
 
-    /**
-     * Normaliza y valida el nombre del ejecutable recibido desde el frontend.
-     *
-     * @param executableName valor recibido.
-     * @return nombre limpio y en minúsculas.
-     */
     private String normalizeExecutableName(String executableName) {
         if (executableName == null || executableName.trim().isEmpty()) {
             throw new IllegalArgumentException("El nombre de la aplicación no puede estar vacío");
@@ -179,5 +122,41 @@ public class AppRestrictionService {
         }
 
         return cleanExecutableName;
+    }
+
+    private String normalizeExecutableNameSafely(String executableName) {
+        try {
+            return normalizeExecutableName(executableName);
+        } catch (Exception ex) {
+            return "";
+        }
+    }
+
+    private Set<String> normalizeBlockedExecutables(Set<String> blockedApps) {
+        if (blockedApps == null || blockedApps.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        Set<String> normalized = new HashSet<>();
+
+        for (String blockedApp : blockedApps) {
+            String normalizedExecutable = normalizeExecutableNameSafely(blockedApp);
+            if (normalizedExecutable.isEmpty()) {
+                continue;
+            }
+
+            normalized.add(normalizedExecutable);
+            normalized.addAll(EXECUTABLE_ALIASES.getOrDefault(normalizedExecutable, Collections.emptySet()));
+        }
+
+        return normalized;
+    }
+
+    private static Map<String, Set<String>> buildExecutableAliases() {
+        Map<String, Set<String>> aliases = new HashMap<>();
+        aliases.put("leagueoflegends.exe", Set.of("leagueclient.exe", "leagueclientux.exe", "leagueclientuxrender.exe"));
+        aliases.put("riotclientservices.exe", Set.of("riotclientux.exe", "riotclientuxrender.exe"));
+        aliases.put("steam.exe", Set.of("steamwebhelper.exe"));
+        return aliases;
     }
 }

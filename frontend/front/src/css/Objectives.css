@@ -1065,20 +1065,6 @@
   padding: 2rem;
 }
 
-/* Light mode modal: same as before, only white text */
-body.light .modalHeader h3,
-body.light .modalForm,
-body.light .modalForm .formGroup label,
-body.light .modalForm .checkboxRow,
-body.light .modalForm input,
-body.light .modalForm select,
-body.light .modalForm textarea,
-body.light .modalForm input::placeholder,
-body.light .modalForm textarea::placeholder,
-body.light .closeButton {
-  color: #fff !important;
-}
-
 /* Translucent table overrides */
 body.translucent .todoTable {
   border-radius: 14px;

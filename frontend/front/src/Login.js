@@ -8,9 +8,11 @@ import {
 import { loginUser, registerActiveSessionUser } from "./api/authApi";
 import { getCurrentUserProfile } from "./api/userApi";
 import { resolveProfileImageUrl } from "./utils/profileImage";
+import { useLanguage } from "./context/languageContext";
 
 
 const Login = () => {
+  const { t } = useLanguage();
   // Definir estado para username y password
   const [loginUsername, setLoginUsername] = useState("");  // Estado para el nombre de usuario
   const [loginPw, setLoginPw] = useState("");  // Estado para la contraseña
@@ -56,7 +58,7 @@ const Login = () => {
         console.log("Login perfecto");
         navigate(nextPath);
     } catch (err) {
-      setError(getApiErrorMessage(err, "Error de conexión, inténtalo de nuevo."));
+      setError(getApiErrorMessage(err, t.loginConnectionError));
       
     }
   };
@@ -79,13 +81,13 @@ const Login = () => {
 
   return (
     <div className="login-form">
-      <h2 style={colorLogInTexto}>Log-in</h2>
+      <h2 style={colorLogInTexto}>{t.loginTitle}</h2>
       <form onSubmit={handleLogin}>
         <input
           className="app-input"
           name="username"
           type="text"
-          placeholder="Username"
+          placeholder={t.username}
           value={loginUsername}
           onChange={(e) => setLoginUsername(e.target.value)} // Actualiza el estado
           onKeyDown={handleKeyDown} // Manejo de la tecla Enter
@@ -94,7 +96,7 @@ const Login = () => {
           className="app-input"
           id="password"
           name="password"
-          placeholder="Password"
+          placeholder={t.loginPassword}
           value={loginPw}
           onChange={(e) => setLoginPw(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -102,7 +104,7 @@ const Login = () => {
           autoComplete="new-password"
         />
         <button className="app-button" type="submit">
-          Log-in
+          {t.loginTitle}
         </button>
       </form>
       {error && <div className="error">{error}</div>}
