@@ -4,6 +4,7 @@ import { es } from "date-fns/locale";
 import "../../css/EventModal.css";
 import { fetchEventCategories } from "../../api/eventApi";
 import { useLanguage } from "../../context/languageContext";
+import AdminAssignmentSelector from "../../components/AdminAssignmentSelector";
 
 // Genera opciones de tiempo en incrementos de 15 minutos
 const generateTimeOptions = () => {
@@ -95,7 +96,12 @@ const TimeSelector = ({ value, onChange, label, disabled = false, searchPlacehol
 
   useEffect(() => {
     if (isOpen && selectedOptionRef.current && optionsRef.current) {
-      selectedOptionRef.current.scrollIntoView({ block: "center" });
+      const selected = selectedOptionRef.current;
+      const container = optionsRef.current;
+      if (selected && container) {
+        const top = selected.offsetTop - container.clientHeight / 2 + selected.clientHeight / 2;
+        container.scrollTop = Math.max(top, 0);
+      }
     }
   }, [isOpen]);
 
@@ -438,50 +444,16 @@ const EventModal = ({
         <form onSubmit={handleSubmit} className="gcal-form">
           <div className="gcal-title-section">
             {isAdmin && (
-              <div className="gcal-admin-assignment">
-                <select
-                  name="assignmentMode"
-                  className="gcal-input"
-                  value={formData.assignmentMode}
-                  onChange={handleChange}
-                >
-                  <option value="single">{t.commonUser}</option>
-                  <option value="multiple">{t.commonMultipleUsers}</option>
-                  <option value="all">{t.commonAllOrganization}</option>
-                </select>
-
-                {formData.assignmentMode === "single" && (
-                  <select
-                    name="targetUserId"
-                    className="gcal-input"
-                    value={formData.targetUserId}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">{t.calendarSelectManagedUser}</option>
-                    {managedUsers.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.username}
-                      </option>
-                    ))}
-                  </select>
-                )}
-
-                {formData.assignmentMode === "multiple" && (
-                  <div className="gcal-multi-targets">
-                    {managedUsers.map((user) => (
-                      <label key={user.id}>
-                        <input
-                          type="checkbox"
-                          checked={formData.targetUserIds?.includes(String(user.id))}
-                          onChange={() => toggleTargetSelection(user.id)}
-                        />
-                        {user.username}
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <AdminAssignmentSelector
+                mode={formData.assignmentMode}
+                onModeChange={(value) => setFormData((prev) => ({ ...prev, assignmentMode: value }))}
+                singleUserId={formData.targetUserId}
+                onSingleUserChange={(value) => setFormData((prev) => ({ ...prev, targetUserId: value }))}
+                selectedUserIds={formData.targetUserIds || []}
+                onToggleUser={toggleTargetSelection}
+                managedUsers={managedUsers}
+                singlePlaceholder={t.calendarSelectManagedUser}
+              />
             )}
 
             <input
