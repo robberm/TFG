@@ -13,9 +13,7 @@ import {
 } from "./api/blockApi";
 import { getApiErrorMessage } from "./api/apiClient";
 import { useError } from "./components/ErrorContext";
-
-const bubbleContent =
-  "Esta ventana está dedicada a ofrecer herramientas para gestionar un uso más saludable del ordenador, fomentando descansos regulares y ayudándote a mantener el enfoque.";
+import { useLanguage } from "./context/languageContext";
 
 const SearchIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -99,6 +97,7 @@ const DurationSelector = ({ valueSeconds, onChange }) => {
 };
 
 function Block() {
+  const { t } = useLanguage();
   const { setErrorMessage } = useError();
   const [blockedApps, setBlockedApps] = useState([]);
   const [installedApps, setInstalledApps] = useState([]);
@@ -350,15 +349,15 @@ function Block() {
     ? ((currentPhaseDuration - timeUntilNextBlock) / currentPhaseDuration) * 100
     : 0;
 
-  const modeLabel = focusModeEnabled ? "Focus mode" : "Off";
+  const modeLabel = focusModeEnabled ? t.blockFocusMode : t.blockOff;
 
   return (
     <div className="block-container">
       <div className="block-main">
         <header className="block-header">
           <h1 className="block-title with-bubble">
-            Time Tracker
-            <span className="burbuja-content">{bubbleContent}</span>
+            {t.blockTimeTracker}
+            <span className="burbuja-content">{t.blockBubbleContent}</span>
           </h1>
         </header>
 
@@ -370,11 +369,11 @@ function Block() {
             </svg>
             <div className="timer-display">
               <span className="timer-value">{formatTime(timeUntilNextBlock)}</span>
-              <span className="timer-label">{isBreakPhase ? "descansando" : "próximo descanso"}</span>
+              <span className="timer-label">{isBreakPhase ? t.blockRestingLower : t.blockNextBreakLower}</span>
             </div>
           </div>
           <div className="timer-status">
-            {isBreakPhase ? <span className="status-badge status-resting">Descansando</span> : (
+            {isBreakPhase ? <span className="status-badge status-resting">{t.blockResting}</span> : (
               <button
                 type="button"
                 className={`status-badge status-working ${focusModeLockedByTag ? "locked" : ""}`}
@@ -384,7 +383,7 @@ function Block() {
                   setFocusModeEnabled(enabled);
                   saveFocusSettings({ focusModeEnabled: enabled, workDurationSeconds, breakDurationSeconds, focusAction });
                 }}
-                title={focusModeLockedByTag ? "Focus mode bloqueado por evento Focus activo" : "Activar/desactivar focus mode"}
+                title={focusModeLockedByTag ? t.blockFocusLockedTitle : t.blockToggleFocusTitle}
               >
                 {modeLabel}{focusModeLockedByTag ? " 🔒" : ""}
               </button>
@@ -394,7 +393,7 @@ function Block() {
 
         <div className="focus-controls">
           <div className="focus-field">
-            <label>Trabajo</label>
+            <label>{t.blockWork}</label>
             <DurationSelector
               valueSeconds={workDurationSeconds}
               onChange={(nextWorkDurationSeconds) => {
@@ -405,7 +404,7 @@ function Block() {
             <small>{formatDurationCaption(workDurationSeconds)}</small>
           </div>
           <div className="focus-field">
-            <label>Descanso</label>
+            <label>{t.blockBreak}</label>
             <DurationSelector
               valueSeconds={breakDurationSeconds}
               onChange={(nextBreakDurationSeconds) => {
@@ -416,7 +415,7 @@ function Block() {
             <small>{formatDurationCaption(breakDurationSeconds)}</small>
           </div>
           <div className="focus-field">
-            <label>Al terminar</label>
+            <label>{t.blockOnFinish}</label>
             <select
               value={focusAction}
               onChange={(e) => {
@@ -424,15 +423,15 @@ function Block() {
                 saveFocusSettings({ focusModeEnabled, workDurationSeconds, breakDurationSeconds, focusAction: e.target.value });
               }}
             >
-              <option value="NOTIFICATION">Notificación</option>
-              <option value="SCREEN_BLOCK">Block screen</option>
+              <option value="NOTIFICATION">{t.blockNotification}</option>
+              <option value="SCREEN_BLOCK">{t.blockScreen}</option>
             </select>
           </div>
         </div>
 
         <div className="block-tabs">
-          <button className={`tab-btn ${activeTab === "add" ? "active" : ""}`} onClick={() => setActiveTab("add")}><PlusIcon />Añadir</button>
-          <button className={`tab-btn ${activeTab === "manage" ? "active" : ""}`} onClick={() => setActiveTab("manage")}><TrashIcon />Gestionar ({blockedApps.length})</button>
+          <button className={`tab-btn ${activeTab === "add" ? "active" : ""}`} onClick={() => setActiveTab("add")}><PlusIcon />{t.commonAdd}</button>
+          <button className={`tab-btn ${activeTab === "manage" ? "active" : ""}`} onClick={() => setActiveTab("manage")}><TrashIcon />{t.blockManage} ({blockedApps.length})</button>
         </div>
 
         <div className="tab-content">
@@ -441,14 +440,14 @@ function Block() {
               <div className="search-container" ref={dropdownRef}>
                 <div className="search-input-wrapper">
                   <span className="search-icon"><SearchIcon /></span>
-                  <input ref={searchInputRef} type="text" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setSelectedIndex(-1); setIsDropdownOpen(true); }} onFocus={() => setIsDropdownOpen(true)} placeholder="Buscar aplicación para bloquear..." className="search-input" />
+                  <input ref={searchInputRef} type="text" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setSelectedIndex(-1); setIsDropdownOpen(true); }} onFocus={() => setIsDropdownOpen(true)} placeholder={t.blockSearchApp} className="search-input" />
                   {searchQuery && <button className="search-clear" onClick={() => { setSearchQuery(""); searchInputRef.current?.focus(); }}><CloseIcon /></button>}
                 </div>
 
                 {isDropdownOpen && (
                   <div className="search-dropdown">
                     {isLoadingApps ? (
-                      <div className="dropdown-loading"><div className="loading-spinner"></div><span>Cargando aplicaciones...</span></div>
+                      <div className="dropdown-loading"><div className="loading-spinner"></div><span>{t.blockLoadingApps}</span></div>
                     ) : filteredApplications.length > 0 || manualExecutableCandidate ? (
                       <ul className="process-list">
                         {filteredApplications.map((application, index) => {
@@ -457,7 +456,7 @@ function Block() {
                             <li key={`${application.displayName}-${application.executableName || index}`} className={`process-item ${index === selectedIndex ? "selected" : ""} ${isAlreadyBlocked ? "already-blocked" : ""}`} onClick={() => !isAlreadyBlocked && addBlockedApp(application)} onMouseEnter={() => setSelectedIndex(index)}>
                               <div className="process-icon">{application.iconBase64 ? <img src={application.iconBase64} alt="" /> : <span className="category-icon">{CategoryIcons.other}</span>}</div>
                               <div className="process-info"><span className="process-name">{application.displayName}</span><span className="process-exe">{resolveExecutableForBlocking(application)}</span></div>
-                              <span className="process-category cat-other">instalada</span>
+                              <span className="process-category cat-other">{t.blockInstalled}</span>
                             </li>
                           );
                         })}
@@ -471,15 +470,15 @@ function Block() {
                               <span className="category-icon">{CategoryIcons.other}</span>
                             </div>
                             <div className="process-info">
-                              <span className="process-name">Añadir manualmente</span>
+                              <span className="process-name">{t.blockAddManual}</span>
                               <span className="process-exe">{manualExecutableCandidate}</span>
                             </div>
-                            <span className="process-category cat-productivity">manual</span>
+                            <span className="process-category cat-productivity">{t.blockManual}</span>
                           </li>
                         )}
                       </ul>
-                    ) : searchQuery ? (<div className="dropdown-empty"><p>No se encontraron aplicaciones instaladas</p></div>) : (
-                      <div className="dropdown-hint"><p>Escribe para buscar entre las aplicaciones instaladas</p></div>
+                    ) : searchQuery ? (<div className="dropdown-empty"><p>{t.blockNoAppsFound}</p></div>) : (
+                      <div className="dropdown-hint"><p>{t.blockTypeToSearch}</p></div>
                     )}
                   </div>
                 )}
@@ -498,15 +497,15 @@ function Block() {
                         <li key={app} className="blocked-app-item">
                           <div className="blocked-app-icon">{info.iconBase64 ? <img src={info.iconBase64} alt="" /> : <span className="category-icon">{CategoryIcons.other}</span>}</div>
                           <div className="blocked-app-info"><span className="blocked-app-name">{info.displayName}</span><span className="blocked-app-exe">{app}</span></div>
-                          <button className="remove-app-btn" onClick={() => removeBlockedApp(app)} title="Eliminar de la lista"><TrashIcon /></button>
+                          <button className="remove-app-btn" onClick={() => removeBlockedApp(app)} title={t.blockRemoveFromList}><TrashIcon /></button>
                         </li>
                       );
                     })}
                   </ul>
-                  <button className="reset-list-btn" onClick={resetAppList}><RefreshIcon />Resetear lista completa</button>
+                  <button className="reset-list-btn" onClick={resetAppList}><RefreshIcon />{t.blockResetList}</button>
                 </>
               ) : (
-                <div className="empty-state"><div className="empty-state-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2v20M2 12h20" /></svg></div><p>No hay aplicaciones bloqueadas</p><span>Añade aplicaciones desde la pestaña "Añadir"</span></div>
+                <div className="empty-state"><div className="empty-state-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2v20M2 12h20" /></svg></div><p>{t.blockNoBlockedApps}</p><span>{t.blockAddFromTab}</span></div>
               )}
             </div>
           )}
