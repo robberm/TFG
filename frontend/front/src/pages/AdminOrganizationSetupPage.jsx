@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createAdminOrganization } from "../api/adminApi";
 import { getCurrentUserProfile } from "../api/userApi";
 import "../css/AdminUsers.css";
+import { useLanguage } from "../context/languageContext";
 
 // Icono de edificio
 const BuildingIcon = () => (
@@ -22,6 +23,7 @@ const BuildingIcon = () => (
 );
 
 function AdminOrganizationSetupPage() {
+  const { t } = useLanguage();
   const [organizationName, setOrganizationName] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,7 +35,7 @@ function AdminOrganizationSetupPage() {
 
     const normalizedName = organizationName.trim();
     if (!normalizedName) {
-      setErrorMessage("Debes indicar un nombre para la organización.");
+      setErrorMessage(t.adminOrgNameRequired);
       return;
     }
 
@@ -59,7 +61,7 @@ function AdminOrganizationSetupPage() {
         }
       }
 
-      setErrorMessage(error.message || "No se pudo crear la organización.");
+      setErrorMessage(error.message || t.adminOrgCreateError);
     } finally {
       setIsSubmitting(false);
     }
@@ -71,29 +73,28 @@ function AdminOrganizationSetupPage() {
         <div className="adminSetupIcon">
           <BuildingIcon />
         </div>
-        <h1>Configura tu organización</h1>
+        <h1>{t.adminOrgSetupTitle}</h1>
         <p>
-          Primer acceso detectado: antes de usar la vista admin, debes crear la
-          organización que vas a gestionar.
+          {t.adminOrgSetupSubtitle}
         </p>
       </header>
 
       <section className="adminUsersCard compact">
-        <h2>Alta de organización</h2>
+        <h2>{t.adminOrgCreateTitle}</h2>
 
         <form className="adminUsersForm" onSubmit={handleSubmit}>
           <label>
-            Nombre de la organización
+            {t.adminOrgName}
             <input
               type="text"
               value={organizationName}
               onChange={(event) => setOrganizationName(event.target.value)}
-              placeholder="Ej: Academia Productiva"
+              placeholder={t.adminOrgPlaceholder}
             />
           </label>
 
           <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Creando..." : "Crear organización"}
+            {isSubmitting ? t.commonCreating : t.adminOrgCreateBtn}
           </button>
         </form>
 

@@ -1,5 +1,6 @@
 import React from "react";
 import { formatIsoDate } from "../utils/objectiveHelpers";
+import { useLanguage } from "../../../context/languageContext";
 
 const HabitsSection = ({
   habits,
@@ -10,35 +11,36 @@ const HabitsSection = ({
   onToggleToday,
   isHabitUpdating,
 }) => {
+  const { t } = useLanguage();
   const todayIso = formatIsoDate(new Date());
 
   return (
     <section className="objectivesSection">
       <div className="sectionHeader">
         <div>
-          <h2>Hábitos</h2>
-          <p>Seguimiento diario con rachas y estadísticas</p>
+          <h2>{t.habitsTitle}</h2>
+          <p>{t.habitsSubtitle}</p>
         </div>
 
         <button className="addButton" onClick={onCreate}>
-          <i className="fa fa-plus"></i> Nuevo Hábito
+          <i className="fa fa-plus"></i> {t.habitsNew}
         </button>
       </div>
 
       <div className="tableWrapper">
         <div className="todoTable">
           <div className="tableRow tableHeader">
-            <div className="tableCell">Hoy</div>
-            <div className="tableCell">Título</div>
-            <div className="tableCell">Descripción</div>
-            <div className="tableCell">Racha</div>
-            <div className="tableCell">Mejor</div>
-            <div className="tableCell">Acciones</div>
+            <div className="tableCell">{t.commonToday}</div>
+            <div className="tableCell">{t.commonTitle}</div>
+            <div className="tableCell">{t.commonDescription}</div>
+            <div className="tableCell">{t.habitsStreak}</div>
+            <div className="tableCell">{t.habitsBest}</div>
+            <div className="tableCell">{t.commonActions}</div>
           </div>
 
           {habits.length === 0 ? (
             <div className="emptyState">
-              <p>No hay hábitos creados. Comienza añadiendo uno.</p>
+              <p>{t.habitsEmpty}</p>
             </div>
           ) : (
             habits.map((habit) => {
@@ -91,7 +93,7 @@ const HabitsSection = ({
                     <button
                       className="actionButton editButton"
                       onClick={() => onEdit(habit)}
-                      title="Editar"
+                      title={t.commonEdit}
                     >
                       <i className="fa fa-edit"></i>
                     </button>
@@ -99,7 +101,7 @@ const HabitsSection = ({
                     <button
                       className="actionButton deleteButton"
                       onClick={() => onDelete(habit)}
-                      title="Eliminar"
+                      title={t.commonDelete}
                     >
                       <i className="fa fa-trash"></i>
                     </button>

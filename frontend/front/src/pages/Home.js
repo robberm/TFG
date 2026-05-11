@@ -9,8 +9,9 @@ import { getCurrentUserProfile } from "../api/userApi";
 import { getManagedUsers, getManagedUserGoals } from "../api/adminApi";
 import { calculateGlobalGoalsProgress } from "../features/objectives/utils/objectiveHelpers";
 import { resolveProfileImageUrl } from "../utils/profileImage";
+import { useLanguage } from "../context/languageContext";
 
-const AdminGoalsStats = ({ goals }) => {
+const AdminGoalsStats = ({ goals, t }) => {
   const metrics = useMemo(() => {
     const total = goals.length;
     const completed = goals.filter((goal) => goal.status === "Done").length;
@@ -30,22 +31,22 @@ const AdminGoalsStats = ({ goals }) => {
 
   return (
     <section className="adminGoalsStats">
-      <h3>Estadísticas de goals</h3>
+      <h3>{t.homeGoalsStats}</h3>
       <div className="adminGoalsStatsGrid">
         <article className="adminGoalsMetricCard">
-          <span>Total</span>
+          <span>{t.homeTotal}</span>
           <strong>{metrics.total}</strong>
         </article>
         <article className="adminGoalsMetricCard">
-          <span>Activos</span>
+          <span>{t.homeActive}</span>
           <strong>{metrics.active}</strong>
         </article>
         <article className="adminGoalsMetricCard">
-          <span>En progreso</span>
+          <span>{t.homeInProgress}</span>
           <strong>{metrics.inProgress}</strong>
         </article>
         <article className="adminGoalsMetricCard">
-          <span>Completados</span>
+          <span>{t.homeDone}</span>
           <strong>{metrics.completed}</strong>
         </article>
       </div>
@@ -57,13 +58,14 @@ const AdminGoalsStats = ({ goals }) => {
             style={{ width: `${metrics.progress}%` }}
           ></div>
         </div>
-        <span className="progressText">Avance global del usuario seleccionado</span>
+        <span className="progressText">{t.homeGlobalProgress}</span>
       </div>
     </section>
   );
 };
 
 const Home = () => {
+  const { t } = useLanguage();
   const { todayEvents, refreshTodayEvents, isLoadingTodayEvents } =
     useTodayEvents();
 
@@ -126,7 +128,7 @@ if (isAdmin) {
         <div className="adminUsersCardsGrid">
           {managedUsers.length === 0 && (
             <p className="adminHomeEmptyState">
-              No tienes usuarios subordinados todavía.
+              {t.homeNoManagedUsers}
             </p>
           )}
 
@@ -152,7 +154,7 @@ if (isAdmin) {
                   )}
                   <div className="adminUserCardInfo">
                     <strong>{user.username}</strong>
-                    <span>{user.organizationName || "Sin organización"}</span>
+                    <span>{user.organizationName || t.homeNoOrganization}</span>
                   </div>
                   <button
                     className="adminCloseBtn"
@@ -165,9 +167,9 @@ if (isAdmin) {
                 <div className="adminUserCardBody">
                   {isSelected && (
                     isLoadingAdminGoals ? (
-                      <p className="adminLoadingState">Cargando...</p>
+                      <p className="adminLoadingState">{t.homeLoading}</p>
                     ) : (
-                      <AdminGoalsStats goals={selectedUserGoals} />
+                      <AdminGoalsStats goals={selectedUserGoals} t={t} />
                     )
                   )}
                 </div>

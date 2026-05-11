@@ -5,6 +5,7 @@ import {
   normalizeGoalForm,
   toInputNumberValue,
 } from "../utils/objectiveHelpers";
+import { useLanguage } from "../../../context/languageContext";
 
 const GoalModal = ({
   isOpen,
@@ -17,6 +18,7 @@ const GoalModal = ({
   defaultManagedUserId = null,
 }) => {
   const [form, setForm] = useState(EMPTY_GOAL_FORM);
+  const { t } = useLanguage();
   const isAssignedGoalReadOnlyForUser =
     Boolean(initialData?.assignedByAdmin) && !isAdmin;
 
@@ -157,7 +159,7 @@ const GoalModal = ({
     <div className="modalOverlay" onClick={onClose}>
       <div className="editModal" onClick={(event) => event.stopPropagation()}>
         <div className="modalHeader">
-          <h3>{initialData ? "Editar Goal" : "Nuevo Goal"}</h3>
+          <h3>{initialData ? t.goalEditTitle : t.goalNewTitle}</h3>
           <button type="button" className="closeButton" onClick={onClose}>
             <i className="fa fa-times"></i>
           </button>
@@ -168,7 +170,7 @@ const GoalModal = ({
             <div className="formRow">
               {isAdmin && (
                 <div className="formGroup">
-                  <label htmlFor="goal-assignment-mode">Asignación</label>
+                  <label htmlFor="goal-assignment-mode">{t.commonAssignment}</label>
                   <select
                     id="goal-assignment-mode"
                     value={form.assignmentMode}
@@ -176,9 +178,9 @@ const GoalModal = ({
                       handleChange("assignmentMode", event.target.value)
                     }
                   >
-                    <option value="single">Usuario</option>
-                    <option value="multiple">Varios usuarios</option>
-                    <option value="all">Todos (organización)</option>
+                    <option value="single">{t.commonUser}</option>
+                    <option value="multiple">{t.commonMultipleUsers}</option>
+                    <option value="all">{t.commonAllOrganization}</option>
                   </select>
 
                   {form.assignmentMode === "single" && (
@@ -190,7 +192,7 @@ const GoalModal = ({
                       }
                       required
                     >
-                      <option value="">Selecciona un usuario</option>
+                      <option value="">{t.commonSelectUser}</option>
                       {managedUsers.map((user) => (
                         <option key={user.id} value={user.id}>
                           {user.username}
@@ -217,7 +219,7 @@ const GoalModal = ({
               )}
 
               <div className="formGroup">
-                <label htmlFor="goal-title">Título</label>
+                <label htmlFor="goal-title">{t.commonTitle}</label>
                 <input
                   id="goal-title"
                   type="text"
@@ -226,13 +228,13 @@ const GoalModal = ({
                   onChange={(event) =>
                     handleChange("titulo", event.target.value)
                   }
-                  placeholder="Ej. Terminar proyecto"
+                  placeholder={t.goalTitlePlaceholder}
                   required
                 />
               </div>
 
               <div className="formGroup">
-                <label htmlFor="goal-priority">Prioridad</label>
+                <label htmlFor="goal-priority">{t.commonPriority}</label>
                 <select
                   id="goal-priority"
                   value={form.priority}
@@ -241,16 +243,16 @@ const GoalModal = ({
                     handleChange("priority", event.target.value)
                   }
                 >
-                  <option value="Alta">Alta</option>
-                  <option value="Media">Media</option>
-                  <option value="Baja">Baja</option>
+                  <option value="Alta">{t.priorityHigh}</option>
+                  <option value="Media">{t.priorityMedium}</option>
+                  <option value="Baja">{t.priorityLow}</option>
                 </select>
               </div>
             </div>
 
             <div className="formRow">
               <div className="formGroup">
-                <label htmlFor="goal-description">Descripción</label>
+                <label htmlFor="goal-description">{t.commonDescription}</label>
                 <textarea
                   id="goal-description"
                   rows="3"
@@ -259,17 +261,17 @@ const GoalModal = ({
                   onChange={(event) =>
                     handleChange("description", event.target.value)
                   }
-                  placeholder="Describe tu objetivo..."
+                  placeholder={t.goalDescriptionPlaceholder}
                 />
               </div>
 
               <div className="formGroup">
-                <label htmlFor="goal-status">Estado</label>
+                <label htmlFor="goal-status">{t.commonStatus}</label>
                 {isAdmin ? (
                   <input
                     id="goal-status"
                     type="text"
-                    value={initialData?.status === "Done" ? "Completado" : initialData?.status === "InProgress" ? "En progreso" : "Sin empezar"}
+                    value={initialData?.status === "Done" ? t.goalStatusDone : initialData?.status === "InProgress" ? t.goalStatusInProgress : t.goalStatusNotStarted}
                     readOnly
                     disabled
                   />
@@ -281,9 +283,9 @@ const GoalModal = ({
                       handleChange("status", event.target.value)
                     }
                   >
-                    <option value="NotStarted">Sin empezar</option>
-                    <option value="InProgress">En progreso</option>
-                    <option value="Done">Completado</option>
+                    <option value="NotStarted">{t.goalStatusNotStarted}</option>
+                    <option value="InProgress">{t.goalStatusInProgress}</option>
+                    <option value="Done">{t.goalStatusDone}</option>
                   </select>
                 )}
 
@@ -297,7 +299,7 @@ const GoalModal = ({
                       handleNumericToggle(event.target.checked)
                     }
                   />
-                  Objetivo numérico
+                  {t.goalNumericObjective}
                 </label>
 
                 <label className="checkboxRow" htmlFor="goal-active">
@@ -310,7 +312,7 @@ const GoalModal = ({
                       handleChange("active", event.target.checked)
                     }
                   />
-                  Activo
+                  {t.commonActive}
                 </label>
               </div>
             </div>
@@ -319,7 +321,7 @@ const GoalModal = ({
               <>
                 <div className="formRow">
                   <div className="formGroup">
-                    <label htmlFor="goal-progress">Valor actual</label>
+                    <label htmlFor="goal-progress">{t.goalCurrentValue}</label>
                     <input
                       id="goal-progress"
                       type="number"
@@ -328,12 +330,12 @@ const GoalModal = ({
                       onChange={(event) =>
                         handleChange("valorProgreso", event.target.value)
                       }
-                      placeholder="0"
+                      placeholder={t.goalCurrentValuePlaceholder}
                     />
                   </div>
 
                   <div className="formGroup">
-                    <label htmlFor="goal-target">Valor objetivo</label>
+                    <label htmlFor="goal-target">{t.goalTargetValue}</label>
                     <input
                       id="goal-target"
                       type="number"
@@ -343,14 +345,14 @@ const GoalModal = ({
                       onChange={(event) =>
                         handleChange("valorObjetivo", event.target.value)
                       }
-                      placeholder="100"
+                      placeholder={t.goalTargetValuePlaceholder}
                     />
                   </div>
                 </div>
 
                 <div className="formRow singleColumn">
                   <div className="formGroup">
-                    <label htmlFor="goal-notes">Nota del progreso</label>
+                    <label htmlFor="goal-notes">{t.goalProgressNote}</label>
                     <textarea
                       id="goal-notes"
                       rows="2"
@@ -358,7 +360,7 @@ const GoalModal = ({
                       onChange={(event) =>
                         handleChange("notes", event.target.value)
                       }
-                      placeholder="Opcional: nota para el historial de progreso"
+                      placeholder={t.goalProgressNotePlaceholder}
                     />
                   </div>
                 </div>
@@ -367,7 +369,7 @@ const GoalModal = ({
 
             <div className="formActions">
               <button type="button" className="cancelButton" onClick={onClose}>
-                Cancelar
+                {t.commonCancel}
               </button>
               <button
                 type="submit"
@@ -375,10 +377,10 @@ const GoalModal = ({
                 disabled={isSubmitting}
               >
                 {isSubmitting
-                  ? "Guardando..."
+                  ? t.commonSaving
                   : initialData
-                    ? "Actualizar"
-                    : "Crear Goal"}
+                    ? t.commonUpdate
+                    : t.goalCreateButton}
               </button>
             </div>
           </form>

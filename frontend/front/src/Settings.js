@@ -10,10 +10,12 @@ import {
   updateCurrentUserProfileImage,
 } from "./api/userApi";
 import { getApiErrorMessage } from "./api/apiClient";
+import { useLanguage } from "./context/languageContext";
 
 const Settings = () => {
   const { darkMode, translucentMode, toggleDarkMode, toggleTranslucentMode } =
     useDarkMode();
+  const { language, setLanguage, t } = useLanguage();
 
   const [username, setUsername] = useState(
     localStorage.getItem("username") || "",
@@ -55,7 +57,7 @@ const Settings = () => {
         localStorage.removeItem("profileImage");
       }
     } catch (error) {
-      setProfileMessage(getApiErrorMessage(error, "No se pudo cargar el perfil."));
+      setProfileMessage(getApiErrorMessage(error, t.messages.profileLoadError));
       setProfileError(true);
     }
   };
@@ -82,12 +84,12 @@ const Settings = () => {
       }
 
       setProfileMessage(
-        data?.message || "Imagen de perfil actualizada correctamente.",
+        data?.message || t.messages.profileUpdateSuccess,
       );
       setProfileError(false);
       e.target.value = "";
     } catch (error) {
-      setProfileMessage(getApiErrorMessage(error, "No se pudo actualizar la foto de perfil."));
+      setProfileMessage(getApiErrorMessage(error, t.messages.profileUpdateError));
       setProfileError(true);
       e.target.value = "";
     }
@@ -98,10 +100,10 @@ const Settings = () => {
       const data = await deleteCurrentUserProfileImage();
 
       setProfileImage("");
-      setProfileMessage(data?.message || "Imagen eliminada correctamente.");
+      setProfileMessage(data?.message || t.messages.profileDeleteSuccess);
       setProfileError(false);
     } catch (error) {
-      setProfileMessage(getApiErrorMessage(error, "No se pudo eliminar la foto."));
+      setProfileMessage(getApiErrorMessage(error, t.messages.profileDeleteError));
       setProfileError(true);
     }
   };
@@ -109,7 +111,7 @@ const Settings = () => {
   const handleUsernameSave = async () => {
     if (!username || !currentPassword) {
       setUsernameMessage(
-        "Debes introducir el nuevo username y tu contraseña actual.",
+        t.messages.usernameMissingData,
       );
       setUsernameError(true);
       return;
@@ -118,7 +120,7 @@ const Settings = () => {
     try {
       setUsernameMessage("");
       const data = await changeCurrentUsername(username, currentPassword);
-      const message = data?.message || "Username actualizado correctamente.";
+      const message = data?.message || t.messages.usernameUpdateSuccess;
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("username", data.username);
@@ -128,20 +130,20 @@ const Settings = () => {
       setUsernameError(false);
       setCurrentPassword("");
     } catch (error) {
-      setUsernameMessage(getApiErrorMessage(error, "No se pudo actualizar el username."));
+      setUsernameMessage(getApiErrorMessage(error, t.messages.usernameUpdateError));
       setUsernameError(true);
     }
   };
 
   const handlePasswordSave = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setPasswordMessage("Debes rellenar todos los campos.");
+      setPasswordMessage(t.messages.passwordMissingData);
       setPasswordError(true);
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setPasswordMessage("Las contraseñas no coinciden.");
+      setPasswordMessage(t.messages.passwordNoMatch);
       setPasswordError(true);
       return;
     }
@@ -153,7 +155,7 @@ const Settings = () => {
         newPassword,
         confirmPassword,
       );
-      const message = data?.message || "Contraseña actualizada correctamente.";
+      const message = data?.message || t.messages.passwordUpdateSuccess;
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("username", data.username);
@@ -164,7 +166,7 @@ const Settings = () => {
       setNewPassword("");
       setConfirmPassword("");
     } catch (error) {
-      setPasswordMessage(getApiErrorMessage(error, "No se pudo actualizar la contraseña."));
+      setPasswordMessage(getApiErrorMessage(error, t.messages.passwordUpdateError));
       setPasswordError(true);
     }
   };
@@ -172,18 +174,39 @@ const Settings = () => {
   return (
     <div className="settingsPage">
       <div className="settingsContainer">
-        <h1 className="settingsTitle">Settings</h1>
+        <h1 className="settingsTitle">{t.settings}</h1>
 
+        
         <section className="settingsCard">
           <div className="settingsCardHeader">
-            <h2>Apariencia</h2>
-            <p>Personaliza cómo se ve la aplicación.</p>
+            <h2>{t.language}</h2>
           </div>
 
           <div className="settingsRow">
             <div>
-              <span className="settingsLabel">Tema oscuro</span>
-              <p className="settingsHint">Activa o desactiva el modo oscuro.</p>
+              <span className="settingsLabel">{t.language}</span>
+            </div>
+
+            <select
+              className="settingsInput"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+            >
+              <option value="es">{t.spanish}</option>
+              <option value="en">{t.english}</option>
+            </select>
+          </div>
+        </section>
+<section className="settingsCard">
+          <div className="settingsCardHeader">
+            <h2>{t.appearance}</h2>
+            <p>{t.appearanceDesc}</p>
+          </div>
+
+          <div className="settingsRow">
+            <div>
+              <span className="settingsLabel">{t.darkTheme}</span>
+              <p className="settingsHint">{t.darkThemeHint}</p>
             </div>
 
             <button
@@ -197,9 +220,9 @@ const Settings = () => {
 
           <div className="settingsRow">
             <div>
-              <span className="settingsLabel">Tema translúcido</span>
+              <span className="settingsLabel">{t.translucentTheme}</span>
               <p className="settingsHint">
-                Hace la ventana transparente para que se vea el escritorio.
+                {t.translucentThemeHint}
               </p>
             </div>
 
@@ -215,8 +238,8 @@ const Settings = () => {
 
         <section className="settingsCard">
           <div className="settingsCardHeader">
-            <h2>Perfil</h2>
-            <p>Actualiza tu foto de perfil.</p>
+            <h2>{t.profile}</h2>
+            <p>{t.profileDesc}</p>
           </div>
 
           <div className="profileSection">
@@ -236,7 +259,7 @@ const Settings = () => {
 
             <div className="profileActions">
               <label className="settingsButton primary">
-                Subir foto
+                {t.uploadPhoto}
                 <input
                   type="file"
                   accept="image/*"
@@ -250,7 +273,7 @@ const Settings = () => {
                 className="settingsButton secondary"
                 onClick={handleRemoveProfileImage}
               >
-                Quitar foto
+                {t.removePhoto}
               </button>
             </div>
           </div>
@@ -263,13 +286,13 @@ const Settings = () => {
 
         <section className="settingsCard">
           <div className="settingsCardHeader">
-            <h2>Cuenta</h2>
-            <p>Actualiza tu nombre de usuario.</p>
+            <h2>{t.account}</h2>
+            <p>{t.accountDesc}</p>
           </div>
 
           <div className="settingsFieldGroup">
             <label className="settingsFieldLabel" htmlFor="username">
-              Nombre de usuario
+              {t.username}
             </label>
             <input
               id="username"
@@ -277,7 +300,7 @@ const Settings = () => {
               className="settingsInput"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Introduce tu nuevo nombre de usuario"
+              placeholder={t.placeholders.newUsername}
             />
           </div>
 
@@ -286,7 +309,7 @@ const Settings = () => {
               className="settingsFieldLabel"
               htmlFor="usernameCurrentPassword"
             >
-              Contraseña actual
+              {t.currentPassword}
             </label>
             <input
               id="usernameCurrentPassword"
@@ -294,7 +317,7 @@ const Settings = () => {
               className="settingsInput"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="Introduce tu contraseña actual"
+              placeholder={t.placeholders.currentPassword}
             />
           </div>
 
@@ -303,7 +326,7 @@ const Settings = () => {
             className="settingsButton primary"
             onClick={handleUsernameSave}
           >
-            Guardar username
+            {t.saveUsername}
           </button>
           {usernameMessage && (
             <p className={`accountMessage ${usernameError ? "error" : "success"}`}>
@@ -314,13 +337,13 @@ const Settings = () => {
 
         <section className="settingsCard">
           <div className="settingsCardHeader">
-            <h2>Seguridad</h2>
-            <p>Cambia tu contraseña de acceso.</p>
+            <h2>{t.security}</h2>
+            <p>{t.securityDesc}</p>
           </div>
 
           <div className="settingsFieldGroup">
             <label className="settingsFieldLabel" htmlFor="currentPassword">
-              Contraseña actual
+              {t.currentPassword}
             </label>
             <input
               id="currentPassword"
@@ -328,13 +351,13 @@ const Settings = () => {
               className="settingsInput"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="Introduce tu contraseña actual"
+              placeholder={t.placeholders.currentPassword}
             />
           </div>
 
           <div className="settingsFieldGroup">
             <label className="settingsFieldLabel" htmlFor="newPassword">
-              Nueva contraseña
+              {t.newPassword}
             </label>
             <input
               id="newPassword"
@@ -342,13 +365,13 @@ const Settings = () => {
               className="settingsInput"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Introduce tu nueva contraseña"
+              placeholder={t.placeholders.newPassword}
             />
           </div>
 
           <div className="settingsFieldGroup">
             <label className="settingsFieldLabel" htmlFor="confirmPassword">
-              Confirmar nueva contraseña
+              {t.confirmPassword}
             </label>
             <input
               id="confirmPassword"
@@ -356,7 +379,7 @@ const Settings = () => {
               className="settingsInput"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Repite tu nueva contraseña"
+              placeholder={t.placeholders.confirmPassword}
             />
           </div>
 
@@ -365,7 +388,7 @@ const Settings = () => {
             className="settingsButton primary"
             onClick={handlePasswordSave}
           >
-            Cambiar contraseña
+            {t.changePassword}
           </button>
           {passwordMessage && (
             <p className={`accountMessage ${passwordError ? "error" : "success"}`}>
