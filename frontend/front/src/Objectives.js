@@ -267,7 +267,7 @@ const Objectives = () => {
    */
   const handleHabitSubmit = async (payload) => {
     if (!payload.titulo.trim()) {
-      setErrorMessage("El titulo del habito es obligatorio.");
+      setErrorMessage(t.objectivesHabitTitleRequired);
       return;
     }
 
@@ -283,7 +283,7 @@ const Objectives = () => {
       closeHabitModal();
       await loadObjectivesData(false);
     } catch (error) {
-      setErrorMessage(error.message || "No se pudo guardar el habito.");
+      setErrorMessage(error.message || t.objectivesHabitSaveError);
     } finally {
       setIsSubmittingHabit(false);
     }
@@ -294,7 +294,7 @@ const Objectives = () => {
    */
   const handleGoalDelete = async (goal) => {
     const confirmed = window.confirm(
-      `Seguro que quieres eliminar "${goal.titulo}"?`,
+      `${t.objectivesDeleteGoalConfirmPrefix} "${goal.titulo}"?`,
     );
     if (!confirmed) return;
 
@@ -302,7 +302,7 @@ const Objectives = () => {
       await deleteGoal(goal.id);
       await loadObjectivesData(false);
     } catch (error) {
-      setErrorMessage(error.message || "No se pudo eliminar el goal.");
+      setErrorMessage(error.message || t.objectivesGoalDeleteError);
     }
   };
 
@@ -311,7 +311,7 @@ const Objectives = () => {
    */
   const handleHabitDelete = async (habit) => {
     const confirmed = window.confirm(
-      `Seguro que quieres eliminar "${habit.titulo}"?`,
+      `${t.objectivesDeleteHabitConfirmPrefix} "${habit.titulo}"?`,
     );
     if (!confirmed) return;
 
@@ -319,7 +319,7 @@ const Objectives = () => {
       await deleteHabit(habit.id);
       await loadObjectivesData(false);
     } catch (error) {
-      setErrorMessage(error.message || "No se pudo eliminar el habito.");
+      setErrorMessage(error.message || t.objectivesHabitDeleteError);
     }
   };
 
@@ -379,14 +379,14 @@ const Objectives = () => {
         date: todayIso,
         completed: shouldComplete,
         notes: shouldComplete
-          ? "Marcado como completado hoy."
-          : "Desmarcado desde frontend.",
+          ? t.objectivesHabitMarkedTodayNote
+          : t.objectivesHabitUnmarkedFrontendNote,
       });
 
       await loadObjectivesData(false);
     } catch (error) {
       await loadObjectivesData(false);
-      setErrorMessage(error.message || "No se pudo actualizar el habito.");
+      setErrorMessage(error.message || t.objectivesHabitUpdateError);
     } finally {
       setIsHabitUpdating(false);
     }
@@ -396,18 +396,18 @@ const Objectives = () => {
     <div className="objectivesPage">
       <div className="pageHeader objectivesHeader">
         <div>
-          <h1>Objetivos</h1>
+          <h1>{t.objectivesTitle}</h1>
           <p>
             {isAdmin
-              ? "Asigna y supervisa goals de tus usuarios subordinados."
-              : "Goals a largo plazo, habitos diarios y estadisticas"}
+              ? t.objectivesAdminSubtitle
+              : t.objectivesSubtitle}
           </p>
         </div>
       </div>
 
       {isAdmin && (
         <div className="adminScopeSelector">
-          <label htmlFor="managed-user-goals">Usuario subordinado</label>
+          <label htmlFor="managed-user-goals">{t.objectivesManagedUserLabel}</label>
           <select
             id="managed-user-goals"
             value={selectedManagedUserId ?? ""}
@@ -417,9 +417,9 @@ const Objectives = () => {
               )
             }
           >
-            <option value="">Todos los asignados</option>
+            <option value="">{t.objectivesAllAssignedOption}</option>
             {managedUsers.length === 0 && (
-              <option value="">Sin usuarios subordinados</option>
+              <option value="">{t.objectivesNoManagedUsersOption}</option>
             )}
             {managedUsers.map((user) => (
               <option key={user.id} value={user.id}>
@@ -433,7 +433,7 @@ const Objectives = () => {
       {isLoading ? (
         <div className="objectivesLoadingState">
           <span className="loaderDot"></span>
-          <span>Cargando objetivos...</span>
+          <span>{t.objectivesLoading}</span>
         </div>
       ) : (
         <>
