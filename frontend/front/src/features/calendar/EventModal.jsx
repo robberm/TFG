@@ -664,7 +664,7 @@ const EventModal = ({
                     disabled={isAssignedEventReadOnly}
                     onClick={handleCustomReminderAdd}
                   >
-                    Añadir
+                    {t.commonAdd}
                   </button>
                 </div>
                 <div className="gcal-reminder-list">

@@ -28,7 +28,8 @@
     "web": "react-scripts start",
     "electron": "electron .",
     "electron-dev": "concurrently \"npm run web\" \"wait-on http://localhost:3000 && electron .\"",
-    "dist": "npm run build && electron-builder"
+    "dist": "npm run build && electron-builder",
+    "i18n:audit": "node scripts/i18n-audit.js"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

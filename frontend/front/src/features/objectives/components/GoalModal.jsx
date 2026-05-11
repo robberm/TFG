@@ -369,7 +369,7 @@ const GoalModal = ({
 
             <div className="formActions">
               <button type="button" className="cancelButton" onClick={onClose}>
-                Cancelar
+                {t.commonCancel}
               </button>
               <button
                 type="submit"
@@ -377,9 +377,9 @@ const GoalModal = ({
                 disabled={isSubmitting}
               >
                 {isSubmitting
-                  ? "Guardando..."
+                  ? t.commonSaving
                   : initialData
-                    ? "Actualizar"
+                    ? t.commonUpdate
                     : t.goalCreateButton}
               </button>
             </div>
