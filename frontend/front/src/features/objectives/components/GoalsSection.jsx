@@ -6,6 +6,7 @@ import {
   getPriorityColor,
   sortGoalsByPriority,
 } from "../utils/objectiveHelpers";
+import { useLanguage } from "../../../context/languageContext";
 
 const GoalsSection = ({
   goals,
@@ -15,6 +16,7 @@ const GoalsSection = ({
   isAdmin = false,
   showAssignedUserColumn = false,
 }) => {
+  const { t } = useLanguage();
   const [showCompleted, setShowCompleted] = useState(false);
 
   /**
@@ -60,7 +62,7 @@ const GoalsSection = ({
             <strong className={goal.status === "Done" ? "completedText" : ""}>
               {goal.titulo}
               {goal.assignedByAdmin && (
-                <span className="ownerTag assigned">Asignado</span>
+                <span className="ownerTag assigned">{t.goalsAssigned}</span>
               )}
             </strong>
           </div>
@@ -77,7 +79,7 @@ const GoalsSection = ({
             <span className={goal.status === "Done" ? "completedText" : ""}>
               {goal.description || "—"}
               {goal.assignedByAdmin && goal.assignedByAdminUsername && (
-                <div className="goalMetaText">Por: {goal.assignedByAdminUsername}</div>
+                <div className="goalMetaText">{t.commonBy}: {goal.assignedByAdminUsername}</div>
               )}
             </span>
           </div>
@@ -125,7 +127,7 @@ const GoalsSection = ({
             <button
               className="actionButton editButton"
               onClick={() => onEdit(goal)}
-              title="Editar"
+              title={t.commonEdit}
             >
               <i className="fa fa-edit"></i>
             </button>
@@ -134,7 +136,7 @@ const GoalsSection = ({
               <button
                 className="actionButton deleteButton"
                 onClick={() => onDelete(goal)}
-                title="Eliminar"
+                title={t.commonDelete}
               >
                 <i className="fa fa-trash"></i>
               </button>
@@ -148,30 +150,30 @@ const GoalsSection = ({
     <section className="objectivesSection">
       <div className="sectionHeader">
         <div>
-          <h2>Goals</h2>
-          <p>Metas a largo plazo con seguimiento de progreso</p>
+          <h2>{t.goalsTitle}</h2>
+          <p>{t.goalsSubtitle}</p>
         </div>
 
         <button className="addButton" onClick={onCreate}>
-          <i className="fa fa-plus"></i> Nuevo Goal
+          <i className="fa fa-plus"></i> {t.goalsNew}
         </button>
       </div>
 
       <div className="tableWrapper">
         <div className="todoTable">
           <div className="tableRow tableHeader">
-            <div className="tableCell">Título</div>
-            {showAssignedUserColumn && <div className="tableCell">Usuario</div>}
-            <div className="tableCell">Descripción</div>
-            <div className="tableCell">Prioridad</div>
-            <div className="tableCell">Estado</div>
-            <div className="tableCell">Progreso</div>
-            <div className="tableCell">Acciones</div>
+            <div className="tableCell">{t.commonTitle}</div>
+            {showAssignedUserColumn && <div className="tableCell">{t.commonUser}</div>}
+            <div className="tableCell">{t.commonDescription}</div>
+            <div className="tableCell">{t.commonPriority}</div>
+            <div className="tableCell">{t.commonStatus}</div>
+            <div className="tableCell">{t.commonProgress}</div>
+            <div className="tableCell">{t.commonActions}</div>
           </div>
 
           {activeGoals.length === 0 ? (
             <div className="emptyState">
-              <p>No hay goals activos. Comienza añadiendo uno.</p>
+              <p>{t.goalsEmpty}</p>
             </div>
           ) : (
             renderGoalRows(activeGoals)
@@ -188,8 +190,8 @@ const GoalsSection = ({
           >
             <span>
               {showCompleted
-                ? "Ocultar completados"
-                : `Mostrar completados (${completedGoals.length})`}
+                ? t.goalsHideCompleted
+                : `${t.goalsShowCompleted} (${completedGoals.length})`}
             </span>
             <i
               className={`fa ${showCompleted ? "fa-chevron-up" : "fa-chevron-down"}`}
@@ -200,13 +202,13 @@ const GoalsSection = ({
             <div className="tableWrapper">
               <div className="todoTable">
                 <div className="tableRow tableHeader">
-                  <div className="tableCell">Título</div>
-                  {showAssignedUserColumn && <div className="tableCell">Usuario</div>}
-                  <div className="tableCell">Descripción</div>
-                  <div className="tableCell">Prioridad</div>
-                  <div className="tableCell">Estado</div>
-                  <div className="tableCell">Progreso</div>
-                  <div className="tableCell">Acciones</div>
+                  <div className="tableCell">{t.commonTitle}</div>
+                  {showAssignedUserColumn && <div className="tableCell">{t.commonUser}</div>}
+                  <div className="tableCell">{t.commonDescription}</div>
+                  <div className="tableCell">{t.commonPriority}</div>
+                  <div className="tableCell">{t.commonStatus}</div>
+                  <div className="tableCell">{t.commonProgress}</div>
+                  <div className="tableCell">{t.commonActions}</div>
                 </div>
                 {renderGoalRows(completedGoals)}
               </div>

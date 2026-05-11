@@ -3,11 +3,13 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import { clearActiveSessionUser } from "../../api/authApi";
 
 import "../../css/UserMenu.css";
+import { useLanguage } from "../../context/languageContext";
 
 function UserMenu() {
+  const { t } = useLanguage();
   const [userMenuIsOpen, setUserMenuIsOpen] = useState(false);
   const [username, setUsername] = useState(
-    localStorage.getItem("username") || "User",
+    localStorage.getItem("username") || t.userDefault,
   );
   const [profileImage, setProfileImage] = useState(localStorage.getItem("profileImage") || "");
 
@@ -46,7 +48,7 @@ function UserMenu() {
     try {
       await clearActiveSessionUser();
     } catch (err) {
-      console.warn("Log out failed.", err);
+      console.warn(t.logoutFailed, err);
     }
 
     localStorage.removeItem("token");
@@ -80,7 +82,7 @@ function UserMenu() {
 
         <div className="userInfo">
           <span className="userName">{username}</span>
-          <span className="userRole">Mi cuenta</span>
+          <span className="userRole">{t.myAccount}</span>
         </div>
 
         <i
@@ -96,12 +98,12 @@ function UserMenu() {
             onClick={() => setUserMenuIsOpen(false)}
           >
             <i className="fa fa-cog"></i>
-            <span>Settings</span>
+            <span>{t.settings}</span>
           </Link>
 
           <div className="menuItem logout" onClick={handleLogout}>
             <i className="fa fa-sign-out-alt"></i>
-            <span>Sign Out</span>
+            <span>{t.signOut}</span>
           </div>
         </div>
       )}

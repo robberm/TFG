@@ -5,8 +5,10 @@ import {
   formatIsoDate,
   getStartOfWeek,
 } from "../utils/objectiveHelpers";
+import { useLanguage } from "../../../context/languageContext";
 
 const ObjectivesDashboard = ({ goals, habits, logs }) => {
+  const { t } = useLanguage();
   const todayIso = formatIsoDate(new Date());
 
   /**
@@ -121,7 +123,7 @@ const ObjectivesDashboard = ({ goals, habits, logs }) => {
         <article className="summaryCard">
           <div className="summaryCardContent">
             <div className="summaryTextBlock">
-              <span className="summaryLabel">Avance goals</span>
+              <span className="summaryLabel">{t.dashboardGoalsProgress}</span>
               <strong className="summaryValue">
                 {metrics.globalGoalsProgress}%
               </strong>
@@ -133,7 +135,7 @@ const ObjectivesDashboard = ({ goals, habits, logs }) => {
         <article className="summaryCard">
           <div className="summaryCardContent">
             <div className="summaryTextBlock">
-              <span className="summaryLabel">Completados hoy</span>
+              <span className="summaryLabel">{t.dashboardDoneToday}</span>
               <strong className="summaryValue">
                 {metrics.completedToday}/{habits.length}
               </strong>
@@ -145,7 +147,7 @@ const ObjectivesDashboard = ({ goals, habits, logs }) => {
         <article className="summaryCard">
           <div className="summaryCardContent">
             <div className="summaryTextBlock">
-              <span className="summaryLabel">Cumplimiento semanal</span>
+              <span className="summaryLabel">{t.dashboardWeeklyRate}</span>
               <strong className="summaryValue">{metrics.weeklyRate}%</strong>
             </div>
             {renderRing(metrics.weeklyRate, "#43e97b", "#38f9d7")}
@@ -155,7 +157,7 @@ const ObjectivesDashboard = ({ goals, habits, logs }) => {
         <article className="summaryCard">
           <div className="summaryCardContent">
             <div className="summaryTextBlock">
-              <span className="summaryLabel">Mejor racha</span>
+              <span className="summaryLabel">{t.dashboardBestStreak}</span>
               <strong className="summaryValue">
                 {metrics.bestHabitStreak}
               </strong>
@@ -167,13 +169,13 @@ const ObjectivesDashboard = ({ goals, habits, logs }) => {
       <div className="dashboardGrid">
         <article className="dashboardCard">
           <div className="cardHeader">
-            <h3>Resumen de Goals</h3>
+            <h3>{t.dashboardGoalsSummary}</h3>
           </div>
 
           <div className="goalsSummaryPanel">
             <div className="goalsSummaryTop">
               <div className="goalsSummaryMainMetric">
-                <span className="goalsSummaryLabel">Avance global</span>
+                <span className="goalsSummaryLabel">{t.homeGlobalProgress}</span>
                 <strong className="goalsSummaryBigValue">
                   {metrics.globalGoalsProgress}%
                 </strong>
@@ -188,34 +190,34 @@ const ObjectivesDashboard = ({ goals, habits, logs }) => {
                 ></div>
               </div>
               <span className="progressText">
-                Progreso medio de los goals activos
+                {t.dashboardGoalsAverageProgress}
               </span>
             </div>
 
             <div className="goalsMetricsGrid">
               <div className="goalsMetricCard">
-                <span className="goalsMetricLabel">Activos</span>
+                <span className="goalsMetricLabel">{t.homeActive}</span>
                 <strong className="goalsMetricValue">
                   {metrics.activeGoals}
                 </strong>
               </div>
 
               <div className="goalsMetricCard">
-                <span className="goalsMetricLabel">En progreso</span>
+                <span className="goalsMetricLabel">{t.homeInProgress}</span>
                 <strong className="goalsMetricValue">
                   {metrics.goalsInProgress}
                 </strong>
               </div>
 
               <div className="goalsMetricCard">
-                <span className="goalsMetricLabel">Completados</span>
+                <span className="goalsMetricLabel">{t.homeDone}</span>
                 <strong className="goalsMetricValue">
                   {metrics.completedGoals}
                 </strong>
               </div>
 
               <div className="goalsMetricCard">
-                <span className="goalsMetricLabel">Total</span>
+                <span className="goalsMetricLabel">{t.homeTotal}</span>
                 <strong className="goalsMetricValue">
                   {metrics.totalGoals}
                 </strong>
@@ -226,7 +228,7 @@ const ObjectivesDashboard = ({ goals, habits, logs }) => {
 
         <article className="dashboardCard">
           <div className="cardHeader">
-            <h3>Actividad Semanal</h3>
+            <h3>{t.dashboardWeeklyActivity}</h3>
           </div>
 
           <div className="weeklyBars">

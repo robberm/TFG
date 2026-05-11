@@ -1,4 +1,5 @@
 import React from "react";
+import { useLanguage } from "../../context/languageContext";
 
 const CalendarHeader = ({
   dateText,
@@ -8,12 +9,14 @@ const CalendarHeader = ({
   onNext,
   onChangeView,
 }) => {
+  const { t } = useLanguage();
+
   return (
     <div className="calendar-header">
       <div className="navigation">
-        <button onClick={onPrevious}>Anterior</button>
-        <button onClick={onToday}>Hoy</button>
-        <button onClick={onNext}>Siguiente</button>
+        <button onClick={onPrevious}>{t.calendarPrevious}</button>
+        <button onClick={onToday}>{t.calendarToday}</button>
+        <button onClick={onNext}>{t.calendarNext}</button>
       </div>
 
       <div className="current-date">{dateText}</div>
@@ -23,19 +26,19 @@ const CalendarHeader = ({
           className={viewMode === "day" ? "active" : ""}
           onClick={() => onChangeView("day")}
         >
-          Día
+          {t.calendarDay}
         </button>
         <button
           className={viewMode === "week" ? "active" : ""}
           onClick={() => onChangeView("week")}
         >
-          Semana
+          {t.calendarWeek}
         </button>
         <button
           className={viewMode === "month" ? "active" : ""}
           onClick={() => onChangeView("month")}
         >
-          Mes
+          {t.calendarMonth}
         </button>
       </div>
     </div>
