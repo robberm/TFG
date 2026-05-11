@@ -1,6 +1,37 @@
 .admin-assignment-panel { display:flex; flex-direction:column; gap:.65rem; margin-bottom:1rem; }
 .admin-assignment-panel label { color: var(--text-secondary); font-size: .75rem; font-weight:600; text-transform: uppercase; letter-spacing:.5px; }
-.admin-assignment-input { width:100%; background: rgba(255,255,255,.03); border:1px solid var(--border-color); border-radius:12px; color:var(--text-main); padding:12px 14px; }
+
+.admin-assignment-input {
+  width:100%;
+  background: rgba(255,255,255,.03);
+  border:1px solid var(--border-color);
+  border-radius:12px;
+  color:var(--text-main);
+  padding:12px 14px;
+  transition: all .2s ease;
+}
+
+select.admin-assignment-input {
+  cursor: pointer;
+  appearance: none;
+  padding-right: 38px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2399a2b3' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+
+.admin-assignment-input:focus {
+  border-color: #667eea;
+  background-color: rgba(102,126,234,.05);
+  box-shadow: 0 0 0 3px rgba(102,126,234,.1);
+  outline: none;
+}
+
+.admin-assignment-input option {
+  background: #1c2233;
+  color: #fff;
+}
+
 .admin-assignment-all-confirm { border:1px dashed rgba(102,126,234,.45); background:rgba(102,126,234,.08); border-radius:12px; padding:.7rem .85rem; color:var(--text-main); font-size:.9rem; }
 .admin-assignment-multi { display:flex; flex-direction:column; gap:.6rem; }
 .admin-assignment-tags { display:flex; flex-wrap:wrap; gap:.4rem; }
@@ -9,3 +40,17 @@
 .admin-assignment-result { width:100%; display:flex; justify-content:space-between; background:transparent; border:none; color:var(--text-main); padding:.45rem .55rem; border-radius:8px; cursor:pointer; }
 .admin-assignment-result:hover { background:rgba(102,126,234,.1); }
 .admin-assignment-result.selected { background:rgba(102,126,234,.18); }
+
+.admin-assignment-results::-webkit-scrollbar { width: 8px; }
+.admin-assignment-results::-webkit-scrollbar-track { background: rgba(255,255,255,.04); border-radius: 10px; }
+.admin-assignment-results::-webkit-scrollbar-thumb { background: rgba(120,130,160,.55); border-radius: 10px; }
+.admin-assignment-results::-webkit-scrollbar-thumb:hover { background: rgba(120,130,160,.75); }
+
+body.light .admin-assignment-input,
+body.light .admin-assignment-input::placeholder,
+body.light .admin-assignment-panel label,
+body.light .admin-assignment-result,
+body.light .admin-assignment-tag,
+body.light .admin-assignment-all-confirm {
+  color: #fff !important;
+}
