@@ -5,6 +5,7 @@ import {
   normalizeGoalForm,
   toInputNumberValue,
 } from "../utils/objectiveHelpers";
+import { useLanguage } from "../../../context/languageContext";
 
 const GoalModal = ({
   isOpen,
@@ -17,6 +18,7 @@ const GoalModal = ({
   defaultManagedUserId = null,
 }) => {
   const [form, setForm] = useState(EMPTY_GOAL_FORM);
+  const { t } = useLanguage();
   const isAssignedGoalReadOnlyForUser =
     Boolean(initialData?.assignedByAdmin) && !isAdmin;
 
@@ -157,7 +159,7 @@ const GoalModal = ({
     <div className="modalOverlay" onClick={onClose}>
       <div className="editModal" onClick={(event) => event.stopPropagation()}>
         <div className="modalHeader">
-          <h3>{initialData ? "Editar Goal" : "Nuevo Goal"}</h3>
+          <h3>{initialData ? t.goalEditTitle : t.goalNewTitle}</h3>
           <button type="button" className="closeButton" onClick={onClose}>
             <i className="fa fa-times"></i>
           </button>
