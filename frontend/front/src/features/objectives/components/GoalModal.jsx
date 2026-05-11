@@ -170,7 +170,7 @@ const GoalModal = ({
             <div className="formRow">
               {isAdmin && (
                 <div className="formGroup">
-                  <label htmlFor="goal-assignment-mode">Asignación</label>
+                  <label htmlFor="goal-assignment-mode">{t.commonAssignment}</label>
                   <select
                     id="goal-assignment-mode"
                     value={form.assignmentMode}
@@ -178,9 +178,9 @@ const GoalModal = ({
                       handleChange("assignmentMode", event.target.value)
                     }
                   >
-                    <option value="single">Usuario</option>
-                    <option value="multiple">Varios usuarios</option>
-                    <option value="all">Todos (organización)</option>
+                    <option value="single">{t.commonUser}</option>
+                    <option value="multiple">{t.commonMultipleUsers}</option>
+                    <option value="all">{t.commonAllOrganization}</option>
                   </select>
 
                   {form.assignmentMode === "single" && (
@@ -192,7 +192,7 @@ const GoalModal = ({
                       }
                       required
                     >
-                      <option value="">Selecciona un usuario</option>
+                      <option value="">{t.commonSelectUser}</option>
                       {managedUsers.map((user) => (
                         <option key={user.id} value={user.id}>
                           {user.username}
@@ -219,7 +219,7 @@ const GoalModal = ({
               )}
 
               <div className="formGroup">
-                <label htmlFor="goal-title">Título</label>
+                <label htmlFor="goal-title">{t.commonTitle}</label>
                 <input
                   id="goal-title"
                   type="text"
@@ -228,13 +228,13 @@ const GoalModal = ({
                   onChange={(event) =>
                     handleChange("titulo", event.target.value)
                   }
-                  placeholder="Ej. Terminar proyecto"
+                  placeholder={t.goalTitlePlaceholder}
                   required
                 />
               </div>
 
               <div className="formGroup">
-                <label htmlFor="goal-priority">Prioridad</label>
+                <label htmlFor="goal-priority">{t.commonPriority}</label>
                 <select
                   id="goal-priority"
                   value={form.priority}
@@ -243,16 +243,16 @@ const GoalModal = ({
                     handleChange("priority", event.target.value)
                   }
                 >
-                  <option value="Alta">Alta</option>
-                  <option value="Media">Media</option>
-                  <option value="Baja">Baja</option>
+                  <option value="Alta">{t.priorityHigh}</option>
+                  <option value="Media">{t.priorityMedium}</option>
+                  <option value="Baja">{t.priorityLow}</option>
                 </select>
               </div>
             </div>
 
             <div className="formRow">
               <div className="formGroup">
-                <label htmlFor="goal-description">Descripción</label>
+                <label htmlFor="goal-description">{t.commonDescription}</label>
                 <textarea
                   id="goal-description"
                   rows="3"
@@ -266,7 +266,7 @@ const GoalModal = ({
               </div>
 
               <div className="formGroup">
-                <label htmlFor="goal-status">Estado</label>
+                <label htmlFor="goal-status">{t.commonStatus}</label>
                 {isAdmin ? (
                   <input
                     id="goal-status"
@@ -380,7 +380,7 @@ const GoalModal = ({
                   ? "Guardando..."
                   : initialData
                     ? "Actualizar"
-                    : "Crear Goal"}
+                    : t.goalCreateButton}
               </button>
             </div>
           </form>

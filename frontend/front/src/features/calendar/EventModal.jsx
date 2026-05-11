@@ -3,6 +3,7 @@ import { format, addMinutes, startOfDay, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import "../../css/EventModal.css";
 import { fetchEventCategories } from "../../api/eventApi";
+import { useLanguage } from "../../context/languageContext";
 
 // Genera opciones de tiempo en incrementos de 15 minutos
 const generateTimeOptions = () => {
@@ -72,7 +73,7 @@ const normalizeReminderList = (reminders = []) => {
     .sort((a, b) => a - b);
 };
 
-const TimeSelector = ({ value, onChange, label, disabled = false }) => {
+const TimeSelector = ({ value, onChange, label, disabled = false, searchPlaceholder = "Search time..." }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const dropdownRef = useRef(null);
@@ -138,7 +139,7 @@ const TimeSelector = ({ value, onChange, label, disabled = false }) => {
             ref={inputRef}
             type="text"
             className="time-search"
-            placeholder="Buscar hora..."
+            placeholder={searchPlaceholder}
             value={search}
             disabled={disabled}
             onChange={(e) => setSearch(e.target.value)}
@@ -171,6 +172,7 @@ const EventModal = ({
   managedUsers = EMPTY_MANAGED_USERS,
   defaultManagedUserId = null,
 }) => {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     id: null,
     title: "",
@@ -383,7 +385,7 @@ const EventModal = ({
   };
 
   const handleDelete = () => {
-    if (window.confirm("¿Estás seguro de que deseas eliminar este evento?")) {
+    if (window.confirm(t.calendarDeleteConfirm)) {
       onDelete(formData.id);
     }
   };
@@ -443,9 +445,9 @@ const EventModal = ({
                   value={formData.assignmentMode}
                   onChange={handleChange}
                 >
-                  <option value="single">Usuario</option>
-                  <option value="multiple">Varios usuarios</option>
-                  <option value="all">Todos (organización)</option>
+                  <option value="single">{t.commonUser}</option>
+                  <option value="multiple">{t.commonMultipleUsers}</option>
+                  <option value="all">{t.commonAllOrganization}</option>
                 </select>
 
                 {formData.assignmentMode === "single" && (
@@ -487,7 +489,7 @@ const EventModal = ({
               type="text"
               name="title"
               className="gcal-title-input"
-              placeholder="Añadir título"
+              placeholder={t.calendarAddTitle}
               value={formData.title}
               disabled={isAssignedEventReadOnly}
               onChange={handleChange}
@@ -527,14 +529,14 @@ const EventModal = ({
               {!formData.isAllDay && (
                 <div className="gcal-time-row">
                   <TimeSelector
-                    label="Inicio"
+                    label={t.calendarStart}
                     value={formData.startTime}
                     disabled={isAssignedEventReadOnly}
                     onChange={(val) => handleTimeChange("startTime", val)}
                   />
                   <span className="gcal-time-separator">—</span>
                   <TimeSelector
-                    label="Fin"
+                    label={t.calendarEnd}
                     value={formData.endTime}
                     disabled={isAssignedEventReadOnly}
                     onChange={(val) => handleTimeChange("endTime", val)}
@@ -551,7 +553,7 @@ const EventModal = ({
                     onChange={handleChange}
                   />
                 <span className="gcal-toggle-slider"></span>
-                <span className="gcal-toggle-label">Todo el día</span>
+                <span className="gcal-toggle-label">{t.calendarAllDay}</span>
               </label>
             </div>
           </div>
@@ -593,7 +595,7 @@ const EventModal = ({
                   type="text"
                   name="location"
                   className="gcal-location-input"
-                  placeholder="Añadir ubicación"
+                  placeholder={t.calendarAddLocation}
                   value={formData.location}
                   disabled={isAssignedEventReadOnly}
                   onChange={handleChange}
@@ -617,7 +619,7 @@ const EventModal = ({
                 <textarea
                   name="description"
                   className="gcal-description-input"
-                  placeholder="Añadir descripción"
+                  placeholder={t.calendarAddDescription}
                   value={formData.description}
                   disabled={isAssignedEventReadOnly}
                   onChange={handleChange}
