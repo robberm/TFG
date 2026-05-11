@@ -5,6 +5,7 @@ import {
   deleteManagedUser,
   getManagedUsers,
 } from "../api/adminApi";
+import { useLanguage } from "../context/languageContext";
 
 // Iconos
 const RefreshIcon = () => (
@@ -31,6 +32,7 @@ const initialForm = {
 };
 
 function AdminUsersPage() {
+  const { t } = useLanguage();
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -51,7 +53,7 @@ function AdminUsersPage() {
       const response = await getManagedUsers();
       setUsers(Array.isArray(response) ? response : []);
     } catch (error) {
-      setErrorMessage(error.message || "No se pudieron cargar los usuarios.");
+      setErrorMessage(error.message || t.adminUsersLoadError);
     } finally {
       setIsLoading(false);
     }
@@ -67,7 +69,7 @@ function AdminUsersPage() {
     setSuccessMessage("");
 
     if (!form.username.trim() || !form.password.trim()) {
-      setErrorMessage("Debes indicar username y contraseña.");
+      setErrorMessage(t.adminUsersRequired);
       return;
     }
 
@@ -81,9 +83,9 @@ function AdminUsersPage() {
 
       setUsers((current) => [...current, created]);
       setForm(initialForm);
-      setSuccessMessage(`Usuario ${created.username} creado correctamente.`);
+      setSuccessMessage(`${t.adminUser} ${created.username} ${t.adminCreated}`);
     } catch (error) {
-      setErrorMessage(error.message || "No se pudo crear el usuario.");
+      setErrorMessage(error.message || t.adminCreateError);
     } finally {
       setIsSubmitting(false);
     }
@@ -94,7 +96,7 @@ function AdminUsersPage() {
     setSuccessMessage("");
 
     const confirmed = window.confirm(
-      `¿Seguro que quieres dar de baja a ${username}?`,
+      `${t.adminConfirmDeletePrefix} ${username}?`,
     );
 
     if (!confirmed) {
@@ -104,21 +106,21 @@ function AdminUsersPage() {
     try {
       await deleteManagedUser(userId);
       setUsers((current) => current.filter((user) => user.id !== userId));
-      setSuccessMessage(`Usuario ${username} eliminado correctamente.`);
+      setSuccessMessage(`${t.adminUser} ${username} ${t.adminDeleted}`);
     } catch (error) {
-      setErrorMessage(error.message || "No se pudo eliminar el usuario.");
+      setErrorMessage(error.message || t.adminDeleteError);
     }
   };
 
   return (
     <div className="adminUsersPage">
       <header className="adminUsersHeader">
-        <h1>Gestión de usuarios</h1>
-        <p>Alta y baja de usuarios subordinados de tu organización.</p>
+        <h1>{t.adminUsersTitle}</h1>
+        <p>{t.adminUsersSubtitle}</p>
       </header>
 
       <section className="adminUsersCard">
-        <h2>Crear usuario subordinado</h2>
+        <h2>{t.adminCreateManaged}</h2>
 
         <form className="adminUsersForm" onSubmit={handleCreateUser}>
           <label>
@@ -137,7 +139,7 @@ function AdminUsersPage() {
           </label>
 
           <label>
-            Contraseña
+            {t.loginPassword}
             <input
               type="password"
               value={form.password}
@@ -147,22 +149,22 @@ function AdminUsersPage() {
                   password: event.target.value,
                 }))
               }
-              placeholder="Contraseña"
+              placeholder={t.loginPassword}
             />
           </label>
 
           <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Creando..." : "Dar de alta"}
+            {isSubmitting ? t.commonCreating : t.adminCreate}
           </button>
         </form>
       </section>
 
       <section className="adminUsersCard">
         <div className="adminUsersListHeader">
-          <h2>Usuarios subordinados</h2>
+          <h2>{t.adminManagedUsers}</h2>
           <button type="button" onClick={loadUsers} disabled={isLoading}>
             <RefreshIcon />
-            Recargar
+            {t.commonReload}
           </button>
         </div>
 
@@ -174,12 +176,12 @@ function AdminUsersPage() {
         {isLoading ? (
           <div className="adminLoading">
             <div className="adminSpinner" />
-            <span>Cargando usuarios...</span>
+            <span>{t.adminLoadingUsers}</span>
           </div>
         ) : sortedUsers.length === 0 ? (
           <div className="adminEmptyState">
             <UsersIcon />
-            <p>No hay usuarios subordinados.</p>
+            <p>{t.adminNoUsers}</p>
           </div>
         ) : (
           <div className="adminUsersTableWrap">
@@ -187,7 +189,7 @@ function AdminUsersPage() {
               <thead>
                 <tr>
                   <th>Username</th>
-                  <th>Organización</th>
+                  <th>{t.adminOrganization}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -202,7 +204,7 @@ function AdminUsersPage() {
                         className="danger"
                         onClick={() => handleDeleteUser(user.id, user.username)}
                       >
-                        Dar de baja
+                        {t.adminDeleteBtn}
                       </button>
                     </td>
                   </tr>
