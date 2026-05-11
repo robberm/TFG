@@ -4,8 +4,10 @@ import { useNavigate } from "react-router-dom";
 import PasswordInput from "./components/PasswordInput";
 import { getApiErrorMessage } from "./api/apiClient";
 import { registerActiveSessionUser, registerUser } from "./api/authApi";
+import { useLanguage } from "./context/languageContext";
 
 const Register = () => {
+  const { t } = useLanguage();
   // Definir estado para username y password
   const [registerUsername, setRegisterUsername] = useState(""); // Estado para el nombre de usuario
   const [registerPw, setRegisterPw] = useState(""); // Estado para la contraseña
@@ -22,17 +24,17 @@ const Register = () => {
     const normalizedPassword = registerPw.trim();
 
     if (!normalizedUsername) {
-      setError("El username es obligatorio.");
+      setError(t.registerUsernameRequired);
       return;
     }
 
     if (normalizedUsername.includes(" ")) {
-      setError("El username no puede contener espacios.");
+      setError(t.registerUsernameNoSpaces);
       return;
     }
 
     if (!normalizedPassword) {
-      setError("La contraseña es obligatoria.");
+      setError(t.registerPasswordRequired);
       return;
     }
 
@@ -51,7 +53,7 @@ const Register = () => {
       navigate("/home");
     } catch (err) {
       console.log(err);
-      setError(getApiErrorMessage(err, "Error de conexión, inténtalo de nuevo."));
+      setError(getApiErrorMessage(err, t.loginConnectionError));
     }
   };
 
@@ -71,13 +73,13 @@ const Register = () => {
 
   return (
     <div className="register-form">
-      <h2 style={colorRegisterTexto}>Register</h2>
+      <h2 style={colorRegisterTexto}>{t.registerTitle}</h2>
       <form onSubmit={handleRegister}>
         <input
           className="app-input"
           name="username"
           type="text"
-          placeholder="Username"
+          placeholder={t.username}
           value={registerUsername}
           onChange={(e) => setRegisterUsername(e.target.value)} // Actualiza el estado
           onKeyDown={handleKeyDown} // Manejo de la tecla Enter
@@ -86,7 +88,7 @@ const Register = () => {
           className="app-input"
           id="password"
           name="password"
-          placeholder="Password"
+          placeholder={t.loginPassword}
           value={registerPw}
           onChange={(e) => setRegisterPw(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -94,12 +96,11 @@ const Register = () => {
           autoComplete="new-password"
         />
         <button className="app-button" type="submit">
-          Register
+          {t.registerTitle}
         </button>
       </form>
       <h4 style={colorRegisterTexto}>
-        La contraseña debe tener al menos 10 caracteres, incluir letras, un
-        número y un símbolo
+        {t.registerPasswordHelp}
       </h4>
       {error && <div className="error">{error}</div>}
     </div>

@@ -3,6 +3,7 @@ import {
   EMPTY_HABIT_FORM,
   normalizeHabitForm,
 } from "../utils/objectiveHelpers";
+import { useLanguage } from "../../../context/languageContext";
 
 const HabitModal = ({
   isOpen,
@@ -12,6 +13,7 @@ const HabitModal = ({
   isSubmitting,
 }) => {
   const [form, setForm] = useState(EMPTY_HABIT_FORM);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -49,7 +51,7 @@ const HabitModal = ({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="modalHeader">
-          <h3>{initialData ? "Editar Hábito" : "Nuevo Hábito"}</h3>
+          <h3>{initialData ? t.habitEditTitle : t.habitNewTitle}</h3>
           <button className="closeButton" onClick={onClose}>
             <i className="fa fa-times"></i>
           </button>
@@ -59,7 +61,7 @@ const HabitModal = ({
           <form className="objectiveForm" onSubmit={handleSubmit}>
             <div className="formRow singleColumn">
               <div className="formGroup">
-                <label htmlFor="habit-title">Título</label>
+                <label htmlFor="habit-title">{t.commonTitle}</label>
                 <input
                   id="habit-title"
                   type="text"
@@ -67,7 +69,7 @@ const HabitModal = ({
                   onChange={(event) =>
                     handleChange("titulo", event.target.value)
                   }
-                  placeholder="Ej. Leer 30 minutos"
+                  placeholder={t.habitTitlePlaceholder}
                   required
                 />
               </div>
@@ -75,7 +77,7 @@ const HabitModal = ({
 
             <div className="formRow">
               <div className="formGroup">
-                <label htmlFor="habit-description">Descripción</label>
+                <label htmlFor="habit-description">{t.commonDescription}</label>
                 <textarea
                   id="habit-description"
                   rows="3"
@@ -83,7 +85,7 @@ const HabitModal = ({
                   onChange={(event) =>
                     handleChange("description", event.target.value)
                   }
-                  placeholder="Describe tu hábito..."
+                  placeholder={t.habitDescriptionPlaceholder}
                 />
               </div>
 
@@ -97,14 +99,14 @@ const HabitModal = ({
                       handleChange("active", event.target.checked)
                     }
                   />
-                  Activo
+                  {t.commonActive}
                 </label>
               </div>
             </div>
 
             <div className="formActions">
               <button type="button" className="cancelButton" onClick={onClose}>
-                Cancelar
+                {t.commonCancel}
               </button>
               <button
                 type="submit"
@@ -112,10 +114,10 @@ const HabitModal = ({
                 disabled={isSubmitting}
               >
                 {isSubmitting
-                  ? "Guardando..."
+                  ? t.commonSaving
                   : initialData
-                    ? "Actualizar"
-                    : "Crear Hábito"}
+                    ? t.commonUpdate
+                    : t.habitCreateButton}
               </button>
             </div>
           </form>

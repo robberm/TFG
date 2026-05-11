@@ -7,6 +7,7 @@ import net.tfg.tfgapp.domains.Goal;
 import net.tfg.tfgapp.domains.Organization;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.exception.ApiException;
+import net.tfg.tfgapp.i18n.LanguageResolver;
 import net.tfg.tfgapp.security.TokenService;
 import net.tfg.tfgapp.service.interfaces.IAdminService;
 import net.tfg.tfgapp.service.interfaces.IUserService;
@@ -25,18 +26,22 @@ public class AdminController {
     private final IAdminService organizationAdminService;
     private final IUserService userService;
     private final TokenService tokenService;
+    private final LanguageResolver languageResolver;
 
     public AdminController(IAdminService organizationAdminService,
                            IUserService userService,
-                           TokenService tokenService) {
+                           TokenService tokenService,
+                           LanguageResolver languageResolver) {
         this.organizationAdminService = organizationAdminService;
         this.userService = userService;
         this.tokenService = tokenService;
+        this.languageResolver = languageResolver;
     }
 
     @GetMapping("/users")
-    public ResponseEntity<?> getManagedUsers(@RequestHeader("Authorization") String authHeader) {
-        String token = extractAndVerifyToken(authHeader);
+    public ResponseEntity<?> getManagedUsers(@RequestHeader("Authorization") String authHeader,
+                                             @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
+        String token = extractAndVerifyToken(authHeader, acceptLanguage);
         String adminUsername = tokenService.extractUsername(token);
 
         List<UserSummaryResponse> users = organizationAdminService.getManagedUsers(adminUsername);
@@ -45,8 +50,9 @@ public class AdminController {
 
     @PostMapping("/users")
     public ResponseEntity<?> createManagedUser(@RequestHeader("Authorization") String authHeader,
+                                               @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
                                                @RequestBody AdminCreateUserRequest request) {
-        String token = extractAndVerifyToken(authHeader);
+        String token = extractAndVerifyToken(authHeader, acceptLanguage);
         String adminUsername = tokenService.extractUsername(token);
 
         UserSummaryResponse createdUser = organizationAdminService.createManagedUser(adminUsername, request);
@@ -55,8 +61,9 @@ public class AdminController {
 
     @DeleteMapping("/users/{userId}")
     public ResponseEntity<?> deleteManagedUser(@RequestHeader("Authorization") String authHeader,
+                                               @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
                                                @PathVariable Long userId) {
-        String token = extractAndVerifyToken(authHeader);
+        String token = extractAndVerifyToken(authHeader, acceptLanguage);
         String adminUsername = tokenService.extractUsername(token);
 
         organizationAdminService.deleteManagedUser(adminUsername, userId);
@@ -65,8 +72,9 @@ public class AdminController {
 
     @PostMapping("/organization")
     public ResponseEntity<?> createOrganization(@RequestHeader("Authorization") String authHeader,
+                                                @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
                                                 @RequestBody AdminCreateOrganizationRequest request) {
-        String token = extractAndVerifyToken(authHeader);
+        String token = extractAndVerifyToken(authHeader, acceptLanguage);
         String adminUsername = tokenService.extractUsername(token);
 
         Organization organization = organizationAdminService.createOrganizationForAdmin(adminUsername, request);
@@ -74,41 +82,42 @@ public class AdminController {
         Map<String, Object> response = new HashMap<>();
         response.put("organizationId", organization.getId());
         response.put("organizationName", organization.getName());
-        response.put("message", "Organización creada correctamente.");
+        response.put("message", languageResolver.text(acceptLanguage, "organization.created"));
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/users/{userId}/goals")
     public ResponseEntity<?> getManagedUserGoals(@RequestHeader("Authorization") String authHeader,
+                                                 @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
                                                  @PathVariable Long userId) {
-        String token = extractAndVerifyToken(authHeader);
+        String token = extractAndVerifyToken(authHeader, acceptLanguage);
         String adminUsername = tokenService.extractUsername(token);
 
         List<Goal> goals = organizationAdminService.getManagedUserGoals(adminUsername, userId);
         return ResponseEntity.ok(goals);
     }
 
-    private String extractAndVerifyToken(String authHeader) {
+    private String extractAndVerifyToken(String authHeader, String acceptLanguage) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "Token de autenticación no proporcionado o formato incorrecto.");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, languageResolver.text(acceptLanguage, "errors.auth.tokenMissing"));
         }
 
         String token = authHeader.replace("Bearer ", "").trim();
 
         if (!tokenService.validateToken(token)) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "Token de autenticación inválido o expirado.");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, languageResolver.text(acceptLanguage, "errors.auth.tokenInvalid"));
         }
 
         String username = tokenService.extractUsername(token);
         User user = userService.getUserByUsername(username);
 
         if (user == null) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "Usuario asociado al token no encontrado.");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, languageResolver.text(acceptLanguage, "errors.auth.userNotFound"));
         }
 
         if (!tokenService.validateToken(token, user.getUsername(), user.getTokenVersion())) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "Token revocado o no válido.");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, languageResolver.text(acceptLanguage, "errors.auth.tokenRevoked"));
         }
 
         return token;

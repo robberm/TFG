@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import UserMenu from "./UserMenu";
 import WindowTitleBar from "./WindowTitleBar";
+import { useLanguage } from "../../context/languageContext";
 import ReminderListener from "./ReminderListener";
 import "../../css/MainLayout.css";
 
@@ -119,6 +120,7 @@ const UsersIcon = () => (
 );
 
 const MainLayout = ({ children }) => {
+  const { t } = useLanguage();
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -147,34 +149,34 @@ const MainLayout = ({ children }) => {
         <div className="homeFrame">
           <aside className="sideBar">
             <div className="menuHeader">
-              <h3>Menu</h3>
+              <h3>{t.menuTitle}</h3>
             </div>
 
             <nav className="menuItems">
               <NavLink to="/home">
                 <HomeIcon />
-                <span className="menuLabel">Home</span>
+                <span className="menuLabel">{t.menuHome}</span>
               </NavLink>
 
               <NavLink to="/calendar">
                 <CalendarIcon />
-                <span className="menuLabel">Calendar</span>
+                <span className="menuLabel">{t.menuCalendar}</span>
               </NavLink>
 
               <NavLink to="/objectives">
                 <ObjectivesIcon />
-                <span className="menuLabel">Objectives</span>
+                <span className="menuLabel">{t.menuObjectives}</span>
               </NavLink>
 
               {isAdmin ? (
                 <NavLink to="/admin">
                   <UsersIcon />
-                  <span className="menuLabel">Users</span>
+                  <span className="menuLabel">{t.menuUsers}</span>
                 </NavLink>
               ) : (
                 <NavLink to="/block">
                   <BlockIcon />
-                  <span className="menuLabel">Block</span>
+                  <span className="menuLabel">{t.menuBlock}</span>
                 </NavLink>
               )}
             </nav>

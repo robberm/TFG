@@ -2,6 +2,7 @@ package net.tfg.tfgapp.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import net.tfg.tfgapp.DTOs.errors.ApiErrorResponse;
+import net.tfg.tfgapp.i18n.LanguageResolver;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -23,6 +24,11 @@ import java.util.Map;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private final LanguageResolver languageResolver;
+
+    public GlobalExceptionHandler(LanguageResolver languageResolver) {
+        this.languageResolver = languageResolver;
+    }
 
     /**
      * Excepciones explícitas de negocio que ya indican el status HTTP final.
@@ -43,7 +49,7 @@ public class GlobalExceptionHandler {
             details.put(error.getField(), error.getDefaultMessage());
         }
 
-        return buildResponse(HttpStatus.BAD_REQUEST, "Revisa los datos enviados.", request, details);
+        return buildResponse(HttpStatus.BAD_REQUEST, "errors.validation.invalidData", request, details);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -77,7 +83,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGeneric(Exception ex,
                                                           HttpServletRequest request) {
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Ha ocurrido un error interno.", request, null);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "errors.internal", request, null);
     }
 
     private ResponseEntity<ApiErrorResponse> buildResponse(HttpStatus status,
@@ -85,10 +91,12 @@ public class GlobalExceptionHandler {
                                                            HttpServletRequest request,
                                                            Map<String, String> details) {
         ApiErrorResponse response = new ApiErrorResponse();
+        String acceptLanguage = request.getHeader("Accept-Language");
+        String localizedMessage = languageResolver.textOrLegacy(acceptLanguage, message);
         response.setTimestamp(Instant.now());
         response.setStatus(status.value());
         response.setError(status.name());
-        response.setMessage(message);
+        response.setMessage(localizedMessage);
         response.setPath(request.getRequestURI());
         response.setDetails(details);
 

@@ -1,4 +1,17 @@
 const API_BASE_URL = "http://localhost:8080";
+const API_TEXTS = {
+  en: {
+    noSession: "No active session.",
+    genericError: "An unexpected error occurred.",
+  },
+  es: {
+    noSession: "No hay sesión activa.",
+    genericError: "Ha ocurrido un error inesperado.",
+  },
+};
+
+const getLanguage = () => (localStorage.getItem("appLanguage") === "es" ? "es" : "en");
+const text = (key) => API_TEXTS[getLanguage()][key];
 
 /**
  * Error de API tipado para que la UI pueda decidir:
@@ -22,7 +35,7 @@ export class ApiClientError extends Error {
 const getTokenOrThrow = () => {
   const token = localStorage.getItem("token");
   if (!token) {
-    throw new ApiClientError("No hay sesión activa.", 401);
+    throw new ApiClientError(text("noSession"), 401);
   }
   return token;
 };
@@ -31,7 +44,10 @@ const getTokenOrThrow = () => {
  * Crea cabeceras estándar para peticiones al backend.
  */
 const buildHeaders = ({ includeAuth = true, includeJson = true, extraHeaders = {} } = {}) => {
+  const appLanguage = localStorage.getItem("appLanguage");
+  const normalizedLanguage = appLanguage === "es" ? "es" : "en";
   const headers = {
+    "Accept-Language": normalizedLanguage,
     ...extraHeaders,
   };
 
@@ -51,7 +67,7 @@ const parseErrorResponse = async (response) => {
     const body = await response.json();
     if (body && typeof body === "object") {
       return new ApiClientError(
-        body.message || "Ha ocurrido un error inesperado.",
+        body.message || text("genericError"),
         response.status,
         body.details || null,
         body.path || null,
@@ -70,7 +86,7 @@ const parseErrorResponse = async (response) => {
     // Ignorado: usamos fallback.
   }
 
-  return new ApiClientError("Ha ocurrido un error inesperado.", response.status);
+  return new ApiClientError(text("genericError"), response.status);
 };
 
 const parseSuccessResponse = async (response) => {
@@ -116,7 +132,7 @@ export const apiRequest = async (path, options = {}) => {
 /**
  * Helper para sacar mensaje "bonito" sin romper UI antigua.
  */
-export const getApiErrorMessage = (error, fallback = "Ha ocurrido un error inesperado.") => {
+export const getApiErrorMessage = (error, fallback = text("genericError")) => {
   if (error instanceof ApiClientError) {
     return error.message || fallback;
   }
