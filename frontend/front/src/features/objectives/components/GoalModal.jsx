@@ -7,6 +7,7 @@ import {
 } from "../utils/objectiveHelpers";
 import { useLanguage } from "../../../context/languageContext";
 
+
 const GoalModal = ({
   isOpen,
   onClose,
