@@ -517,13 +517,13 @@ const EventModal = ({
               )}
 
               <label className="gcal-allday-toggle">
-                  <input
-                    type="checkbox"
-                    name="isAllDay"
-                    checked={formData.isAllDay}
-                    disabled={isAssignedEventReadOnly}
-                    onChange={handleChange}
-                  />
+                <input
+                  type="checkbox"
+                  name="isAllDay"
+                  checked={formData.isAllDay}
+                  disabled={isAssignedEventReadOnly}
+                  onChange={handleChange}
+                />
                 <span className="gcal-toggle-slider"></span>
                 <span className="gcal-toggle-label">{t.calendarAllDay}</span>
               </label>

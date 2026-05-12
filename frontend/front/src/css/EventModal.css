@@ -85,7 +85,6 @@
 
 .gcal-form .formGroup {
   display: flex;
-  flex-direction: column;
   margin-bottom: 1.5rem;
   min-width: 0;
 }
@@ -299,7 +298,7 @@
   right: 0;
   width: 100%;
   min-width: 0;
-  margin-top: 0.35rem;
+  animation: gcal-slide-up 0.15s ease-out;
   background: var(--card-background);
   border: 1px solid var(--border-color);
   border-radius: 14px;

@@ -1,6 +1,13 @@
 .admin-assignment-panel { display:flex; flex-direction:column; gap:.65rem; margin-bottom:1rem; }
 .admin-assignment-panel label { color: var(--text-secondary); font-size: .75rem; font-weight:600; text-transform: uppercase; letter-spacing:.5px; }
 
+.admin-assignment-dropdown { display:flex; flex-direction:column; gap:.35rem; }
+.admin-assignment-results-inline {
+  width:100%;
+  animation: gcal-slide-up 0.15s ease-out;
+  transform-origin: top;
+}
+
 .admin-assignment-input {
   width:100%;
   background: rgba(255,255,255,.03);
@@ -21,7 +28,13 @@ select.admin-assignment-input { cursor: pointer; appearance: none; padding-right
 
 .admin-assignment-input option { background: #1c2233; color: #fff; }
 .admin-assignment-all-confirm { border:1px dashed rgba(102,126,234,.45); background:rgba(102,126,234,.08); border-radius:12px; padding:.7rem .85rem; color:var(--text-main); font-size:.9rem; }
-.admin-assignment-multi { display:flex; flex-direction:column; gap:.6rem; }
+.admin-assignment-multi {
+  display:flex;
+  flex-direction:column;
+  gap:.6rem;
+  animation: gcal-slide-up 0.15s ease-out;
+  transform-origin: top;
+}
 .admin-assignment-tags { display:flex; flex-wrap:wrap; gap:.4rem; }
 .admin-assignment-tag { border:1px solid rgba(102,126,234,.4); background:rgba(102,126,234,.12); color:var(--text-main); border-radius:999px; padding:.25rem .6rem; cursor:pointer; }
 .admin-assignment-results { max-height:180px; overflow:auto; border:1px solid var(--border-color); border-radius:12px; padding:.35rem; display:flex; flex-direction:column; gap:.25rem; background: var(--card-background); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); }
@@ -33,3 +46,8 @@ select.admin-assignment-input { cursor: pointer; appearance: none; padding-right
 .admin-assignment-results::-webkit-scrollbar-track { background: rgba(255,255,255,.04); border-radius: 10px; }
 .admin-assignment-results::-webkit-scrollbar-thumb { background: rgba(120,130,160,.55); border-radius: 10px; }
 .admin-assignment-results::-webkit-scrollbar-thumb:hover { background: rgba(120,130,160,.75); }
+
+.admin-assignment-all-confirm {
+  animation: gcal-slide-up 0.15s ease-out;
+  transform-origin: top;
+}

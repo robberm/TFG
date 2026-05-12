@@ -15,12 +15,14 @@ const AdminAssignmentSelector = ({
   const { t } = useLanguage();
   const [query, setQuery] = useState("");
   const [singleOpen, setSingleOpen] = useState(false);
-  const singleRef = useRef(null);
+  const [modeOpen, setModeOpen] = useState(false);
+  const rootRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (singleRef.current && !singleRef.current.contains(event.target)) {
+      if (rootRef.current && !rootRef.current.contains(event.target)) {
         setSingleOpen(false);
+        setModeOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -40,48 +42,69 @@ const AdminAssignmentSelector = ({
 
   const selectedSingleUser = managedUsers.find((user) => String(user.id) === String(singleUserId));
 
+  const modeOptions = [
+    { value: "single", label: t.commonUser, selected: mode === "single" },
+    { value: "multiple", label: t.commonMultipleUsers, selected: mode === "multiple" },
+    { value: "all", label: t.commonAllOrganization, selected: mode === "all" },
+  ];
+
+  const DropdownList = ({ label, valueLabel, isOpen, onToggle, options, onSelect }) => (
+    <div className="admin-assignment-dropdown">
+      {label && <label>{label}</label>}
+      <button type="button" className={`admin-assignment-input admin-assignment-trigger ${isOpen ? "active" : ""}`} onClick={onToggle}>
+        <span>{valueLabel}</span>
+        <span>▾</span>
+      </button>
+      {isOpen && (
+        <div className={`admin-assignment-results admin-assignment-results-inline`}>
+          {options.map((option) => (
+            <button
+              type="button"
+              key={option.value}
+              className={`admin-assignment-result ${option.selected ? "selected" : ""}`}
+              onClick={() => onSelect(option.value)}
+            >
+              <span>{option.label}</span>
+              {option.selected && <span>✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
-    <div className="admin-assignment-panel">
-      <label>{t.commonAssignment}</label>
-      <select className="admin-assignment-input" value={mode} onChange={(e) => onModeChange(e.target.value)}>
-        <option value="single">{t.commonUser}</option>
-        <option value="multiple">{t.commonMultipleUsers}</option>
-        <option value="all">{t.commonAllOrganization}</option>
-      </select>
+    <div className="admin-assignment-panel" ref={rootRef}>
+      <DropdownList
+        label={t.commonAssignment}
+        valueLabel={modeOptions.find((opt) => opt.selected)?.label || t.commonAssignment}
+        isOpen={modeOpen}
+        onToggle={() => {
+          setModeOpen((prev) => !prev);
+          setSingleOpen(false);
+        }}
+        options={modeOptions}
+        onSelect={(value) => {
+          onModeChange(value);
+          setModeOpen(false);
+        }}
+      />
 
       {mode === "single" && (
-        <div className="admin-assignment-single" ref={singleRef}>
-          <button
-            type="button"
-            className={`admin-assignment-input admin-assignment-trigger ${singleOpen ? "active" : ""}`}
-            onClick={() => setSingleOpen((prev) => !prev)}
-          >
-            <span>{selectedSingleUser?.username || singlePlaceholder || t.commonSelectUser}</span>
-            <span>▾</span>
-          </button>
-
-          {singleOpen && (
-            <div className="admin-assignment-results admin-assignment-results-single">
-              {managedUsers.map((user) => {
-                const selected = String(user.id) === String(singleUserId);
-                return (
-                  <button
-                    type="button"
-                    key={user.id}
-                    className={`admin-assignment-result ${selected ? "selected" : ""}`}
-                    onClick={() => {
-                      onSingleUserChange(String(user.id));
-                      setSingleOpen(false);
-                    }}
-                  >
-                    <span>{user.username}</span>
-                    {selected && <span>✓</span>}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        <DropdownList
+          label={t.commonUser}
+          valueLabel={selectedSingleUser?.username || singlePlaceholder || t.commonSelectUser}
+          isOpen={singleOpen}
+          onToggle={() => {
+            setSingleOpen((prev) => !prev);
+            setModeOpen(false);
+          }}
+          options={managedUsers.map((user) => ({ value: String(user.id), label: user.username, selected: String(user.id) === String(singleUserId) }))}
+          onSelect={(value) => {
+            onSingleUserChange(value);
+            setSingleOpen(false);
+          }}
+        />
       )}
 
       {mode === "all" && <div className="admin-assignment-all-confirm">✓ {t.commonAllOrganization} — se asignará a todos los usuarios subordinados.</div>}
