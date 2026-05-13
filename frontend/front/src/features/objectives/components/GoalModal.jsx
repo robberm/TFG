@@ -6,6 +6,7 @@ import {
   toInputNumberValue,
 } from "../utils/objectiveHelpers";
 import { useLanguage } from "../../../context/languageContext";
+import AdminAssignmentSelector from "../../../components/AdminAssignmentSelector";
 
 
 const GoalModal = ({
@@ -170,53 +171,16 @@ const GoalModal = ({
           <form className="objectiveForm" onSubmit={handleSubmit}>
             <div className="formRow">
               {isAdmin && (
-                <div className="formGroup">
-                  <label htmlFor="goal-assignment-mode">{t.commonAssignment}</label>
-                  <select
-                    id="goal-assignment-mode"
-                    value={form.assignmentMode}
-                    onChange={(event) =>
-                      handleChange("assignmentMode", event.target.value)
-                    }
-                  >
-                    <option value="single">{t.commonUser}</option>
-                    <option value="multiple">{t.commonMultipleUsers}</option>
-                    <option value="all">{t.commonAllOrganization}</option>
-                  </select>
-
-                  {form.assignmentMode === "single" && (
-                    <select
-                      id="goal-target-user"
-                      value={form.targetUserId}
-                      onChange={(event) =>
-                        handleChange("targetUserId", event.target.value)
-                      }
-                      required
-                    >
-                      <option value="">{t.commonSelectUser}</option>
-                      {managedUsers.map((user) => (
-                        <option key={user.id} value={user.id}>
-                          {user.username}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-
-                  {form.assignmentMode === "multiple" && (
-                    <div className="gcal-multi-targets">
-                      {managedUsers.map((user) => (
-                        <label key={user.id}>
-                          <input
-                            type="checkbox"
-                            checked={form.targetUserIds?.includes(String(user.id))}
-                            onChange={() => toggleTargetSelection(user.id)}
-                          />
-                          {user.username}
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <AdminAssignmentSelector
+                  mode={form.assignmentMode}
+                  onModeChange={(value) => handleChange("assignmentMode", value)}
+                  singleUserId={form.targetUserId}
+                  onSingleUserChange={(value) => handleChange("targetUserId", value)}
+                  selectedUserIds={form.targetUserIds || []}
+                  onToggleUser={toggleTargetSelection}
+                  managedUsers={managedUsers}
+                  singlePlaceholder={t.commonSelectUser}
+                />
               )}
 
               <div className="formGroup">
