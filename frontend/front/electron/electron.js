@@ -475,3 +475,25 @@ ipcMain.handle("window:is-maximized", () => {
 ipcMain.handle("window:get-transparency-mode", () => {
   return currentWindowTransparent;
 });
+
+ipcMain.handle("settings:get-auto-start", () => {
+  if (process.platform !== "win32" || !app.isPackaged) {
+    return false;
+  }
+
+  return app.getLoginItemSettings().openAtLogin;
+});
+
+ipcMain.handle("settings:set-auto-start", (_event, enabled) => {
+  if (process.platform !== "win32" || !app.isPackaged) {
+    return false;
+  }
+
+  const openAtLogin = !!enabled;
+  app.setLoginItemSettings({
+    openAtLogin,
+    path: process.execPath,
+  });
+
+  return app.getLoginItemSettings().openAtLogin;
+});

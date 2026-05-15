@@ -31,9 +31,27 @@ const Settings = () => {
   const [usernameError, setUsernameError] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState("");
   const [passwordError, setPasswordError] = useState(false);
+  const [autoStartSupported, setAutoStartSupported] = useState(false);
+  const [autoStartEnabled, setAutoStartEnabled] = useState(false);
 
   useEffect(() => {
     loadCurrentUserProfile();
+  }, []);
+
+  useEffect(() => {
+    const loadAutoStart = async () => {
+      if (!window?.electronAPI?.electronSettings?.getAutoStart) return;
+
+      try {
+        const enabled = await window.electronAPI.electronSettings.getAutoStart();
+        setAutoStartSupported(true);
+        setAutoStartEnabled(!!enabled);
+      } catch (_error) {
+        setAutoStartSupported(false);
+      }
+    };
+
+    loadAutoStart();
   }, []);
 
   const loadCurrentUserProfile = async () => {
@@ -230,6 +248,30 @@ const Settings = () => {
               type="button"
               className={`settingsSwitch ${translucentMode ? "active" : ""}`}
               onClick={toggleTranslucentMode}
+            >
+              <span className="settingsSwitchThumb"></span>
+            </button>
+          </div>
+
+          <div className="settingsRow">
+            <div>
+              <span className="settingsLabel">{t.autoStartWindows}</span>
+              <p className="settingsHint">{t.autoStartWindowsHint}</p>
+            </div>
+
+            <button
+              type="button"
+              className={`settingsSwitch ${autoStartEnabled ? "active" : ""}`}
+              disabled={!autoStartSupported}
+              onClick={async () => {
+                if (!autoStartSupported) return;
+                const nextValue = !autoStartEnabled;
+                try {
+                  const enabled =
+                    await window.electronAPI.electronSettings.setAutoStart(nextValue);
+                  setAutoStartEnabled(!!enabled);
+                } catch (_error) {}
+              }}
             >
               <span className="settingsSwitchThumb"></span>
             </button>

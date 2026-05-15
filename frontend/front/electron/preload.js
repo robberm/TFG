@@ -27,4 +27,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
       callback(isMaximized);
     });
   },
+
+  electronSettings: {
+    getAutoStart: () => ipcRenderer.invoke("settings:get-auto-start"),
+    setAutoStart: (enabled) =>
+      ipcRenderer.invoke("settings:set-auto-start", enabled),
+  },
 });

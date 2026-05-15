@@ -25,7 +25,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "web": "react-scripts start",
+    "web": "node -e \"process.env.BROWSER='none'; require('react-scripts/scripts/start');\"",
     "electron": "electron .",
     "electron-dev": "concurrently \"npm run web\" \"wait-on http://localhost:3000 && electron .\"",
     "dist": "npm run build && electron-builder",
