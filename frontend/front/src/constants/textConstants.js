@@ -10,6 +10,9 @@ export const TEXT_CONSTANTS = {
     darkThemeHint: "Enable or disable dark mode.",
     translucentTheme: "Translucent theme",
     translucentThemeHint: "Makes the window transparent so the desktop can be seen.",
+    autoStartWindows: "Run app on Windows startup",
+    autoStartWindowsHint:
+      "Automatically open the desktop app when you sign in to Windows.",
     profile: "Profile",
     profileDesc: "Update your profile photo.",
     uploadPhoto: "Upload photo",
@@ -249,6 +252,9 @@ export const TEXT_CONSTANTS = {
     darkThemeHint: "Activa o desactiva el modo oscuro.",
     translucentTheme: "Tema translúcido",
     translucentThemeHint: "Hace la ventana transparente para que se vea el escritorio.",
+    autoStartWindows: "Ejecutar app al iniciar Windows",
+    autoStartWindowsHint:
+      "Abre automáticamente la aplicación de escritorio al iniciar sesión en Windows.",
     profile: "Perfil",
     profileDesc: "Actualiza tu foto de perfil.",
     uploadPhoto: "Subir foto",
