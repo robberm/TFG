@@ -11,6 +11,7 @@ import net.tfg.tfgapp.service.interfaces.IHabitService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -98,22 +99,64 @@ public class HabitServiceImpl extends ObjectiveServiceBase<Habit, HabitRepo> imp
     private void recalculateHabitStreaks(Habit habit) {
         List<ObjectiveLog> logs = objectiveLogRepo.findByObjectiveIdOrderByLogDateAsc(habit.getId());
 
-        int currentStreak = 0;
+        if (logs.isEmpty()) {
+            habit.setCurrentStreak(0);
+            habit.setBestStreak(0);
+            habitRepo.save(habit);
+            return;
+        }
+
+        int runningStreak = 0;
         int bestStreak = 0;
+        LocalDate previousDate = null;
 
         for (ObjectiveLog log : logs) {
-            if (Boolean.TRUE.equals(log.getCompleted())) {
-                currentStreak++;
-                if (currentStreak > bestStreak) {
-                    bestStreak = currentStreak;
-                }
-            } else {
-                currentStreak = 0;
+            LocalDate logDate = log.getLogDate();
+            boolean isCompleted = Boolean.TRUE.equals(log.getCompleted());
+
+            if (previousDate != null && ChronoUnit.DAYS.between(previousDate, logDate) > 1) {
+                runningStreak = 0;
             }
+
+            if (isCompleted) {
+                runningStreak++;
+                bestStreak = Math.max(bestStreak, runningStreak);
+            } else {
+                runningStreak = 0;
+            }
+
+            previousDate = logDate;
         }
+
+        int currentStreak = calculateCurrentStreakEndingToday(logs);
 
         habit.setCurrentStreak(currentStreak);
         habit.setBestStreak(bestStreak);
         habitRepo.save(habit);
+    }
+
+    /**
+     * Calcula la racha vigente de días consecutivos completados hasta hoy.
+     */
+    private int calculateCurrentStreakEndingToday(List<ObjectiveLog> logs) {
+        int streak = 0;
+        LocalDate expectedDate = LocalDate.now();
+
+        for (int i = logs.size() - 1; i >= 0; i--) {
+            ObjectiveLog log = logs.get(i);
+
+            if (log.getLogDate().isAfter(expectedDate)) {
+                continue;
+            }
+
+            if (!log.getLogDate().isEqual(expectedDate) || !Boolean.TRUE.equals(log.getCompleted())) {
+                return streak;
+            }
+
+            streak++;
+            expectedDate = expectedDate.minusDays(1);
+        }
+
+        return streak;
     }
 }
