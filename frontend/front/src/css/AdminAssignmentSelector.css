@@ -31,6 +31,7 @@ select.admin-assignment-input { cursor: pointer; appearance: none; padding-right
 .admin-assignment-multi {
   display:flex;
   flex-direction:column;
+  width: 100%;
   gap:.6rem;
   animation: gcal-slide-up 0.15s ease-out;
   transform-origin: top;
