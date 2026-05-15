@@ -1,5 +1,5 @@
 {
-  "main":"./front/public/electron.js",
+  "main":"./front/electron/electron.js",
   "devDependencies": {
     "concurrently": "^9.1.2",
     "electron": "^35.0.1"

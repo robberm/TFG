@@ -1,5 +1,8 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
+const isAutoStartSupported =
+  process.platform === "win32" && !process.defaultApp;
+
 contextBridge.exposeInMainWorld("electronAPI", {
   onBlockStatus: (callback) => ipcRenderer.on("block-status", callback),
   startBlock: (payload) => ipcRenderer.send("start-block", payload),
@@ -29,8 +32,20 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
 
   electronSettings: {
-    getAutoStart: () => ipcRenderer.invoke("settings:get-auto-start"),
-    setAutoStart: (enabled) =>
-      ipcRenderer.invoke("settings:set-auto-start", enabled),
+    isAutoStartSupported,
+    getAutoStart: () => {
+      if (!isAutoStartSupported) {
+        return Promise.resolve(false);
+      }
+
+      return ipcRenderer.invoke("settings:get-auto-start");
+    },
+    setAutoStart: (enabled) => {
+      if (!isAutoStartSupported) {
+        return Promise.resolve(false);
+      }
+
+      return ipcRenderer.invoke("settings:set-auto-start", enabled);
+    },
   },
 });

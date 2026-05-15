@@ -40,6 +40,10 @@ const Settings = () => {
 
   useEffect(() => {
     const loadAutoStart = async () => {
+      if (!window?.electronAPI?.electronSettings?.isAutoStartSupported) {
+        return;
+      }
+
       if (!window?.electronAPI?.electronSettings?.getAutoStart) return;
 
       try {
