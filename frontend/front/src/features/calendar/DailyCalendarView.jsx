@@ -1,6 +1,7 @@
 import React from "react";
 import { format, isSameDay, parseISO } from "date-fns";
-import { es } from "date-fns/locale";
+import { enUS, es } from "date-fns/locale";
+import { useLanguage } from "../../context/languageContext";
 
 const HOUR_HEIGHT_PX = 80;
 const MINUTES_PER_HOUR = 60;
@@ -173,6 +174,8 @@ const DailyCalendarView = ({
   onTimeSlotClick,
   onEventClick,
 }) => {
+  const { language, t } = useLanguage();
+  const calendarLocale = language === "es" ? es : enUS;
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const currentTime = new Date();
   const isToday = isSameDay(currentDate, currentTime);
@@ -196,7 +199,7 @@ const DailyCalendarView = ({
   };
 
   const formatEventTime = (event) => {
-    if (event.isAllDay) return "Todo el día";
+    if (event.isAllDay) return t.calendarAllDay;
 
     return `${format(parseCalendarDate(event.startTime), "HH:mm")} - ${format(
       parseCalendarDate(event.endTime),
@@ -213,7 +216,7 @@ const DailyCalendarView = ({
       <div className="day-view-header">
         <div className="day-view-date">
           {format(currentDate, "EEEE, d 'de' MMMM 'de' yyyy", {
-            locale: es,
+            locale: calendarLocale,
           })}
         </div>
       </div>
@@ -238,7 +241,7 @@ const DailyCalendarView = ({
               letterSpacing: "0.04em",
             }}
           >
-            Todo el día
+            {t.calendarAllDay}
           </div>
 
           <div
@@ -264,7 +267,7 @@ const DailyCalendarView = ({
                 <div className="day-event-time">{formatEventTime(event)}</div>
                 <div className="day-event-title">{event.title}</div>
                 {event.assignedByAdmin && (
-                  <div className="day-event-assigned">Asignado</div>
+                  <div className="day-event-assigned">{t.calendarAssignedTag}</div>
                 )}
                 {event.location && (
                   <div className="day-event-location">📍 {event.location}</div>
@@ -354,7 +357,7 @@ const DailyCalendarView = ({
                   <div className="day-event-time">{formatEventTime(event)}</div>
                   <div className="day-event-title">{event.title}</div>
                 {event.assignedByAdmin && (
-                  <div className="day-event-assigned">Asignado</div>
+                  <div className="day-event-assigned">{t.calendarAssignedTag}</div>
                 )}
                   {event.location && (
                     <div className="day-event-location">

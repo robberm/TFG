@@ -124,7 +124,7 @@ function AdminUsersPage() {
 
         <form className="adminUsersForm" onSubmit={handleCreateUser}>
           <label>
-            Username
+            {t.username}
             <input
               type="text"
               value={form.username}

@@ -9,8 +9,10 @@ import WeekView from "./WeekView";
 import DailyCalendarView from "./DailyCalendarView";
 import useCalendarEvents from "../../hooks/useCalendarEvents";
 import "../../css/Calendar.css";
+import { useLanguage } from "../../context/languageContext";
 
 const Calendar = () => {
+  const { t } = useLanguage();
   const {
     currentDate,
     selectedDate,
@@ -72,7 +74,7 @@ const Calendar = () => {
       <div className="calendar-body">
         {isAdmin && (
           <div className="adminCalendarScopeSelector">
-            <label htmlFor="calendar-managed-user">Usuario subordinado</label>
+            <label htmlFor="calendar-managed-user">{t.calendarManagedUserLabel}</label>
             <select
               id="calendar-managed-user"
               value={selectedManagedUserId ?? ""}
@@ -82,9 +84,9 @@ const Calendar = () => {
                 )
               }
             >
-              <option value="">Todos los asignados</option>
+              <option value="">{t.calendarAllManagedUsers}</option>
               {managedUsers.length === 0 && (
-                <option value="">Sin usuarios subordinados</option>
+                <option value="">{t.calendarNoManagedUsers}</option>
               )}
               {managedUsers.map((user) => (
                 <option key={user.id} value={user.id}>

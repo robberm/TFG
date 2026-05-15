@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import {
   GOAL_STATUS_COLORS,
-  GOAL_STATUS_LABELS,
   getGoalTrackingPercent,
   getPriorityColor,
   sortGoalsByPriority,
@@ -18,6 +17,20 @@ const GoalsSection = ({
 }) => {
   const { t } = useLanguage();
   const [showCompleted, setShowCompleted] = useState(false);
+
+  const getPriorityLabel = (priority) => {
+    if (priority === "Alta") return t.priorityHigh;
+    if (priority === "Media") return t.priorityMedium;
+    if (priority === "Baja") return t.priorityLow;
+    return priority;
+  };
+
+  const getStatusLabel = (status) => {
+    if (status === "NotStarted") return t.goalStatusNotStarted;
+    if (status === "InProgress") return t.goalStatusInProgress;
+    if (status === "Done") return t.goalStatusDone;
+    return status;
+  };
 
   /**
    * Goals activos:
@@ -91,7 +104,7 @@ const GoalsSection = ({
                 backgroundColor: getPriorityColor(goal.priority),
               }}
             >
-              {goal.priority}
+              {getPriorityLabel(goal.priority)}
             </span>
           </div>
 
@@ -102,7 +115,7 @@ const GoalsSection = ({
                 backgroundColor: GOAL_STATUS_COLORS[goal.status] || "#6c757d",
               }}
             >
-              {GOAL_STATUS_LABELS[goal.status] || goal.status}
+              {getStatusLabel(goal.status)}
             </span>
           </div>
 
@@ -118,7 +131,7 @@ const GoalsSection = ({
               <span className="progressText">
                 {goal.isNumeric
                   ? `${Number(goal.valorProgreso || 0)} / ${Number(goal.valorObjetivo || 0)}`
-                  : GOAL_STATUS_LABELS[goal.status] || goal.status}
+                  : getStatusLabel(goal.status)}
               </span>
             </div>
           </div>

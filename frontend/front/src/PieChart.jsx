@@ -2,16 +2,22 @@ import React, { useEffect, useMemo, useState } from "react";
 import "./css/PieChart.css";
 import { useError } from "./components/ErrorContext";
 import { getGoals } from "./api/objectivesApi";
-import {
-  GOAL_STATUS_LABELS,
-  buildGoalStatusDistribution,
-} from "./features/objectives/utils/objectiveHelpers";
+import { buildGoalStatusDistribution } from "./features/objectives/utils/objectiveHelpers";
+import { useLanguage } from "./context/languageContext";
 
 export default function PieChart({ goals: externalGoals = null }) {
+  const { t } = useLanguage();
   const [goals, setGoals] = useState(
     Array.isArray(externalGoals) ? externalGoals : [],
   );
   const { setErrorMessage } = useError();
+
+  const getStatusLabel = (statusKey) => {
+    if (statusKey === "NotStarted") return t.goalStatusNotStarted;
+    if (statusKey === "InProgress") return t.goalStatusInProgress;
+    if (statusKey === "Done") return t.goalStatusDone;
+    return statusKey;
+  };
 
   useEffect(() => {
     if (Array.isArray(externalGoals)) {
@@ -88,7 +94,7 @@ export default function PieChart({ goals: externalGoals = null }) {
                 style={{ backgroundColor: segment.color }}
               ></span>
               <span className="legendText">
-                {GOAL_STATUS_LABELS[segment.key]} ({segment.value})
+                {getStatusLabel(segment.key)} ({segment.value})
               </span>
             </div>
           ))}

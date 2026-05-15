@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { format, startOfWeek, addDays, isSameDay, parseISO } from "date-fns";
+import { enUS, es } from "date-fns/locale";
+import { useLanguage } from "../../context/languageContext";
 
 const HOUR_HEIGHT_PX = 80;
 const MINUTES_PER_HOUR = 60;
@@ -167,12 +169,14 @@ const buildEventLayoutMap = (dayEvents) => {
 };
 
 const WeekView = ({ currentDate, events, onTimeSlotClick, onEventClick }) => {
+  const { language, t } = useLanguage();
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const currentTime = new Date();
 
   const gridViewportRef = useRef(null);
   const timelineRef = useRef(null);
+  const calendarLocale = language === "es" ? es : enUS;
   const [headerScrollLeft, setHeaderScrollLeft] = useState(0);
   const [headerPaddingRight, setHeaderPaddingRight] = useState(0);
 
@@ -181,7 +185,7 @@ const WeekView = ({ currentDate, events, onTimeSlotClick, onEventClick }) => {
     weekDays.push(addDays(weekStart, i));
   }
 
-  const shortDayNames = ["L", "M", "X", "J", "V", "S", "D"];
+  const shortDayNames = weekDays.map((day) => format(day, "EEEEE", { locale: calendarLocale }));
 
   const getEventsForDay = (day) => {
     return events.filter((event) =>
@@ -190,7 +194,7 @@ const WeekView = ({ currentDate, events, onTimeSlotClick, onEventClick }) => {
   };
 
   const formatEventTime = (event) => {
-    if (event.isAllDay) return "Todo el día";
+    if (event.isAllDay) return t.calendarAllDay;
     return format(parseCalendarDate(event.startTime), "HH:mm");
   };
 

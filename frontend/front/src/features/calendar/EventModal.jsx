@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { format, addMinutes, startOfDay, parseISO } from "date-fns";
-import { es } from "date-fns/locale";
+import { enUS, es } from "date-fns/locale";
 import "../../css/EventModal.css";
 import { fetchEventCategories } from "../../api/eventApi";
 import { useLanguage } from "../../context/languageContext";
@@ -178,7 +178,8 @@ const EventModal = ({
   managedUsers = EMPTY_MANAGED_USERS,
   defaultManagedUserId = null,
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const calendarLocale = language === "es" ? es : enUS;
   const [formData, setFormData] = useState({
     id: null,
     title: "",
@@ -421,7 +422,7 @@ const EventModal = ({
   const formatDisplayDate = () => {
     if (!formData.date) return "";
     const date = new Date(`${formData.date}T00:00:00`);
-    return format(date, "EEEE, d 'de' MMMM", { locale: es });
+    return format(date, "EEEE, d 'de' MMMM", { locale: calendarLocale });
   };
 
   return (
@@ -505,6 +506,7 @@ const EventModal = ({
                     value={formData.startTime}
                     disabled={isAssignedEventReadOnly}
                     onChange={(val) => handleTimeChange("startTime", val)}
+                    searchPlaceholder={t.calendarSearchTime}
                   />
                   <span className="gcal-time-separator">—</span>
                   <TimeSelector
@@ -512,6 +514,7 @@ const EventModal = ({
                     value={formData.endTime}
                     disabled={isAssignedEventReadOnly}
                     onChange={(val) => handleTimeChange("endTime", val)}
+                    searchPlaceholder={t.calendarSearchTime}
                   />
                 </div>
               )}

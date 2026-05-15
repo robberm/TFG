@@ -9,7 +9,7 @@ import {
   addMonths,
   subMonths,
 } from "date-fns";
-import { es } from "date-fns/locale";
+import { enUS, es } from "date-fns/locale";
 import {
   fetchEventsByRange,
   saveCalendarEvent,
@@ -17,8 +17,10 @@ import {
 } from "../api/eventApi";
 import { getCurrentUserProfile } from "../api/userApi";
 import { getManagedUsers } from "../api/adminApi";
+import { useLanguage } from "../context/languageContext";
 
 const useCalendarEvents = () => {
+  const { language } = useLanguage();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState([]);
@@ -30,6 +32,7 @@ const useCalendarEvents = () => {
   const [selectedManagedUserId, setSelectedManagedUserId] = useState(null);
 
   const isAdmin = profile?.role === "ADMIN";
+  const calendarLocale = language === "es" ? es : enUS;
 
   const collapseAdminAssignedEvents = useCallback((incomingEvents) => {
     if (!Array.isArray(incomingEvents)) {
@@ -258,22 +261,22 @@ const useCalendarEvents = () => {
 
   const getHeaderDateText = useCallback(() => {
     if (viewMode === "month") {
-      return format(currentDate, "MMMM yyyy", { locale: es });
+      return format(currentDate, "MMMM yyyy", { locale: calendarLocale });
     }
 
     if (viewMode === "week") {
       const start = startOfWeek(currentDate, { weekStartsOn: 1 });
       const end = endOfWeek(currentDate, { weekStartsOn: 1 });
 
-      return `${format(start, "MMM d", { locale: es })} - ${format(
+      return `${format(start, "MMM d", { locale: calendarLocale })} - ${format(
         end,
         "MMM d, yyyy",
-        { locale: es },
+        { locale: calendarLocale },
       )}`;
     }
 
-    return format(currentDate, "EEEE, MMMM d, yyyy", { locale: es });
-  }, [currentDate, viewMode]);
+    return format(currentDate, "EEEE, MMMM d, yyyy", { locale: calendarLocale });
+  }, [calendarLocale, currentDate, viewMode]);
 
   return {
     currentDate,

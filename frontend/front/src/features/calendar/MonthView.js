@@ -10,6 +10,8 @@ import {
   isSameDay,
   parseISO,
 } from "date-fns";
+import { enUS, es } from "date-fns/locale";
+import { useLanguage } from "../../context/languageContext";
 
 /**
  * Convierte una fecha del backend a objeto Date de forma estable.
@@ -59,6 +61,8 @@ const MonthView = ({
   onDateClick,
   onEventClick,
 }) => {
+  const { language, t } = useLanguage();
+  const calendarLocale = language === "es" ? es : enUS;
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
   const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
@@ -67,17 +71,14 @@ const MonthView = ({
   const days = [];
   const daysOfWeek = [];
   const dateFormat = "d";
-  const daysOfWeekFormat = "EEE";
   const startOfTheWeek = startOfWeek(new Date(), { weekStartsOn: 1 });
-
-  const shortDayNames = ["L", "M", "X", "J", "V", "S", "D"];
 
   for (let i = 0; i < 7; i++) {
     const dayOfWeek = addDays(startOfTheWeek, i);
 
     daysOfWeek.push(
       <div className="day-header" key={`header-${i}`}>
-        {shortDayNames[i]}
+        {format(dayOfWeek, "EEEEE", { locale: calendarLocale })}
       </div>,
     );
   }
@@ -110,7 +111,7 @@ const MonthView = ({
               onClick={(e) => onEventClick(event, e)}
             >
               {event.title}
-              {event.assignedByAdmin && <span className="eventOwnerTag">Asignado</span>}
+              {event.assignedByAdmin && <span className="eventOwnerTag">{t.calendarAssignedTag}</span>}
             </div>
           ))}
         </div>
