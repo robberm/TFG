@@ -1,3 +1,5 @@
+export const app_name = "GMO";
+
 export const TEXT_CONSTANTS = {
   en: {
     language: "Language",
@@ -74,6 +76,14 @@ export const TEXT_CONSTANTS = {
     calendarNoReminders: "No reminders.",
     calendarMoreOptions: "More options",
     calendarAssignedTag: "Assigned",
+    appWelcomeTo: "Welcome to",
+    homeNiceToSeeYou: "Nice to see you,",
+    calendarTagFocusDescription:
+      "This tag is linked to the Block screen and activates Focus mode for the duration of the scheduled event.",
+    calendarTagMandatoryDescription:
+      'Tag used when you need to force yourself to do something and discipline is hard; this can make your computer shut down.',
+    calendarTagColors: "Tag colors",
+    calendarTagReset: "Reset",
     commonDelete: "Delete",
     commonSave: "Save",
     commonCreate: "Create",
@@ -316,6 +326,14 @@ export const TEXT_CONSTANTS = {
     calendarNoReminders: "Sin alertas.",
     calendarMoreOptions: "Más opciones",
     calendarAssignedTag: "Asignado",
+    appWelcomeTo: "Bienvenido a",
+    homeNiceToSeeYou: "¡Qué bueno verte,",
+    calendarTagFocusDescription:
+      "Este tag está ligado a la pantalla de Block, ofreciendo una restricción, activando el Focus mode durante el tiempo del evento programado.",
+    calendarTagMandatoryDescription:
+      'Tag que hace que si tienes que "obligarte" a algo pero te cuesta la disciplina, este hará que tu ordenador se apague.',
+    calendarTagColors: "Colores de tags",
+    calendarTagReset: "Restablecer",
     commonDelete: "Eliminar",
     commonSave: "Guardar",
     commonCreate: "Crear",

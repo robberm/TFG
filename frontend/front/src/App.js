@@ -3,13 +3,15 @@ import "./css/App.css";
 import Login from "./Login";
 import Register from "./Register";
 import WindowTitleBar from "./components/layout/WindowTitleBar";
+import { useLanguage } from "./context/languageContext";
+import { app_name } from "./constants/textConstants";
 
 const CONFIG_ANIMACION = {
   retrasoInicial: 500,
   duracionAparecer: 1500,
   duracionEscalar: 1000,
   duracionDesaparecer: 2000,
-  nombreApp: "¿App?",
+  nombreApp: app_name,
   colorTexto: "#ffffff",
   colorNombreApp: "#000000",
   colorFondo: "#111111",
@@ -24,6 +26,7 @@ function App() {
   const [config] = useState(CONFIG_ANIMACION);
   const [etapaAnimacion, setEtapaAnimacion] = useState(0);
   const [showButtons, setShowButtons] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (etapaAnimacion === 0) {
@@ -92,7 +95,7 @@ function App() {
       </video>
 
       <div className={obtenerClasesAnimacion()} style={estiloTexto}>
-        Welcome to{" "}
+          {t.appWelcomeTo}{" "}
         <span className="nombre-app" style={estiloNombreApp}>
           {config.nombreApp}
         </span>

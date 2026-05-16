@@ -12,9 +12,12 @@
 
   --event-study-color: #f39c12;
   --event-mandatory-color: #e74c3c;
-  --event-work-color: #3498db;
+  --event-work-color: #0ea5a4;
   --event-personal-color: #2ecc71;
   --event-health-color: #9b59b6;
+  --event-reunion-color: #6264a7;
+  --event-perfil-color: #f48942;
+  --event-focus-color: #7c3aed;
 }
 
 body.dark {

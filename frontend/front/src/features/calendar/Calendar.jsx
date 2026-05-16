@@ -7,6 +7,7 @@ import CalendarHeader from "./CalendarHeader";
 import MonthView from "./MonthView";
 import WeekView from "./WeekView";
 import DailyCalendarView from "./DailyCalendarView";
+import TagColorCustomizer from "./TagColorCustomizer";
 import useCalendarEvents from "../../hooks/useCalendarEvents";
 import "../../css/Calendar.css";
 import { useLanguage } from "../../context/languageContext";
@@ -125,6 +126,8 @@ const Calendar = () => {
           />
         )}
       </div>
+
+      <TagColorCustomizer />
 
       {showModal && (
         <EventModal

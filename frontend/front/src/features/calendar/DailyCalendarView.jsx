@@ -311,7 +311,7 @@ const DailyCalendarView = ({
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor =
-                  "rgba(98, 100, 167, 0.05)";
+                  "color-mix(in srgb, var(--event-work-color) 5%, transparent)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = "transparent";

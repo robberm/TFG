@@ -398,12 +398,20 @@ const EventModal = ({
   };
 
   const getCategoryColor = (cat) => {
-    const colors = {
-      reunion: "#6264a7",
-      personal: "#78b6c8",
-      perfil: "#f48942",
+    if (!cat) return 'var(--event-work-color, #6264a7)';
+    const key = String(cat).toUpperCase();
+    const map = {
+      REUNION: 'var(--event-reunion-color, #6264a7)',
+      PERSONAL: 'var(--event-personal-color, #78b6c8)',
+      PERFIL: 'var(--event-perfil-color, #f48942)',
+      STUDY: 'var(--event-study-color, #66bb6a)',
+      WORK: 'var(--event-work-color, #e11238)',
+      FOCUS: 'var(--event-focus-color, #7c3aed)',
+      HEALTH: 'var(--event-health-color, #6366f1)',
+      MANDATORY: 'var(--event-mandatory-color, #ff6347)',
     };
-    return colors[cat?.toLowerCase()] || "#6264a7";
+
+    return map[key] || 'var(--event-work-color, #6264a7)';
   };
 
   /**

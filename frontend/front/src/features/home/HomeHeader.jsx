@@ -1,13 +1,15 @@
 import React from "react";
+import { useLanguage } from "../../context/languageContext";
 
 const HomeHeader = () => {
+  const { t } = useLanguage();
   const username = localStorage.getItem("username");
 
   return (
     <>
       <div className="personalHeader">
         <h1>
-          Nice to see you,&nbsp;
+          {t.homeNiceToSeeYou}&nbsp;
           <span className="slide-in-bottom" aria-hidden="false">
             <span className="slide-inner">
               <span className="slide-original">{username}</span>
