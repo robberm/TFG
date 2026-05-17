@@ -40,7 +40,8 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody LoginRequest request,
-                                       @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
+                                       @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
+                                       @RequestHeader(value = "X-Client-Platform", required = false) String clientPlatform) {
         boolean authenticated = accountService.authenticate(request);
 
         if (!authenticated) {
@@ -51,7 +52,7 @@ public class UserController {
         }
 
         User user = userService.getUserByUsername(request.getUsername());
-        String token = tokenService.generateToken(user.getUsername(), user.getTokenVersion());
+        String token = tokenService.generateToken(user.getUsername(), user.getTokenVersion(), isDesktopClient(clientPlatform));
 
         Map<String, Object> response = new HashMap<>();
         response.put("token", token);
@@ -69,10 +70,11 @@ public class UserController {
      */
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody User newUser,
-                                          @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
+                                          @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
+                                          @RequestHeader(value = "X-Client-Platform", required = false) String clientPlatform) {
         User user = accountService.register(newUser);
 
-        String token = tokenService.generateToken(user.getUsername(), user.getTokenVersion());
+        String token = tokenService.generateToken(user.getUsername(), user.getTokenVersion(), isDesktopClient(clientPlatform));
 
         Map<String, Object> response = new HashMap<>();
         response.put("token", token);
@@ -88,12 +90,13 @@ public class UserController {
     @PostMapping("change/password")
     public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request,
                                             @RequestHeader("Authorization") String authHeader,
-                                            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
+                                            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
+                                            @RequestHeader(value = "X-Client-Platform", required = false) String clientPlatform) {
         String token = extractAndVerifyToken(authHeader, acceptLanguage);
         String usernameFromToken = tokenService.extractUsername(token);
 
         User updatedUser = accountService.changePassword(usernameFromToken, request);
-        String newToken = tokenService.generateToken(updatedUser.getUsername(), updatedUser.getTokenVersion());
+        String newToken = tokenService.generateToken(updatedUser.getUsername(), updatedUser.getTokenVersion(), isDesktopClient(clientPlatform));
 
         Map<String, Object> response = new HashMap<>();
         response.put("message", languageResolver.text(acceptLanguage, "account.password.changed"));
@@ -109,12 +112,13 @@ public class UserController {
     @PostMapping("change/username")
     public ResponseEntity<?> changeUsername(@RequestBody ChangeUsernameRequest request,
                                             @RequestHeader("Authorization") String authHeader,
-                                            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
+                                            @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
+                                            @RequestHeader(value = "X-Client-Platform", required = false) String clientPlatform) {
         String token = extractAndVerifyToken(authHeader, acceptLanguage);
         String usernameFromToken = tokenService.extractUsername(token);
 
         User updatedUser = accountService.changeUsername(usernameFromToken, request);
-        String newToken = tokenService.generateToken(updatedUser.getUsername(), updatedUser.getTokenVersion());
+        String newToken = tokenService.generateToken(updatedUser.getUsername(), updatedUser.getTokenVersion(), isDesktopClient(clientPlatform));
 
         Map<String, Object> response = new HashMap<>();
         response.put("message", languageResolver.text(acceptLanguage, "account.username.changed"));
@@ -165,6 +169,10 @@ public class UserController {
         response.put("profileImagePath", null);
 
         return ResponseEntity.ok(response);
+    }
+
+    private boolean isDesktopClient(String clientPlatform) {
+        return clientPlatform != null && clientPlatform.equalsIgnoreCase("desktop");
     }
 
     private String extractAndVerifyToken(String authHeader, String acceptLanguage) {

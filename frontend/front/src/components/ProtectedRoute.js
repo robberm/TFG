@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { getCurrentUserProfile } from "../api/userApi";
 
+
 const ProtectedRoute = ({
   children,
   requireAdmin = false,

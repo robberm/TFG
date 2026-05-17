@@ -21,16 +21,23 @@ public class JwtUtil {
     @Value("${jwt.expiration}")
     private long expirationMs;
 
+
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String username, Integer tokenVersion) {
-        return Jwts.builder()
+    public String generateToken(String username, Integer tokenVersion, boolean desktopClient) {
+        var builder = Jwts.builder()
                 .setSubject(username)
                 .claim("tokenVersion", tokenVersion)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
+                .claim("desktopClient", desktopClient)
+                .setIssuedAt(new Date());
+
+        if (!desktopClient) {
+            builder.setExpiration(new Date(System.currentTimeMillis() + expirationMs));
+        }
+
+        return builder
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -68,10 +75,12 @@ public class JwtUtil {
             String username = claims.getSubject();
             Integer tokenVersion = extractTokenVersion(token);
             Date expiration = claims.getExpiration();
+            boolean desktopClient = Boolean.TRUE.equals(claims.get("desktopClient", Boolean.class));
+            boolean isValidByTime = desktopClient || (expiration != null && expiration.after(new Date()));
 
             return username.equals(expectedUsername)
                     && tokenVersion.equals(expectedTokenVersion)
-                    && expiration.after(new Date());
+                    && isValidByTime;
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
