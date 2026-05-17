@@ -12,8 +12,8 @@ public class JwtTokenService implements TokenService {
     }
 
     @Override
-    public String generateToken(String username, Integer tokenVersion) {
-        return jwtUtil.generateToken(username, tokenVersion);
+    public String generateToken(String username, Integer tokenVersion, boolean desktopClient) {
+        return jwtUtil.generateToken(username, tokenVersion, desktopClient);
     }
 
     @Override

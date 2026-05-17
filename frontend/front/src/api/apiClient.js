@@ -11,6 +11,9 @@ const API_TEXTS = {
 };
 
 const getLanguage = () => (localStorage.getItem("appLanguage") === "es" ? "es" : "en");
+const isElectronEnvironment =
+  typeof window !== "undefined" && typeof window.electronAPI !== "undefined";
+
 const text = (key) => API_TEXTS[getLanguage()][key];
 
 /**
@@ -53,6 +56,10 @@ const buildHeaders = ({ includeAuth = true, includeJson = true, extraHeaders = {
 
   if (includeJson) {
     headers["Content-Type"] = "application/json";
+  }
+
+  if (isElectronEnvironment) {
+    headers["X-Client-Platform"] = "desktop";
   }
 
   if (includeAuth) {

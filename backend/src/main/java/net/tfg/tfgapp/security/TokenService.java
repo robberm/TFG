@@ -2,7 +2,7 @@ package net.tfg.tfgapp.security;
 
 public interface TokenService {
 
-    String generateToken(String username, Integer tokenVersion);
+    String generateToken(String username, Integer tokenVersion, boolean desktopClient);
 
     String extractUsername(String token);
 
