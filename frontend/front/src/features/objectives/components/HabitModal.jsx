@@ -89,19 +89,6 @@ const HabitModal = ({
                 />
               </div>
 
-              <div className="formGroup">
-                <label className="checkboxRow" htmlFor="habit-active">
-                  <input
-                    id="habit-active"
-                    type="checkbox"
-                    checked={form.active}
-                    onChange={(event) =>
-                      handleChange("active", event.target.checked)
-                    }
-                  />
-                  {t.commonActive}
-                </label>
-              </div>
             </div>
 
             <div className="formActions">

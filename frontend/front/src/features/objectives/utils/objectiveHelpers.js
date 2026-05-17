@@ -104,9 +104,7 @@ export const getGoalTrackingPercent = (goal) => {
 };
 
 export const calculateGlobalGoalsProgress = (goals) => {
-  const trackedGoals = goals.filter(
-    (goal) => goal.active !== false && goal.status !== "Done",
-  );
+  const trackedGoals = goals.filter((goal) => goal.active !== false);
 
   if (trackedGoals.length === 0) {
     return 0;
