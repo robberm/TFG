@@ -7,6 +7,7 @@ import {
 } from "../utils/objectiveHelpers";
 import { useLanguage } from "../../../context/languageContext";
 import AdminAssignmentSelector from "../../../components/AdminAssignmentSelector";
+import CustomSelectDropdown from "../../../components/shared/CustomSelectDropdown";
 
 
 const GoalModal = ({
@@ -23,6 +24,16 @@ const GoalModal = ({
   const { t } = useLanguage();
   const isAssignedGoalReadOnlyForUser =
     Boolean(initialData?.assignedByAdmin) && !isAdmin;
+  const priorityOptions = [
+    { value: "Alta", label: t.priorityHigh },
+    { value: "Media", label: t.priorityMedium },
+    { value: "Baja", label: t.priorityLow },
+  ];
+  const statusOptions = [
+    { value: "NotStarted", label: t.goalStatusNotStarted },
+    { value: "InProgress", label: t.goalStatusInProgress },
+    { value: "Done", label: t.goalStatusDone },
+  ];
 
   /**
    * Cuando abrimos el modal en modo edición, cargamos los datos del goal.
@@ -200,18 +211,14 @@ const GoalModal = ({
 
               <div className="formGroup">
                 <label htmlFor="goal-priority">{t.commonPriority}</label>
-                <select
+                <CustomSelectDropdown
                   id="goal-priority"
                   value={form.priority}
                   disabled={isAssignedGoalReadOnlyForUser}
-                  onChange={(event) =>
-                    handleChange("priority", event.target.value)
-                  }
-                >
-                  <option value="Alta">{t.priorityHigh}</option>
-                  <option value="Media">{t.priorityMedium}</option>
-                  <option value="Baja">{t.priorityLow}</option>
-                </select>
+                  onChange={(value) => handleChange("priority", value)}
+                  options={priorityOptions}
+                  placeholder={t.commonPriority}
+                />
               </div>
             </div>
 
@@ -241,17 +248,13 @@ const GoalModal = ({
                     disabled
                   />
                 ) : (
-                  <select
+                  <CustomSelectDropdown
                     id="goal-status"
                     value={form.status}
-                    onChange={(event) =>
-                      handleChange("status", event.target.value)
-                    }
-                  >
-                    <option value="NotStarted">{t.goalStatusNotStarted}</option>
-                    <option value="InProgress">{t.goalStatusInProgress}</option>
-                    <option value="Done">{t.goalStatusDone}</option>
-                  </select>
+                    onChange={(value) => handleChange("status", value)}
+                    options={statusOptions}
+                    placeholder={t.commonStatus}
+                  />
                 )}
 
                 <label className="checkboxRow" htmlFor="goal-is-numeric">

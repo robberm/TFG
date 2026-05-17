@@ -123,7 +123,7 @@ function App() {
 
       {showForm && (
         <button className="app-button" onClick={goBack}>
-          Volver
+          {t.commonBack}
         </button>
       )}
     </div>

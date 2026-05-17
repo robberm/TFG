@@ -24,6 +24,7 @@ import GoalsSection from "./features/objectives/components/GoalsSection";
 import HabitsSection from "./features/objectives/components/HabitsSection";
 import ObjectivesDashboard from "./features/objectives/components/ObjectivesDashboard";
 import { useLanguage } from "./context/languageContext";
+import CustomSelectDropdown from "./components/shared/CustomSelectDropdown";
 
 import {
   buildHabitCompletionMap,
@@ -407,26 +408,26 @@ const Objectives = () => {
 
       {isAdmin && (
         <div className="adminScopeSelector">
-          <label htmlFor="managed-user-goals">{t.objectivesManagedUserLabel}</label>
-          <select
+          <CustomSelectDropdown
             id="managed-user-goals"
-            value={selectedManagedUserId ?? ""}
-            onChange={(event) =>
-              setSelectedManagedUserId(
-                event.target.value ? Number(event.target.value) : null,
-              )
+            label={t.objectivesManagedUserLabel}
+            value={String(selectedManagedUserId ?? "")}
+            onChange={(value) =>
+              setSelectedManagedUserId(value ? Number(value) : null)
             }
-          >
-            <option value="">{t.objectivesAllAssignedOption}</option>
-            {managedUsers.length === 0 && (
-              <option value="">{t.objectivesNoManagedUsersOption}</option>
-            )}
-            {managedUsers.map((user) => (
-              <option key={user.id} value={user.id}>
-                {user.username}
-              </option>
-            ))}
-          </select>
+            options={
+              managedUsers.length === 0
+                ? [{ value: "", label: t.objectivesNoManagedUsersOption }]
+                : [
+                    { value: "", label: t.objectivesAllAssignedOption },
+                    ...managedUsers.map((user) => ({
+                      value: String(user.id),
+                      label: user.username,
+                    })),
+                  ]
+            }
+            placeholder={t.objectivesManagedUserLabel}
+          />
         </div>
       )}
 

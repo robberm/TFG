@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import "../css/AdminAssignmentSelector.css";
 import { useLanguage } from "../context/languageContext";
+import CustomSelectDropdown from "./shared/CustomSelectDropdown";
 
 const AdminAssignmentSelector = ({
   mode,
@@ -14,20 +15,6 @@ const AdminAssignmentSelector = ({
 }) => {
   const { t } = useLanguage();
   const [query, setQuery] = useState("");
-  const [singleOpen, setSingleOpen] = useState(false);
-  const [modeOpen, setModeOpen] = useState(false);
-  const rootRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (rootRef.current && !rootRef.current.contains(event.target)) {
-        setSingleOpen(false);
-        setModeOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const filteredUsers = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -40,69 +27,36 @@ const AdminAssignmentSelector = ({
     [managedUsers, selectedUserIds],
   );
 
-  const selectedSingleUser = managedUsers.find((user) => String(user.id) === String(singleUserId));
-
   const modeOptions = [
-    { value: "single", label: t.commonUser, selected: mode === "single" },
-    { value: "multiple", label: t.commonMultipleUsers, selected: mode === "multiple" },
-    { value: "all", label: t.commonAllOrganization, selected: mode === "all" },
+    { value: "single", label: t.commonUser },
+    { value: "multiple", label: t.commonMultipleUsers },
+    { value: "all", label: t.commonAllOrganization },
   ];
 
-  const DropdownList = ({ label, valueLabel, isOpen, onToggle, options, onSelect }) => (
-    <div className="admin-assignment-dropdown">
-      {label && <label>{label}</label>}
-      <button type="button" className={`admin-assignment-input admin-assignment-trigger ${isOpen ? "active" : ""}`} onClick={onToggle}>
-        <span>{valueLabel}</span>
-        <span>▾</span>
-      </button>
-      {isOpen && (
-        <div className={`admin-assignment-results admin-assignment-results-inline`}>
-          {options.map((option) => (
-            <button
-              type="button"
-              key={option.value}
-              className={`admin-assignment-result ${option.selected ? "selected" : ""}`}
-              onClick={() => onSelect(option.value)}
-            >
-              <span>{option.label}</span>
-              {option.selected && <span>✓</span>}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  const singleUserOptions = managedUsers.map((user) => ({
+    value: String(user.id),
+    label: user.username,
+  }));
 
   return (
-    <div className="admin-assignment-panel" ref={rootRef}>
-      <DropdownList
+    <div className="admin-assignment-panel">
+      <CustomSelectDropdown
         label={t.commonAssignment}
-        valueLabel={modeOptions.find((opt) => opt.selected)?.label || t.commonAssignment}
-        isOpen={modeOpen}
-        onToggle={() => {
-          setModeOpen((prev) => !prev);
-          setSingleOpen(false);
-        }}
+        value={mode}
         options={modeOptions}
-        onSelect={(value) => {
+        onChange={(value) => {
           onModeChange(value);
-          setModeOpen(false);
         }}
       />
 
       {mode === "single" && (
-        <DropdownList
+        <CustomSelectDropdown
           label={t.commonUser}
-          valueLabel={selectedSingleUser?.username || singlePlaceholder || t.commonSelectUser}
-          isOpen={singleOpen}
-          onToggle={() => {
-            setSingleOpen((prev) => !prev);
-            setModeOpen(false);
-          }}
-          options={managedUsers.map((user) => ({ value: String(user.id), label: user.username, selected: String(user.id) === String(singleUserId) }))}
-          onSelect={(value) => {
+          value={String(singleUserId ?? "")}
+          options={singleUserOptions}
+          placeholder={singlePlaceholder || t.commonSelectUser}
+          onChange={(value) => {
             onSingleUserChange(value);
-            setSingleOpen(false);
           }}
         />
       )}

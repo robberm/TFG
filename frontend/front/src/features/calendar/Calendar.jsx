@@ -11,6 +11,7 @@ import TagColorCustomizer from "./TagColorCustomizer";
 import useCalendarEvents from "../../hooks/useCalendarEvents";
 import "../../css/Calendar.css";
 import { useLanguage } from "../../context/languageContext";
+import CustomSelectDropdown from "../../components/shared/CustomSelectDropdown";
 
 const Calendar = () => {
   const { t } = useLanguage();
@@ -75,26 +76,27 @@ const Calendar = () => {
       <div className="calendar-body">
         {isAdmin && (
           <div className="adminCalendarScopeSelector">
-            <label htmlFor="calendar-managed-user">{t.calendarManagedUserLabel}</label>
-            <select
+            <CustomSelectDropdown
               id="calendar-managed-user"
+              label={t.calendarManagedUserLabel}
               value={selectedManagedUserId ?? ""}
-              onChange={(event) =>
-                setSelectedManagedUserId(
-                  event.target.value ? Number(event.target.value) : null,
-                )
+              onChange={(value) =>
+                setSelectedManagedUserId(value ? Number(value) : null)
               }
-            >
-              <option value="">{t.calendarAllManagedUsers}</option>
-              {managedUsers.length === 0 && (
-                <option value="">{t.calendarNoManagedUsers}</option>
-              )}
-              {managedUsers.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.username}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: "", label: t.calendarAllManagedUsers },
+                ...managedUsers.map((user) => ({
+                  value: String(user.id),
+                  label: user.username,
+                })),
+              ]}
+              placeholder={
+                managedUsers.length === 0
+                  ? t.calendarNoManagedUsers
+                  : t.calendarAllManagedUsers
+              }
+              disabled={managedUsers.length === 0}
+            />
           </div>
         )}
 
