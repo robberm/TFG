@@ -43,13 +43,16 @@ const ObjectivesDashboard = ({ goals, habits, logs }) => {
         ? Math.max(...habits.map((habit) => Number(habit.bestStreak || 0)))
         : 0;
 
+    const currentBestHabitStreak =
+      habits.length > 0
+        ? Math.max(...habits.map((habit) => Number(habit.currentStreak || 0)))
+        : 0;
+
     const activeGoals = goals.filter(
       (goal) => goal.active !== false && goal.status !== "Done",
     ).length;
 
-    const completedGoals = goals.filter(
-      (goal) => goal.status === "Done",
-    ).length;
+    const completedGoals = goals.filter((goal) => goal.status === "Done").length;
 
     const goalsInProgress = goals.filter(
       (goal) => goal.status === "InProgress",
@@ -74,6 +77,7 @@ const ObjectivesDashboard = ({ goals, habits, logs }) => {
       goalsInProgress,
       totalGoals,
       globalGoalsProgress,
+      currentBestHabitStreak,
       todayPercent,
     };
   }, [goals, habits, logs, todayIso]);
@@ -123,12 +127,11 @@ const ObjectivesDashboard = ({ goals, habits, logs }) => {
         <article className="summaryCard">
           <div className="summaryCardContent">
             <div className="summaryTextBlock">
-              <span className="summaryLabel">{t.dashboardGoalsProgress}</span>
+              <span className="summaryLabel">{t.dashboardCurrentBestStreak}</span>
               <strong className="summaryValue">
-                {metrics.globalGoalsProgress}%
+                {metrics.currentBestHabitStreak}
               </strong>
             </div>
-            {renderRing(metrics.globalGoalsProgress, "#667eea", "#764ba2")}
           </div>
         </article>
 
