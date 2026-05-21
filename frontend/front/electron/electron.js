@@ -8,6 +8,8 @@ const {
 const path = require("path");
 const fs = require("fs");
 const { exec, spawn } = require("child_process");
+const net = require("net");
+const { promisify } = require("util");
 
 let mainWindow = null;
 let blockWindow = null;
@@ -17,6 +19,96 @@ let currentWindowTransparent = false;
 let isRecreatingWindow = false;
 let isQuitting = false;
 
+
+
+const execAsync = promisify(exec);
+const MYSQL_PORT = 3310;
+const DB_TIMEOUT_MS = 90_000;
+const DB_POLL_INTERVAL_MS = 1_500;
+
+function getDockerComposePath() {
+  const devPath = path.resolve(__dirname, "..", "resources", "docker", "compose.yml");
+  const prodPath = path.join(process.resourcesPath, "docker", "compose.yml");
+
+  if (isDevMode() && fs.existsSync(devPath)) {
+    return devPath;
+  }
+
+  if (fs.existsSync(prodPath)) {
+    return prodPath;
+  }
+
+  return devPath;
+}
+
+async function isDockerAvailable() {
+  try {
+    await execAsync("docker version", { windowsHide: true });
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+async function startDockerCompose() {
+  const composePath = getDockerComposePath();
+
+  if (!fs.existsSync(composePath)) {
+    throw new Error(`No se ha encontrado compose.yml en: ${composePath}`);
+  }
+
+  await execAsync(`docker compose -f "${composePath}" up -d`, { windowsHide: true });
+}
+
+function canConnectToPort(port, host = "127.0.0.1", timeoutMs = 1200) {
+  return new Promise((resolve) => {
+    const socket = new net.Socket();
+
+    socket.setTimeout(timeoutMs);
+
+    socket.once("connect", () => {
+      socket.destroy();
+      resolve(true);
+    });
+
+    const onError = () => {
+      socket.destroy();
+      resolve(false);
+    };
+
+    socket.once("error", onError);
+    socket.once("timeout", onError);
+    socket.connect(port, host);
+  });
+}
+
+async function waitForDatabase(timeoutMs = DB_TIMEOUT_MS) {
+  const startedAt = Date.now();
+
+  while (Date.now() - startedAt < timeoutMs) {
+    if (await canConnectToPort(MYSQL_PORT)) {
+      return;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, DB_POLL_INTERVAL_MS));
+  }
+
+  throw new Error(`MySQL no disponible en localhost:${MYSQL_PORT} tras ${Math.round(timeoutMs / 1000)}s`);
+}
+
+async function ensureDockerDatabaseReady() {
+  const dockerAvailable = await isDockerAvailable();
+  if (!dockerAvailable) {
+    throw new Error("Docker no está disponible. Inicia Docker Desktop y vuelve a abrir la app.");
+  }
+
+  const dbReady = await canConnectToPort(MYSQL_PORT);
+  if (!dbReady) {
+    await startDockerCompose();
+  }
+
+  await waitForDatabase();
+}
 function isDevMode() {
   return !app.isPackaged;
 }
@@ -507,7 +599,13 @@ function createReminderWindow(reminder) {
   }, 12000);
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  try {
+    await ensureDockerDatabaseReady();
+  } catch (error) {
+    console.error("Error preparando Docker/MySQL:", error);
+  }
+
   startBackend();
   openInitialWindow();
 

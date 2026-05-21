@@ -78,6 +78,10 @@
       {
         "from": "resources/backend/tfgapp-0.0.1-SNAPSHOT.jar",
         "to": "backend/tfgapp-0.0.1-SNAPSHOT.jar"
+      },
+      {
+        "from": "resources/docker/compose.yml",
+        "to": "docker/compose.yml"
       }
     ],
     "win": {

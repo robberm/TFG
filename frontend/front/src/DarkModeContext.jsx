@@ -25,8 +25,15 @@ const applyThemeToBody = (theme) => {
   document.body.classList.add(theme);
 };
 
+const isElectronEnvironment =
+  typeof window !== "undefined" && typeof window.electronAPI !== "undefined";
+
 const getCurrentRoute = () => {
-  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (isElectronEnvironment) {
+    return window.location.hash.replace(/^#/, "") || "/";
+  }
+
+  return `${window.location.pathname}${window.location.search}`;
 };
 
 export const DarkModeProvider = ({ children }) => {
