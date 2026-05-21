@@ -6,23 +6,125 @@ const {
   screen,
 } = require("electron");
 const path = require("path");
-const { exec } = require("child_process");
+const fs = require("fs");
+const { exec, spawn } = require("child_process");
 
 let mainWindow = null;
 let blockWindow = null;
+let backendProcess = null;
+
 let currentWindowTransparent = false;
 let isRecreatingWindow = false;
+let isQuitting = false;
+
+function isDevMode() {
+  return !app.isPackaged;
+}
 
 function getRouteToLoad(route = "/") {
   return typeof route === "string" && route.trim() ? route : "/";
 }
 
+function getAppIconPath() {
+  const pngIconPath = path.join(
+    __dirname,
+    "..",
+    "resources",
+    "build",
+    "icono_final_v2.png",
+  );
+
+  return fs.existsSync(pngIconPath) ? pngIconPath : undefined;
+}
+
+function getEmbeddedJavaPath() {
+  if (process.platform !== "win32") {
+    return "java";
+  }
+
+  const javaPath = path.join(
+    process.resourcesPath,
+    "runtime",
+    "jre21",
+    "bin",
+    "java.exe",
+  );
+
+  return fs.existsSync(javaPath) ? javaPath : "java";
+}
+
+function getBackendJarPath() {
+  const jarName = "tfgapp-0.0.1-SNAPSHOT.jar";
+
+  if (isDevMode()) {
+    return path.resolve(__dirname, "..", "resources", "backend", jarName);
+  }
+
+  return path.join(process.resourcesPath, "backend", jarName);
+}
+
+function startBackend() {
+  if (backendProcess) {
+    return;
+  }
+
+  const jarPath = getBackendJarPath();
+
+  if (!fs.existsSync(jarPath)) {
+    console.error(`No se ha encontrado el backend en: ${jarPath}`);
+    return;
+  }
+
+  const javaPath = isDevMode() ? "java" : getEmbeddedJavaPath();
+
+backendProcess = spawn(javaPath, ["-Xms64m", "-Xmx256m", "-jar", jarPath], {
+  cwd: path.dirname(jarPath),
+  windowsHide: true,
+  detached: false,
+  stdio: "pipe",
+});
+
+  backendProcess.stdout?.on("data", (data) => {
+    console.log(`[backend] ${data.toString()}`);
+  });
+
+  backendProcess.stderr?.on("data", (data) => {
+    console.error(`[backend-error] ${data.toString()}`);
+  });
+
+  backendProcess.on("error", (error) => {
+    console.error("Error arrancando el backend:", error);
+    backendProcess = null;
+  });
+
+  backendProcess.on("exit", (code, signal) => {
+    if (!isQuitting) {
+      console.log(`Backend finalizado. code=${code}, signal=${signal}`);
+    }
+
+    backendProcess = null;
+  });
+}
+
+function stopBackend() {
+  if (!backendProcess) {
+    return;
+  }
+
+  try {
+    backendProcess.kill();
+  } catch (error) {
+    console.error("Error cerrando el backend:", error);
+  } finally {
+    backendProcess = null;
+  }
+}
+
 function loadRenderer(win, route = "/") {
   const finalRoute = getRouteToLoad(route);
-  const isDev = !app.isPackaged;
 
-  if (isDev) {
-    win.loadURL(`http://localhost:3000${finalRoute}`);
+  if (isDevMode()) {
+    win.loadURL(`http://localhost:3000/#${finalRoute}`);
     return;
   }
 
@@ -34,8 +136,7 @@ function loadRenderer(win, route = "/") {
           (() => {
             const route = ${JSON.stringify(finalRoute)};
             try {
-              window.history.replaceState({}, "", route);
-              window.dispatchEvent(new PopStateEvent("popstate"));
+              window.location.hash = route;
             } catch (e) {
               console.error(e);
             }
@@ -106,6 +207,7 @@ function createMainWindow({
     roundedCorners: true,
     resizable: true,
     show: !hidden,
+    icon: getAppIconPath(),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
@@ -194,6 +296,7 @@ function recreateMainWindow({ transparentMode, route = "/" }) {
     if (!newWindow.isDestroyed()) {
       newWindow.destroy();
     }
+
     mainWindow = oldWindow;
     isRecreatingWindow = false;
   });
@@ -207,6 +310,7 @@ function createBlockWindow(payload = {}) {
     frame: false,
     alwaysOnTop: true,
     skipTaskbar: true,
+    icon: getAppIconPath(),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
@@ -219,8 +323,18 @@ function createBlockWindow(payload = {}) {
   blockWindow.loadFile(path.join(__dirname, "..", "public", "block.html"));
 
   if (process.platform === "win32") {
-    const scriptPath = path.resolve(__dirname, "..", "..", "..", "tools", "blockScreen.ps1");
-    exec(`powershell -ExecutionPolicy Bypass -File "${scriptPath}"`);
+    const scriptPath = path.resolve(
+      __dirname,
+      "..",
+      "..",
+      "..",
+      "tools",
+      "blockScreen.ps1",
+    );
+
+    if (fs.existsSync(scriptPath)) {
+      exec(`powershell -ExecutionPolicy Bypass -File "${scriptPath}"`);
+    }
   }
 
   setTimeout(() => {
@@ -269,6 +383,7 @@ function createReminderWindow(reminder) {
     show: false,
     hasShadow: true,
     focusable: true,
+    icon: getAppIconPath(),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -393,6 +508,7 @@ function createReminderWindow(reminder) {
 }
 
 app.whenReady().then(() => {
+  startBackend();
   openInitialWindow();
 
   globalShortcut.register("F12", () => {
@@ -406,6 +522,11 @@ app.whenReady().then(() => {
       mainWindow.webContents.toggleDevTools();
     }
   });
+});
+
+app.on("before-quit", () => {
+  isQuitting = true;
+  stopBackend();
 });
 
 app.on("will-quit", () => {

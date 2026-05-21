@@ -1,30 +1,34 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import AppRouter from './AppRouter';
-import { BrowserRouter } from 'react-router-dom';
-import { ErrorMessageGenerator } from './components/ErrorContext';
-import ErrorBox from './components/Error';
-import MainLayout from './components/layout/MainLayout';
-import FocusModeListener from './components/layout/FocusModeListener';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import AppRouter from "./AppRouter";
+import { BrowserRouter, HashRouter } from "react-router-dom";
+import { ErrorMessageGenerator } from "./components/ErrorContext";
+import MainLayout from "./components/layout/MainLayout";
+import FocusModeListener from "./components/layout/FocusModeListener";
 
-import './css/index.css';
-import '@fortawesome/fontawesome-free/css/all.min.css';
-import { DarkModeProvider } from './DarkModeContext';
-import { LanguageProvider } from './context/languageContext';
+import "./css/index.css";
+import "@fortawesome/fontawesome-free/css/all.min.css";
+import { DarkModeProvider } from "./DarkModeContext";
+import { LanguageProvider } from "./context/languageContext";
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const isElectronEnvironment =
+  typeof window !== "undefined" && typeof window.electronAPI !== "undefined";
+
+const Router = isElectronEnvironment ? HashRouter : BrowserRouter;
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+
 root.render(
   <LanguageProvider>
     <DarkModeProvider>
       <ErrorMessageGenerator>
-      <ErrorBox />
-      <BrowserRouter>
-        <FocusModeListener />
-        <MainLayout>
-          <AppRouter />
-        </MainLayout>
-      </BrowserRouter>
+        <Router>
+          <FocusModeListener />
+          <MainLayout>
+            <AppRouter />
+          </MainLayout>
+        </Router>
       </ErrorMessageGenerator>
     </DarkModeProvider>
-  </LanguageProvider>
+  </LanguageProvider>,
 );

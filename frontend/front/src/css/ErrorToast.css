@@ -3,7 +3,7 @@
  * Los separamos para no acoplar feedback visual al módulo Block.
  */
 .error-toast {
-  position: fixed;
+  position: absolute;
   top: 1rem;
   right: 1rem;
   display: flex;
@@ -14,8 +14,22 @@
   color: white;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  z-index: 1000;
+  z-index: 30;
+  max-width: min(420px, calc(100% - 2rem));
   animation: errorToastSlideIn 0.3s ease;
+}
+
+.error-toast span {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+  .error-toast {
+    left: 1rem;
+    right: 1rem;
+    top: 1rem;
+    max-width: none;
+  }
 }
 
 @keyframes errorToastSlideIn {

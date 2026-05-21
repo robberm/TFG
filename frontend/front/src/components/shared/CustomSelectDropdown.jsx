@@ -52,7 +52,6 @@ const CustomSelectDropdown = ({
               }}
             >
               <span>{option.label}</span>
-              {option.value === value && <span className="checkmark">✓</span>}
             </button>
           ))}
         </div>

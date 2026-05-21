@@ -4,6 +4,7 @@ import UserMenu from "./UserMenu";
 import WindowTitleBar from "./WindowTitleBar";
 import { useLanguage } from "../../context/languageContext";
 import ReminderListener from "./ReminderListener";
+import ErrorBox from "../Error";
 import "../../css/MainLayout.css";
 
 const isElectronEnvironment =
@@ -186,6 +187,8 @@ const MainLayout = ({ children }) => {
             <div className="userMenuContainer">
               <UserMenu />
             </div>
+
+            <ErrorBox />
 
             <ReminderListener />
 

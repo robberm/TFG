@@ -1,5 +1,5 @@
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import Home from "./pages/Home";
 import App from "./App";
@@ -26,6 +26,7 @@ const AppRouter = () => {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/objectives"
         element={
@@ -34,6 +35,7 @@ const AppRouter = () => {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/settings"
         element={
@@ -42,6 +44,7 @@ const AppRouter = () => {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/calendar"
         element={
@@ -50,6 +53,7 @@ const AppRouter = () => {
           </ProtectedRoute>
         }
       />
+
       <Route
         path="/block"
         element={
@@ -58,7 +62,6 @@ const AppRouter = () => {
           </ProtectedRoute>
         }
       />
-
 
       <Route
         path="/admin/setup-organization"
@@ -77,6 +80,8 @@ const AppRouter = () => {
           </ProtectedRoute>
         }
       />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

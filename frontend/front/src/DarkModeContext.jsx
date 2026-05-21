@@ -1,5 +1,6 @@
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -35,9 +36,15 @@ export const DarkModeProvider = ({ children }) => {
     applyThemeToBody(theme);
     localStorage.setItem("darkMode", String(theme === "dark"));
     localStorage.setItem("translucentMode", String(theme === "translucent"));
+    if (window.electronAPI?.setWindowTransparencyMode) {
+      window.electronAPI.setWindowTransparencyMode({
+        transparent: theme === "translucent",
+        route: getCurrentRoute(),
+      });
+    }
   }, [theme]);
 
-  const switchTheme = (nextTheme) => {
+  const switchTheme = useCallback((nextTheme) => {
     const wasTransparent = theme === "translucent";
     const willBeTransparent = nextTheme === "translucent";
 
@@ -52,25 +59,25 @@ export const DarkModeProvider = ({ children }) => {
         route: getCurrentRoute(),
       });
     }
-  };
+  }, [theme]);
 
-  const toggleDarkMode = () => {
+  const toggleDarkMode = useCallback(() => {
     if (theme === "dark") {
       switchTheme("light");
       return;
     }
 
     switchTheme("dark");
-  };
+  }, [switchTheme, theme]);
 
-  const toggleTranslucentMode = () => {
+  const toggleTranslucentMode = useCallback(() => {
     if (theme === "translucent") {
       switchTheme("light");
       return;
     }
 
     switchTheme("translucent");
-  };
+  }, [switchTheme, theme]);
 
   const value = useMemo(
     () => ({
@@ -81,7 +88,7 @@ export const DarkModeProvider = ({ children }) => {
       setTheme: switchTheme,
       theme,
     }),
-    [theme],
+    [switchTheme, theme, toggleDarkMode, toggleTranslucentMode],
   );
 
   return (

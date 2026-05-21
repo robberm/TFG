@@ -115,13 +115,6 @@
   font-weight: 500;
 }
 
-.checkmark {
-  font-size: 0.9rem;
-  color: #667eea;
-  margin-left: 8px;
-  flex-shrink: 0;
-}
-
 @keyframes slideDown {
   from {
     opacity: 0;
