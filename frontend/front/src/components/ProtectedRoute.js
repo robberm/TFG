@@ -3,6 +3,9 @@ import { Navigate } from "react-router-dom";
 import { getCurrentUserProfile } from "../api/userApi";
 
 
+const isElectronEnvironment =
+  typeof window !== "undefined" && typeof window.electronAPI !== "undefined";
+
 const ProtectedRoute = ({
   children,
   requireAdmin = false,
@@ -58,7 +61,14 @@ const ProtectedRoute = ({
         }
 
         if (isMounted) setStatus("ok");
-      } catch (_) {
+      } catch (error) {
+        const hasToken = Boolean(localStorage.getItem("token"));
+        if (isElectronEnvironment && hasToken) {
+          console.warn("[ProtectedRoute] Validación remota fallida en Electron. Se mantiene sesión local.", error);
+          if (isMounted) setStatus("ok");
+          return;
+        }
+
         localStorage.removeItem("token");
         localStorage.removeItem("username");
         localStorage.removeItem("role");

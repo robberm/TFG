@@ -4,6 +4,7 @@ const {
   ipcMain,
   globalShortcut,
   screen,
+  dialog,
 } = require("electron");
 const path = require("path");
 const fs = require("fs");
@@ -21,12 +22,42 @@ let isQuitting = false;
 
 
 
+/**
+ * Utilidad promesa para ejecutar comandos de shell (Docker/Compose).
+ */
 const execAsync = promisify(exec);
+
+/** Puerto expuesto por MySQL en Docker (host -> container 3310 -> 3306). */
 const MYSQL_PORT = 3310;
+/** Tiempo máximo de espera para que la base de datos acepte conexiones. */
 const DB_TIMEOUT_MS = 90_000;
+/** Intervalo entre sondeos de disponibilidad de MySQL. */
 const DB_POLL_INTERVAL_MS = 1_500;
 
+/**
+ * Escribe logs de arranque en disco para poder depurar instalaciones empaquetadas
+ * donde la consola no está visible para el usuario final.
+ */
+function logStartup(message) {
+  const formatted = `[${new Date().toISOString()}] ${message}`;
+  console.log(formatted);
+
+  try {
+    const logPath = path.join(app.getPath("userData"), "startup.log");
+    fs.appendFileSync(logPath, `${formatted}
+`, "utf8");
+  } catch (_) {
+    // Si falla escritura del log, no interrumpimos la app.
+  }
+}
+
+/**
+ * Devuelve la ruta de compose.yml según entorno:
+ * - Desarrollo: frontend/front/resources/docker/compose.yml
+ * - Producción empaquetada: process.resourcesPath/docker/compose.yml
+ */
 function getDockerComposePath() {
+
   const devPath = path.resolve(__dirname, "..", "resources", "docker", "compose.yml");
   const prodPath = path.join(process.resourcesPath, "docker", "compose.yml");
 
@@ -41,15 +72,17 @@ function getDockerComposePath() {
   return devPath;
 }
 
+/** Comprueba que el CLI de Docker está operativo para este proceso Electron. */
 async function isDockerAvailable() {
   try {
-    await execAsync("docker version", { windowsHide: true });
+    await execAsync("docker version", { windowsHide: true, shell: "cmd.exe" });
     return true;
   } catch (_) {
     return false;
   }
 }
 
+/** Lanza el docker compose en segundo plano para levantar MySQL. */
 async function startDockerCompose() {
   const composePath = getDockerComposePath();
 
@@ -57,9 +90,11 @@ async function startDockerCompose() {
     throw new Error(`No se ha encontrado compose.yml en: ${composePath}`);
   }
 
-  await execAsync(`docker compose -f "${composePath}" up -d`, { windowsHide: true });
+  logStartup(`Ejecutando docker compose con archivo: ${composePath}`);
+  await execAsync(`docker compose -f "${composePath}" up -d`, { windowsHide: true, shell: "cmd.exe" });
 }
 
+/** Comprueba conectividad TCP a un puerto del host. */
 function canConnectToPort(port, host = "127.0.0.1", timeoutMs = 1200) {
   return new Promise((resolve) => {
     const socket = new net.Socket();
@@ -82,6 +117,7 @@ function canConnectToPort(port, host = "127.0.0.1", timeoutMs = 1200) {
   });
 }
 
+/** Espera hasta que MySQL esté realmente aceptando conexiones TCP. */
 async function waitForDatabase(timeoutMs = DB_TIMEOUT_MS) {
   const startedAt = Date.now();
 
@@ -96,19 +132,25 @@ async function waitForDatabase(timeoutMs = DB_TIMEOUT_MS) {
   throw new Error(`MySQL no disponible en localhost:${MYSQL_PORT} tras ${Math.round(timeoutMs / 1000)}s`);
 }
 
+/** Orquesta validación Docker + levantado compose + espera de base de datos. */
 async function ensureDockerDatabaseReady() {
+  logStartup("Validando disponibilidad de Docker...");
   const dockerAvailable = await isDockerAvailable();
   if (!dockerAvailable) {
     throw new Error("Docker no está disponible. Inicia Docker Desktop y vuelve a abrir la app.");
   }
 
   const dbReady = await canConnectToPort(MYSQL_PORT);
+  logStartup(`Estado inicial MySQL localhost:${MYSQL_PORT} => ${dbReady ? "UP" : "DOWN"}`);
   if (!dbReady) {
     await startDockerCompose();
+    logStartup("docker compose up -d ejecutado.");
   }
 
   await waitForDatabase();
+  logStartup("MySQL disponible. Continuando arranque.");
 }
+/** Indica si la app corre en modo desarrollo (no empaquetado). */
 function isDevMode() {
   return !app.isPackaged;
 }
@@ -599,11 +641,19 @@ function createReminderWindow(reminder) {
   }, 12000);
 }
 
+/**
+ * Secuencia de arranque: Docker/MySQL -> Backend -> Renderer.
+ */
 app.whenReady().then(async () => {
   try {
     await ensureDockerDatabaseReady();
   } catch (error) {
-    console.error("Error preparando Docker/MySQL:", error);
+    const details = error?.message || String(error);
+    logStartup(`Error preparando Docker/MySQL: ${details}`);
+    dialog.showErrorBox(
+      "Error inicializando Docker/MySQL",
+      `No se pudo preparar la base de datos automáticamente.\n\n${details}\n\nRevisa Docker Desktop y el archivo startup.log en %APPDATA%/GMO.`
+    );
   }
 
   startBackend();
