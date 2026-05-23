@@ -33,6 +33,7 @@ const MYSQL_PORT = 3310;
 const DB_TIMEOUT_MS = 90_000;
 /** Intervalo entre sondeos de disponibilidad de MySQL. */
 const DB_POLL_INTERVAL_MS = 1_500;
+const DOCKER_TIMEOUT_MS = 120_000;
 
 /**
  * Escribe logs de arranque en disco para poder depurar instalaciones empaquetadas
@@ -80,6 +81,62 @@ async function isDockerAvailable() {
   } catch (_) {
     return false;
   }
+}
+
+
+/**
+ * Intenta abrir Docker Desktop en Windows para que el daemon quede disponible.
+ * No bloquea indefinidamente: la espera real la gestiona waitForDockerReady().
+ */
+async function launchDockerDesktop() {
+  if (process.platform !== "win32") {
+    return false;
+  }
+
+  const candidates = [
+    path.join(process.env["ProgramFiles"] || "", "Docker", "Docker", "Docker Desktop.exe"),
+    path.join(process.env["ProgramW6432"] || "", "Docker", "Docker", "Docker Desktop.exe"),
+    path.join(process.env["LocalAppData"] || "", "Docker", "Docker", "Docker Desktop.exe"),
+  ].filter(Boolean);
+
+  const dockerDesktopPath = candidates.find((candidate) => fs.existsSync(candidate));
+  if (!dockerDesktopPath) {
+    logStartup("Docker Desktop.exe no encontrado en rutas conocidas.");
+    return false;
+  }
+
+  await new Promise((resolve, reject) => {
+    const child = spawn(dockerDesktopPath, [], {
+      detached: true,
+      windowsHide: true,
+      stdio: "ignore",
+    });
+
+    child.once("error", reject);
+    child.once("spawn", () => {
+      child.unref();
+      resolve();
+    });
+  });
+
+  logStartup(`Docker Desktop lanzado: ${dockerDesktopPath}`);
+  return true;
+}
+
+/** Espera hasta que Docker CLI/daemon esté operativo. */
+async function waitForDockerReady(timeoutMs = DOCKER_TIMEOUT_MS) {
+  const startedAt = Date.now();
+
+  while (Date.now() - startedAt < timeoutMs) {
+    if (await isDockerAvailable()) {
+      logStartup("Docker daemon disponible.");
+      return true;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+
+  return false;
 }
 
 /** Lanza el docker compose en segundo plano para levantar MySQL. */
@@ -137,7 +194,18 @@ async function ensureDockerDatabaseReady() {
   logStartup("Validando disponibilidad de Docker...");
   const dockerAvailable = await isDockerAvailable();
   if (!dockerAvailable) {
-    throw new Error("Docker no está disponible. Inicia Docker Desktop y vuelve a abrir la app.");
+    logStartup("Docker no disponible al inicio. Intentando lanzar Docker Desktop...");
+
+    try {
+      await launchDockerDesktop();
+    } catch (error) {
+      logStartup(`No se pudo lanzar Docker Desktop: ${error?.message || String(error)}`);
+    }
+
+    const dockerReady = await waitForDockerReady();
+    if (!dockerReady) {
+      throw new Error("Docker no está disponible tras intentar iniciar Docker Desktop.");
+    }
   }
 
   const dbReady = await canConnectToPort(MYSQL_PORT);
