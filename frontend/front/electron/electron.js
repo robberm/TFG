@@ -782,6 +782,21 @@ ipcMain.on("window:toggle-maximize", () => {
   }
 });
 
+
+ipcMain.on("window:maximize", () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (!mainWindow.isMaximized()) {
+    mainWindow.maximize();
+  }
+});
+
+ipcMain.on("window:restore", () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (mainWindow.isMaximized()) {
+    mainWindow.unmaximize();
+  }
+});
+
 ipcMain.on("window:close", () => {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.close();

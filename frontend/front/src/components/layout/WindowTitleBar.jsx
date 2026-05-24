@@ -22,17 +22,24 @@ const WindowTitleBar = () => {
     window.electronAPI?.minimizeWindow();
   };
 
-  const handleToggleMaximize = () => {
-    window.electronAPI?.toggleMaximizeWindow();
+  const handleToggleMaximize = async () => {
+    if (!window.electronAPI) return;
+
+    if (isMaximized) {
+      window.electronAPI.restoreWindow?.();
+    } else {
+      window.electronAPI.maximizeWindow?.();
+    }
+
+    window.setTimeout(() => {
+      window.electronAPI?.isWindowMaximized?.().then(setIsMaximized).catch(() => {});
+    }, 120);
   };
 
   const handleClose = () => {
     window.electronAPI?.closeWindow();
   };
 
-  const handleToggleDevTools = () => {
-    window.electronAPI?.toggleDevTools();
-  };
 
   const handleDoubleClick = () => {
     window.electronAPI?.toggleMaximizeWindow();
@@ -48,15 +55,6 @@ const WindowTitleBar = () => {
       </div>
 
       <div className="windowTitleBarActions">
-        <button
-          type="button"
-          className="windowControlButton windowControlButtonTools"
-          onClick={handleToggleDevTools}
-          aria-label="Abrir o cerrar DevTools"
-          title="DevTools"
-        >
-          {"</>"}
-        </button>
 
         <button
           type="button"
