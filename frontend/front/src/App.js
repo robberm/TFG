@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./css/App.css";
 import Login from "./Login";
 import Register from "./Register";
@@ -27,7 +28,31 @@ function App() {
   const [etapaAnimacion, setEtapaAnimacion] = useState(0);
   const [showButtons, setShowButtons] = useState(true);
   const { t } = useLanguage();
+  const navigate = useNavigate();
 
+
+  useEffect(() => {
+    if (!isElectronEnvironment) {
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      return;
+    }
+
+    const role = localStorage.getItem("role") || "PERSONAL";
+    const organizationId = localStorage.getItem("organizationId") || "";
+    const isAdmin = role === "ADMIN";
+
+    const nextPath = isAdmin
+      ? organizationId
+        ? "/admin"
+        : "/admin/setup-organization"
+      : "/home";
+
+    navigate(nextPath, { replace: true });
+  }, [navigate]);
   useEffect(() => {
     if (etapaAnimacion === 0) {
       const temporizador1 = setTimeout(() => {
