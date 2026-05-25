@@ -552,6 +552,20 @@
   gap: 1rem;
 }
 
+.adminHomeActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.adminHomeActions .refreshButton {
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  background: var(--bg-main);
+  color: var(--text-main);
+  cursor: pointer;
+}
+
 .adminUsersCardsGrid {
   display: flex;
   flex-direction: column;

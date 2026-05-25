@@ -354,6 +354,18 @@ body.dark .day.disabled {
   border-bottom: 1px solid var(--border-color);
 }
 
+.week-all-day-container {
+  display: flex;
+  width: 100%;
+  background: var(--bg-page);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.week-all-day-gutter {
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-main);
+}
+
 .week-time-gutter {
   width: var(--week-gutter);
   min-width: var(--week-gutter);
@@ -474,8 +486,9 @@ body.dark .day.disabled {
 
 .week-all-day-strip-viewport {
   overflow: hidden;
-  border-bottom: 1px solid var(--border-color);
   background: var(--bg-page);
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .week-all-day-strip {
