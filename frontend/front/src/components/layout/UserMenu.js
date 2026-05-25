@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { clearActiveSessionUser } from "../../api/authApi";
+import { getCurrentUserProfile } from "../../api/userApi";
+import { resolveProfileImageUrl } from "../../utils/profileImage";
 
 import "../../css/UserMenu.css";
 import { useLanguage } from "../../context/languageContext";
@@ -42,6 +44,28 @@ function UserMenu() {
     }
 
     setProfileImage(profileImageFromStorage || "");
+
+    try {
+      const profile = await getCurrentUserProfile({ forceRefresh: true });
+      const resolvedProfileImage = profile?.profileImagePath
+        ? resolveProfileImageUrl(profile.profileImagePath)
+        : "";
+
+      if (profile?.username) {
+        localStorage.setItem("username", profile.username);
+        setUsername(profile.username);
+      }
+
+      if (resolvedProfileImage) {
+        localStorage.setItem("profileImage", resolvedProfileImage);
+      } else {
+        localStorage.removeItem("profileImage");
+      }
+
+      setProfileImage(resolvedProfileImage);
+    } catch (_) {
+      // Si el backend aún arranca, mantenemos caché local sin romper UI.
+    }
   };
 
   const handleLogout = async () => {

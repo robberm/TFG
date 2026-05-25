@@ -6,6 +6,7 @@ import Register from "./Register";
 import WindowTitleBar from "./components/layout/WindowTitleBar";
 import { useLanguage } from "./context/languageContext";
 import { app_name } from "./constants/textConstants";
+import { registerActiveSessionUser } from "./api/authApi";
 
 const CONFIG_ANIMACION = {
   retrasoInicial: 500,
@@ -51,6 +52,7 @@ function App() {
         : "/admin/setup-organization"
       : "/home";
 
+    registerActiveSessionUser().catch(() => {});
     navigate(nextPath, { replace: true });
   }, [navigate]);
   useEffect(() => {

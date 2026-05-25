@@ -34,6 +34,8 @@ const DB_TIMEOUT_MS = 90_000;
 /** Intervalo entre sondeos de disponibilidad de MySQL. */
 const DB_POLL_INTERVAL_MS = 1_500;
 const DOCKER_TIMEOUT_MS = 120_000;
+const BACKEND_PORT = 8080;
+const BACKEND_TIMEOUT_MS = 60_000;
 
 /**
  * Escribe logs de arranque en disco para poder depurar instalaciones empaquetadas
@@ -709,6 +711,23 @@ function createReminderWindow(reminder) {
   }, 12000);
 }
 
+
+/** Espera hasta que el backend HTTP esté escuchando en localhost:8080. */
+async function waitForBackendReady(timeoutMs = BACKEND_TIMEOUT_MS) {
+  const startedAt = Date.now();
+
+  while (Date.now() - startedAt < timeoutMs) {
+    if (await canConnectToPort(BACKEND_PORT)) {
+      logStartup(`Backend disponible en localhost:${BACKEND_PORT}.`);
+      return true;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+
+  return false;
+}
+
 /**
  * Secuencia de arranque: Docker/MySQL -> Backend -> Renderer.
  */
@@ -725,6 +744,12 @@ app.whenReady().then(async () => {
   }
 
   startBackend();
+
+  const backendReady = await waitForBackendReady();
+  if (!backendReady) {
+    logStartup("Backend no respondió a tiempo; se abrirá la UI igualmente.");
+  }
+
   openInitialWindow();
 
   globalShortcut.register("F12", () => {
