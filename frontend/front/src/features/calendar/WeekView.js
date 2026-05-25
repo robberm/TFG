@@ -278,24 +278,26 @@ const WeekView = ({ currentDate, events, onTimeSlotClick, onEventClick }) => {
           ref={gridViewportRef}
           onScroll={handleGridScroll}
         >
-          <div className="week-all-day-row">
-            {weekDays.map((day, index) => {
-              const dayAllDayEvents = getAllDayEventsForDay(day);
-              return (
-                <div key={`all-day-${index}`} className="week-all-day-cell">
-                  {dayAllDayEvents.map((event) => (
-                    <div
-                      key={`all-day-${event.id}`}
-                      className={`week-all-day-event-chip ${event.category || ""}`}
-                      onClick={(e) => onEventClick(event, e)}
-                    >
-                      <div className="week-event-time">{t.calendarAllDay}</div>
-                      <div className="week-event-title">{event.title}</div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
+          <div className="week-all-day-overlay">
+            <div className="week-all-day-row">
+              {weekDays.map((day, index) => {
+                const dayAllDayEvents = getAllDayEventsForDay(day);
+                return (
+                  <div key={`all-day-${index}`} className="week-all-day-cell">
+                    {dayAllDayEvents.map((event) => (
+                      <div
+                        key={`all-day-${event.id}`}
+                        className={`week-all-day-event-chip ${event.category || ""}`}
+                        onClick={(e) => onEventClick(event, e)}
+                      >
+                        <div className="week-event-time">{t.calendarAllDay}</div>
+                        <div className="week-event-title">{event.title}</div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
           </div>
           <div className="week-view-grid">
             {weekDays.map((day, dayIndex) => {

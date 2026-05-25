@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   GOAL_STATUS_COLORS,
   getGoalTrackingPercent,
@@ -17,6 +17,32 @@ const GoalsSection = ({
 }) => {
   const { t } = useLanguage();
   const [showCompleted, setShowCompleted] = useState(false);
+  const mainWrapperRef = useRef(null);
+  const mainTableRef = useRef(null);
+  const completedWrapperRef = useRef(null);
+  const completedTableRef = useRef(null);
+  const [mainHasOverflow, setMainHasOverflow] = useState(false);
+  const [completedHasOverflow, setCompletedHasOverflow] = useState(false);
+
+  useEffect(() => {
+    const syncOverflow = (wrapper, table, setter) => {
+      if (!wrapper || !table) return;
+      setter(table.scrollWidth > wrapper.clientWidth + 1);
+    };
+
+    const update = () => {
+      syncOverflow(mainWrapperRef.current, mainTableRef.current, setMainHasOverflow);
+      syncOverflow(
+        completedWrapperRef.current,
+        completedTableRef.current,
+        setCompletedHasOverflow,
+      );
+    };
+
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [goals, showCompleted, showAssignedUserColumn]);
 
   const getPriorityLabel = (priority) => {
     if (priority === "Alta") return t.priorityHigh;
@@ -172,8 +198,11 @@ const GoalsSection = ({
         </button>
       </div>
 
-      <div className="tableWrapper">
-        <div className="todoTable">
+      <div
+        ref={mainWrapperRef}
+        className={`tableWrapper ${mainHasOverflow ? "hasOverflow" : "noOverflow"}`}
+      >
+        <div ref={mainTableRef} className="todoTable">
           <div className="tableRow tableHeader">
             <div className="tableCell">{t.commonTitle}</div>
             {showAssignedUserColumn && <div className="tableCell">{t.commonUser}</div>}
@@ -212,8 +241,11 @@ const GoalsSection = ({
           </button>
 
           {showCompleted && (
-            <div className="tableWrapper">
-              <div className="todoTable">
+            <div
+              ref={completedWrapperRef}
+              className={`tableWrapper ${completedHasOverflow ? "hasOverflow" : "noOverflow"}`}
+            >
+              <div ref={completedTableRef} className="todoTable">
                 <div className="tableRow tableHeader">
                   <div className="tableCell">{t.commonTitle}</div>
                   {showAssignedUserColumn && <div className="tableCell">{t.commonUser}</div>}

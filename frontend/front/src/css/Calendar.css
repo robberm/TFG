@@ -465,6 +465,14 @@ body.dark .day.disabled {
   background-color: var(--bg-main);
 }
 
+.week-all-day-overlay {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  background: transparent;
+  pointer-events: none;
+}
+
 .week-grid-viewport::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -496,14 +504,13 @@ body.dark .day.disabled {
   display: grid;
   grid-template-columns: repeat(7, minmax(140px, 1fr));
   min-width: var(--week-grid-min-width);
-  border-bottom: 1px solid var(--border-color);
-  background: var(--bg-page);
+  padding: 4px 0;
 }
 
 .week-all-day-cell {
-  min-height: 36px;
+  min-height: 0;
   padding: 4px;
-  border-right: 1px solid var(--border-color);
+  border-right: 1px dashed color-mix(in srgb, var(--border-color) 65%, transparent);
 }
 
 .week-all-day-cell:last-child {
@@ -520,6 +527,7 @@ body.dark .day.disabled {
   color: #fff;
   cursor: pointer;
   overflow: hidden;
+  pointer-events: auto;
 }
 
 .week-all-day-event-chip.MANDATORY { background-color: var(--event-mandatory-color); }
