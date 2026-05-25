@@ -171,6 +171,19 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @DeleteMapping("/me")
+    public ResponseEntity<?> deleteCurrentUser(@RequestHeader("Authorization") String authHeader,
+                                               @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
+        String token = extractAndVerifyToken(authHeader, acceptLanguage);
+        String usernameFromToken = tokenService.extractUsername(token);
+
+        accountService.deleteCurrentUser(usernameFromToken);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", languageResolver.text(acceptLanguage, "account.deleted"));
+        return ResponseEntity.ok(response);
+    }
+
     private boolean isDesktopClient(String clientPlatform) {
         return clientPlatform != null && clientPlatform.equalsIgnoreCase("desktop");
     }

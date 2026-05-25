@@ -22,4 +22,6 @@ public interface AccountService {
     User removeProfileImage(String tokenUsername);
 
     UserProfileResponse getProfileData(String tokenUsername);
+
+    void deleteCurrentUser(String tokenUsername);
 }

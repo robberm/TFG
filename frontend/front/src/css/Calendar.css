@@ -354,6 +354,18 @@ body.dark .day.disabled {
   border-bottom: 1px solid var(--border-color);
 }
 
+.week-all-day-container {
+  display: flex;
+  width: 100%;
+  background: var(--bg-page);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.week-all-day-gutter {
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-main);
+}
+
 .week-time-gutter {
   width: var(--week-gutter);
   min-width: var(--week-gutter);
@@ -423,6 +435,13 @@ body.dark .day.disabled {
   background-color: var(--bg-main);
 }
 
+.week-right-panel {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .week-view-timeline {
   width: var(--week-gutter);
   min-width: var(--week-gutter);
@@ -465,6 +484,18 @@ body.dark .day.disabled {
   background-color: var(--bg-main);
 }
 
+.week-all-day-strip-viewport {
+  overflow: hidden;
+  background: var(--bg-page);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.week-all-day-strip {
+  min-width: var(--week-grid-min-width);
+  will-change: transform;
+}
+
 .week-grid-viewport::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -491,6 +522,44 @@ body.dark .day.disabled {
   gap: 0;
   background-color: var(--bg-main);
 }
+
+.week-all-day-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(140px, 1fr));
+  padding: 0;
+}
+
+.week-all-day-cell {
+  min-height: 42px;
+  padding: 4px 6px;
+  border-right: 1px solid var(--border-color);
+  box-sizing: border-box;
+}
+
+.week-all-day-cell:last-child {
+  border-right: none;
+}
+
+.week-all-day-event-chip {
+  position: relative;
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  font-size: 11px;
+  background-color: var(--event-work-color);
+  color: #fff;
+  cursor: pointer;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.week-all-day-event-chip.MANDATORY { background-color: var(--event-mandatory-color); }
+.week-all-day-event-chip.WORK { background-color: var(--event-work-color); }
+.week-all-day-event-chip.FOCUS,
+.week-all-day-event-chip.focus { background-color: var(--event-focus-color); }
+.week-all-day-event-chip.PERSONAL { background-color: var(--event-personal-color); }
+.week-all-day-event-chip.HEALTH { background-color: var(--event-health-color); }
+.week-all-day-event-chip.STUDY { background-color: var(--event-study-color); }
 
 .week-day-column {
   position: relative;

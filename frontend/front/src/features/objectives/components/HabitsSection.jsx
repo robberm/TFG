@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { formatIsoDate } from "../utils/objectiveHelpers";
 import { useLanguage } from "../../../context/languageContext";
 
@@ -13,6 +13,20 @@ const HabitsSection = ({
 }) => {
   const { t } = useLanguage();
   const todayIso = formatIsoDate(new Date());
+  const wrapperRef = useRef(null);
+  const tableRef = useRef(null);
+  const [hasOverflow, setHasOverflow] = useState(false);
+
+  useEffect(() => {
+    const update = () => {
+      if (!wrapperRef.current || !tableRef.current) return;
+      setHasOverflow(tableRef.current.scrollWidth > wrapperRef.current.clientWidth + 1);
+    };
+
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [habits]);
 
   return (
     <section className="objectivesSection">
@@ -27,8 +41,11 @@ const HabitsSection = ({
         </button>
       </div>
 
-      <div className="tableWrapper">
-        <div className="todoTable">
+      <div
+        ref={wrapperRef}
+        className={`tableWrapper ${hasOverflow ? "hasOverflow" : "noOverflow"}`}
+      >
+        <div ref={tableRef} className="todoTable">
           <div className="tableRow tableHeader">
             <div className="tableCell">{t.commonToday}</div>
             <div className="tableCell">{t.commonTitle}</div>

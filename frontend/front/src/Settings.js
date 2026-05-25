@@ -6,6 +6,7 @@ import {
   changeCurrentPassword,
   changeCurrentUsername,
   deleteCurrentUserProfileImage,
+  deleteCurrentUser,
   getCurrentUserProfile,
   updateCurrentUserProfileImage,
 } from "./api/userApi";
@@ -190,6 +191,24 @@ const Settings = () => {
     } catch (error) {
       setPasswordMessage(getApiErrorMessage(error, t.messages.passwordUpdateError));
       setPasswordError(true);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm(t.messages.accountDeleteConfirm);
+    if (!confirmed) return;
+
+    try {
+      const data = await deleteCurrentUser();
+      window.alert(data?.message || t.messages.accountDeleteSuccess);
+      localStorage.removeItem("token");
+      localStorage.removeItem("username");
+      localStorage.removeItem("profileImage");
+      localStorage.removeItem("role");
+      localStorage.removeItem("organizationId");
+      window.location.href = "/";
+    } catch (error) {
+      window.alert(getApiErrorMessage(error, t.messages.accountDeleteError));
     }
   };
 
@@ -441,6 +460,16 @@ const Settings = () => {
               {passwordMessage}
             </p>
           )}
+        </section>
+
+        <section className="settingsCard">
+          <div className="settingsCardHeader">
+            <h2>{t.accountDeleteTitle}</h2>
+            <p>{t.accountDeleteDesc}</p>
+          </div>
+          <button type="button" className="settingsButton secondary" onClick={handleDeleteAccount}>
+            {t.accountDeleteButton}
+          </button>
         </section>
       </div>
     </div>
