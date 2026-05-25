@@ -267,7 +267,10 @@ const WeekView = ({ currentDate, events, onTimeSlotClick, onEventClick }) => {
         <div className="week-all-day-strip-viewport">
           <div
             className="week-all-day-strip"
-            style={{ transform: `translateX(-${headerScrollLeft}px)` }}
+            style={{
+              transform: `translateX(-${headerScrollLeft}px)`,
+              paddingRight: `${headerPaddingRight}px`,
+            }}
           >
             <div className="week-all-day-row">
               {weekDays.map((day, index) => {
