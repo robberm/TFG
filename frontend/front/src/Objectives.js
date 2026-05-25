@@ -399,6 +399,10 @@ const Objectives = () => {
 
     const today = new Date();
     const monthLabel = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+    const orgSlug = (profile?.organizationName || "organization")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
     setIsExportingReport(true);
 
     try {
@@ -460,7 +464,7 @@ const Objectives = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `admin-goals-report-${monthLabel}.csv`;
+      link.download = `${orgSlug || "organization"}-goals-report-${monthLabel}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

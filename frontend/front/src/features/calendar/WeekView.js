@@ -286,7 +286,7 @@ const WeekView = ({ currentDate, events, onTimeSlotClick, onEventClick }) => {
                   {dayAllDayEvents.map((event) => (
                     <div
                       key={`all-day-${event.id}`}
-                      className={`week-event week-all-day-event ${event.category || ""}`}
+                      className={`week-all-day-event-chip ${event.category || ""}`}
                       onClick={(e) => onEventClick(event, e)}
                     >
                       <div className="week-event-time">{t.calendarAllDay}</div>
