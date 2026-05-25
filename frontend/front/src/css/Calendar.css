@@ -526,13 +526,14 @@ body.dark .day.disabled {
 .week-all-day-row {
   display: grid;
   grid-template-columns: repeat(7, minmax(140px, 1fr));
-  padding: 4px 0;
+  padding: 0;
 }
 
 .week-all-day-cell {
-  min-height: 0;
-  padding: 4px;
-  border-right: 1px dashed color-mix(in srgb, var(--border-color) 65%, transparent);
+  min-height: 42px;
+  padding: 4px 6px;
+  border-right: 1px solid var(--border-color);
+  box-sizing: border-box;
 }
 
 .week-all-day-cell:last-child {
