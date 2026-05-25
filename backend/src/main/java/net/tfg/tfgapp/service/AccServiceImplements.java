@@ -236,4 +236,22 @@ public class AccServiceImplements implements AccountService {
 
         return response;
     }
+
+    @Override
+    public void deleteCurrentUser(String tokenUsername) {
+        if (tokenUsername == null || tokenUsername.isBlank()) {
+            throw new IllegalArgumentException("Token inválido.");
+        }
+
+        User user = userService.getUserByUsername(tokenUsername);
+        if (user == null) {
+            throw new IllegalArgumentException("Usuario no encontrado.");
+        }
+
+        if (user.getProfileImagePath() != null && !user.getProfileImagePath().isBlank()) {
+            storageService.deleteProfileImage(user.getProfileImagePath());
+        }
+
+        userService.delete(user);
+    }
 }

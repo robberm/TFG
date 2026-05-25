@@ -139,8 +139,14 @@ public class HabitServiceImpl extends ObjectiveServiceBase<Habit, HabitRepo> imp
      * Calcula la racha vigente de días consecutivos completados hasta hoy.
      */
     private int calculateCurrentStreakEndingToday(List<ObjectiveLog> logs) {
+        boolean hasCompletedToday = logs.stream()
+                .anyMatch(log ->
+                        LocalDate.now().isEqual(log.getLogDate()) &&
+                                Boolean.TRUE.equals(log.getCompleted())
+                );
+
         int streak = 0;
-        LocalDate expectedDate = LocalDate.now();
+        LocalDate expectedDate = hasCompletedToday ? LocalDate.now() : LocalDate.now().minusDays(1);
 
         for (int i = logs.size() - 1; i >= 0; i--) {
             ObjectiveLog log = logs.get(i);

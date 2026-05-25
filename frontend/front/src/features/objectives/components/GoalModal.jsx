@@ -270,18 +270,6 @@ const GoalModal = ({
                   {t.goalNumericObjective}
                 </label>
 
-                <label className="checkboxRow" htmlFor="goal-active">
-                  <input
-                    id="goal-active"
-                    type="checkbox"
-                    checked={form.active}
-                    disabled={isAssignedGoalReadOnlyForUser}
-                    onChange={(event) =>
-                      handleChange("active", event.target.checked)
-                    }
-                  />
-                  {t.commonActive}
-                </label>
               </div>
             </div>
 

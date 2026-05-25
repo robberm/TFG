@@ -47,6 +47,12 @@ const ObjectivesDashboard = ({ goals, habits, logs }) => {
       habits.length > 0
         ? Math.max(...habits.map((habit) => Number(habit.currentStreak || 0)))
         : 0;
+    const currentBestHabit = habits.find(
+      (habit) => Number(habit.currentStreak || 0) === currentBestHabitStreak,
+    );
+    const bestStreakHabit = habits.find(
+      (habit) => Number(habit.bestStreak || 0) === bestHabitStreak,
+    );
 
     const activeGoals = goals.filter(
       (goal) => goal.active !== false && goal.status !== "Done",
@@ -78,6 +84,8 @@ const ObjectivesDashboard = ({ goals, habits, logs }) => {
       totalGoals,
       globalGoalsProgress,
       currentBestHabitStreak,
+      currentBestHabitTitle: currentBestHabit?.titulo || "—",
+      bestStreakHabitTitle: bestStreakHabit?.titulo || "—",
       todayPercent,
     };
   }, [goals, habits, logs, todayIso]);
@@ -131,6 +139,7 @@ const ObjectivesDashboard = ({ goals, habits, logs }) => {
               <strong className="summaryValue">
                 {metrics.currentBestHabitStreak}
               </strong>
+              <small className="summarySubLabel">{metrics.currentBestHabitTitle}</small>
             </div>
           </div>
         </article>
@@ -164,6 +173,7 @@ const ObjectivesDashboard = ({ goals, habits, logs }) => {
               <strong className="summaryValue">
                 {metrics.bestHabitStreak}
               </strong>
+              <small className="summarySubLabel">{metrics.bestStreakHabitTitle}</small>
             </div>
           </div>
         </article>
