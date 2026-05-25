@@ -22,14 +22,8 @@ const WindowTitleBar = () => {
     window.electronAPI?.minimizeWindow();
   };
 
-  const handleToggleMaximize = async () => {
-    if (!window.electronAPI) return;
-
-    if (isMaximized) {
-      window.electronAPI.restoreWindow?.();
-    } else {
-      window.electronAPI.maximizeWindow?.();
-    }
+  const handleToggleMaximize = () => {
+    window.electronAPI?.toggleMaximizeWindow?.();
 
     window.setTimeout(() => {
       window.electronAPI?.isWindowMaximized?.().then(setIsMaximized).catch(() => {});
