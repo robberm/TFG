@@ -16,7 +16,7 @@ import {
   updateHabit,
 } from "./api/objectivesApi";
 import { getCurrentUserProfile } from "./api/userApi";
-import { getManagedUsers } from "./api/adminApi";
+import { getManagedUserGoals, getManagedUsers } from "./api/adminApi";
 
 import GoalModal from "./features/objectives/components/GoalModal";
 import HabitModal from "./features/objectives/components/HabitModal";
@@ -57,6 +57,7 @@ const Objectives = () => {
   const [selectedManagedUserId, setSelectedManagedUserId] = useState(null);
 
   const isAdmin = profile?.role === "ADMIN";
+  const [isExportingReport, setIsExportingReport] = useState(false);
 
   /**
    * Carga goals, hábitos y logs semanales.
@@ -393,6 +394,84 @@ const Objectives = () => {
     }
   };
 
+  const handleExportMonthlyAdminCsv = async () => {
+    if (!isAdmin || managedUsers.length === 0) return;
+
+    const today = new Date();
+    const monthLabel = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+    setIsExportingReport(true);
+
+    try {
+      const goalsPerUser = await Promise.all(
+        managedUsers.map(async (user) => ({
+          user,
+          goals: await getManagedUserGoals(user.id),
+        })),
+      );
+
+      const escapeCsv = (value) => `"${String(value ?? "").replaceAll("\"", "\"\"")}"`;
+      const rows = [
+        "userId,username,month,goalsTotal,goalsDone,goalsInProgress,highPriorityCompleted,mediumPriorityCompleted,lowPriorityCompleted",
+      ];
+
+      goalsPerUser.forEach(({ user, goals }) => {
+        const safeGoals = Array.isArray(goals) ? goals : [];
+        const goalsDone = safeGoals.filter((goal) => goal.status === "Done");
+        const highDone = goalsDone.filter((goal) => goal.priority === "Alta").length;
+        const mediumDone = goalsDone.filter((goal) => goal.priority === "Media").length;
+        const lowDone = goalsDone.filter((goal) => goal.priority === "Baja").length;
+
+        rows.push(
+          [
+            user.id,
+            escapeCsv(user.username),
+            monthLabel,
+            safeGoals.length,
+            goalsDone.length,
+            safeGoals.filter((goal) => goal.status === "InProgress").length,
+            highDone,
+            mediumDone,
+            lowDone,
+          ].join(","),
+        );
+      });
+
+      rows.push("");
+      rows.push("userId,username,goalId,goalTitle,priority,status,description");
+
+      goalsPerUser.forEach(({ user, goals }) => {
+        const safeGoals = Array.isArray(goals) ? goals : [];
+        safeGoals.forEach((goal) => {
+          rows.push(
+            [
+              user.id,
+              escapeCsv(user.username),
+              goal.id,
+              escapeCsv(goal.titulo),
+              escapeCsv(goal.priority),
+              escapeCsv(goal.status),
+              escapeCsv(goal.description || ""),
+            ].join(","),
+          );
+        });
+      });
+
+      const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `admin-goals-report-${monthLabel}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      setErrorMessage(error.message || t.adminReportExportError);
+    } finally {
+      setIsExportingReport(false);
+    }
+  };
+
   return (
     <div className="objectivesPage">
       <div className="pageHeader objectivesHeader">
@@ -404,6 +483,12 @@ const Objectives = () => {
               : t.objectivesSubtitle}
           </p>
         </div>
+        {isAdmin && (
+          <button className="refreshButton" onClick={handleExportMonthlyAdminCsv} disabled={isExportingReport}>
+            <i className="fa fa-download"></i>{" "}
+            {isExportingReport ? t.objectivesLoading : t.adminExportMonthlyCsv}
+          </button>
+        )}
       </div>
 
       {isAdmin && (

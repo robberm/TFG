@@ -492,6 +492,30 @@ body.dark .day.disabled {
   background-color: var(--bg-main);
 }
 
+.week-all-day-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(140px, 1fr));
+  min-width: var(--week-grid-min-width);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-page);
+}
+
+.week-all-day-cell {
+  min-height: 36px;
+  padding: 4px;
+  border-right: 1px solid var(--border-color);
+}
+
+.week-all-day-cell:last-child {
+  border-right: none;
+}
+
+.week-all-day-event {
+  position: static;
+  height: auto;
+  margin-bottom: 4px;
+}
+
 .week-day-column {
   position: relative;
   border-right: 1px solid var(--border-color);

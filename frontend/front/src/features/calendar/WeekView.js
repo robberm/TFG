@@ -198,6 +198,9 @@ const WeekView = ({ currentDate, events, onTimeSlotClick, onEventClick }) => {
     return format(parseCalendarDate(event.startTime), "HH:mm");
   };
 
+  const getAllDayEventsForDay = (day) =>
+    getEventsForDay(day).filter((event) => event.isAllDay);
+
   useEffect(() => {
     const updateScrollbarCompensation = () => {
       if (!gridViewportRef.current) return;
@@ -275,6 +278,25 @@ const WeekView = ({ currentDate, events, onTimeSlotClick, onEventClick }) => {
           ref={gridViewportRef}
           onScroll={handleGridScroll}
         >
+          <div className="week-all-day-row">
+            {weekDays.map((day, index) => {
+              const dayAllDayEvents = getAllDayEventsForDay(day);
+              return (
+                <div key={`all-day-${index}`} className="week-all-day-cell">
+                  {dayAllDayEvents.map((event) => (
+                    <div
+                      key={`all-day-${event.id}`}
+                      className={`week-event week-all-day-event ${event.category || ""}`}
+                      onClick={(e) => onEventClick(event, e)}
+                    >
+                      <div className="week-event-time">{t.calendarAllDay}</div>
+                      <div className="week-event-title">{event.title}</div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
           <div className="week-view-grid">
             {weekDays.map((day, dayIndex) => {
               const dayEvents = getEventsForDay(day).filter(
