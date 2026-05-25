@@ -423,6 +423,13 @@ body.dark .day.disabled {
   background-color: var(--bg-main);
 }
 
+.week-right-panel {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .week-view-timeline {
   width: var(--week-gutter);
   min-width: var(--week-gutter);
@@ -465,12 +472,15 @@ body.dark .day.disabled {
   background-color: var(--bg-main);
 }
 
-.week-all-day-overlay {
-  position: sticky;
-  top: 0;
-  z-index: 8;
-  background: transparent;
-  pointer-events: none;
+.week-all-day-strip-viewport {
+  overflow: hidden;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-page);
+}
+
+.week-all-day-strip {
+  min-width: var(--week-grid-min-width);
+  will-change: transform;
 }
 
 .week-grid-viewport::-webkit-scrollbar {
@@ -503,7 +513,6 @@ body.dark .day.disabled {
 .week-all-day-row {
   display: grid;
   grid-template-columns: repeat(7, minmax(140px, 1fr));
-  min-width: var(--week-grid-min-width);
   padding: 4px 0;
 }
 

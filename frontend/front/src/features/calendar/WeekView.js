@@ -273,33 +273,39 @@ const WeekView = ({ currentDate, events, onTimeSlotClick, onEventClick }) => {
           ))}
         </div>
 
-        <div
-          className="week-grid-viewport"
-          ref={gridViewportRef}
-          onScroll={handleGridScroll}
-        >
-          <div className="week-all-day-overlay">
-            <div className="week-all-day-row">
-              {weekDays.map((day, index) => {
-                const dayAllDayEvents = getAllDayEventsForDay(day);
-                return (
-                  <div key={`all-day-${index}`} className="week-all-day-cell">
-                    {dayAllDayEvents.map((event) => (
-                      <div
-                        key={`all-day-${event.id}`}
-                        className={`week-all-day-event-chip ${event.category || ""}`}
-                        onClick={(e) => onEventClick(event, e)}
-                      >
-                        <div className="week-event-time">{t.calendarAllDay}</div>
-                        <div className="week-event-title">{event.title}</div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
+        <div className="week-right-panel">
+          <div className="week-all-day-strip-viewport">
+            <div
+              className="week-all-day-strip"
+              style={{ transform: `translateX(-${headerScrollLeft}px)` }}
+            >
+              <div className="week-all-day-row">
+                {weekDays.map((day, index) => {
+                  const dayAllDayEvents = getAllDayEventsForDay(day);
+                  return (
+                    <div key={`all-day-${index}`} className="week-all-day-cell">
+                      {dayAllDayEvents.map((event) => (
+                        <div
+                          key={`all-day-${event.id}`}
+                          className={`week-all-day-event-chip ${event.category || ""}`}
+                          onClick={(e) => onEventClick(event, e)}
+                        >
+                          <div className="week-event-time">{t.calendarAllDay}</div>
+                          <div className="week-event-title">{event.title}</div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-          <div className="week-view-grid">
+          <div
+            className="week-grid-viewport"
+            ref={gridViewportRef}
+            onScroll={handleGridScroll}
+          >
+            <div className="week-view-grid">
             {weekDays.map((day, dayIndex) => {
               const dayEvents = getEventsForDay(day).filter(
                 (event) => !event.isAllDay,
@@ -360,6 +366,7 @@ const WeekView = ({ currentDate, events, onTimeSlotClick, onEventClick }) => {
                 </div>
               );
             })}
+            </div>
           </div>
         </div>
       </div>
