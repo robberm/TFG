@@ -3,9 +3,7 @@ package net.tfg.tfgapp.domains;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.ConstraintMode;
 import jakarta.persistence.Entity;
-import jakarta.persistence.ForeignKey;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -30,7 +28,7 @@ public class PersonalUser extends User {
      * Los usuarios creados por un admin sí quedan asociados a la suya.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "organization_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(name = "organization_id")
     private Organization organization;
 
     /**
@@ -38,7 +36,7 @@ public class PersonalUser extends User {
      * Para usuarios personales registrados por su cuenta será null.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by_admin_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(name = "created_by_admin_id")
     private AdminUser createdByAdmin;
 
     @JsonIgnore

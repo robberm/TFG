@@ -50,11 +50,11 @@ private List<Integer> reminderMinutesBeforeList = new ArrayList<>();
 private String assignmentBatchId;
 
 @ManyToOne
-@JoinColumn(name = "user_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+@JoinColumn(name = "user_id")
 private PersonalUser user;
 
 @ManyToOne(fetch = FetchType.LAZY)
-@JoinColumn(name = "assigned_by_admin_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+@JoinColumn(name = "assigned_by_admin_id")
 @JsonIgnore
 private AdminUser assignedByAdmin;
 
