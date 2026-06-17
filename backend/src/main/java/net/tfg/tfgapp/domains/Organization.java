@@ -27,7 +27,7 @@ public class Organization {
      * Admin principal y propietario de la organización.
      */
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "admin_id", nullable = false, unique = true)
+    @JoinColumn(name = "admin_id", nullable = false, unique = true, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private AdminUser admin;
 
     /**

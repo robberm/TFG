@@ -38,14 +38,14 @@ public abstract class Objective {
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private PersonalUser user;
 
 
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_by_admin_id")
+    @JoinColumn(name = "assigned_by_admin_id", foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private AdminUser assignedByAdmin;
 
 
