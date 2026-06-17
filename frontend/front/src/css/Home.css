@@ -222,6 +222,9 @@
 }
 
 body.translucent .homeDailyWidget {
+  backface-visibility: hidden;
+  contain: layout paint;
+  transform: translate3d(0, 0, 0);
   transition:
     width 0.4s ease,
     height 0.4s ease,
@@ -231,6 +234,15 @@ body.translucent .homeDailyWidget {
     background-color 0.3s ease,
     background 0.3s ease;
   will-change: width, height, transform;
+}
+
+body.translucent .homeDailyWidget:hover {
+  transform: translate3d(0, -2px, 0);
+}
+
+body.translucent .homeDailyWidgetInner {
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
 }
 
 .homeDailyWidgetInner {

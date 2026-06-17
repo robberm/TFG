@@ -4,6 +4,8 @@ import net.tfg.tfgapp.DTOs.users.ChangePasswordRequest;
 import net.tfg.tfgapp.DTOs.users.ChangeUsernameRequest;
 import net.tfg.tfgapp.DTOs.users.LoginRequest;
 import net.tfg.tfgapp.DTOs.users.UserProfileResponse;
+import net.tfg.tfgapp.domains.AdminUser;
+import net.tfg.tfgapp.domains.Organization;
 import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.exception.ApiException;
@@ -186,15 +188,25 @@ public class UserController {
     }
 
     private Long organizationId(User user) {
-        return user instanceof PersonalUser personalUser && personalUser.getOrganization() != null
-                ? personalUser.getOrganization().getId()
-                : null;
+        Organization organization = organizationFor(user);
+        return organization != null ? organization.getId() : null;
     }
 
     private String organizationName(User user) {
-        return user instanceof PersonalUser personalUser && personalUser.getOrganization() != null
-                ? personalUser.getOrganization().getName()
-                : null;
+        Organization organization = organizationFor(user);
+        return organization != null ? organization.getName() : null;
+    }
+
+    private Organization organizationFor(User user) {
+        if (user instanceof PersonalUser personalUser) {
+            return personalUser.getOrganization();
+        }
+
+        if (user instanceof AdminUser adminUser) {
+            return adminUser.getAdministeredOrganization();
+        }
+
+        return null;
     }
 
     private boolean isDesktopClient(String clientPlatform) {

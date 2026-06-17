@@ -98,7 +98,9 @@ function AdminOrganizationSetupPage() {
           </button>
         </form>
 
-        {errorMessage ? <p className="adminFeedback error">{errorMessage}</p> : null}
+        <p className={`adminFeedback error ${errorMessage ? "" : "hidden"}`} aria-live="polite">
+          {errorMessage || "\u00a0"}
+        </p>
       </section>
     </div>
   );

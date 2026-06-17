@@ -4,6 +4,7 @@ package net.tfg.tfgapp.DTOs.users;
 
 import lombok.Getter;
 import lombok.Setter;
+import net.tfg.tfgapp.domains.AdminUser;
 import net.tfg.tfgapp.domains.Organization;
 import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.domains.User;
@@ -26,7 +27,12 @@ public class UserSummaryResponse {
         response.setRole(user.getRole().name());
         response.setProfileImagePath(user.getProfileImagePath());
 
-        Organization organization = user instanceof PersonalUser personalUser ? personalUser.getOrganization() : null;
+        Organization organization = null;
+        if (user instanceof PersonalUser personalUser) {
+            organization = personalUser.getOrganization();
+        } else if (user instanceof AdminUser adminUser) {
+            organization = adminUser.getAdministeredOrganization();
+        }
         if (organization != null) {
             response.setOrganizationId(organization.getId());
             response.setOrganizationName(organization.getName());

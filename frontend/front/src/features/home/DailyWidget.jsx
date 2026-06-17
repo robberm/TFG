@@ -10,6 +10,7 @@ const HOUR_HEIGHT_PX = 28;
 const MINUTES_PER_HOUR = 60;
 const PX_PER_MINUTE = HOUR_HEIGHT_PX / MINUTES_PER_HOUR;
 const MIN_EVENT_HEIGHT_PX = 8;
+const MIN_EVENT_TITLE_MINUTES = 30;
 
 /**
  * Convierte una fecha del backend a objeto Date de forma estable.
@@ -59,6 +60,26 @@ const parseCalendarDate = (value) => {
  * @returns {number} minutos del día
  */
 const getMinutesOfDay = (date) => date.getHours() * 60 + date.getMinutes();
+
+
+/**
+ * Calcula la duración real del evento en minutos para decidir si cabe texto.
+ *
+ * @param {Object} event evento a evaluar
+ * @returns {number} duración en minutos
+ */
+const getEventDurationMinutes = (event) => {
+  const start = parseCalendarDate(event.startTime);
+  const end = parseCalendarDate(event.endTime);
+  const startMinutes = getMinutesOfDay(start);
+  let endMinutes = getMinutesOfDay(end);
+
+  if (endMinutes <= startMinutes) {
+    endMinutes += 24 * 60;
+  }
+
+  return endMinutes - startMinutes;
+};
 
 /**
  * Calcula el estilo visual de un evento dentro de la vista diaria.
@@ -115,16 +136,44 @@ const buildEventLayoutMap = (dayEvents) => {
     })
     .sort((a, b) => a.startMinutes - b.startMinutes || a.endMinutes - b.endMinutes);
 
-  const positioned = [];
-  let cluster = [];
+  const clusters = [];
+  let currentCluster = [];
   let clusterEnd = -1;
 
-  const flushCluster = () => {
-    if (cluster.length === 0) return;
+  sorted.forEach((item) => {
+    if (currentCluster.length === 0 || item.startMinutes < clusterEnd) {
+      currentCluster.push(item);
+      clusterEnd = Math.max(clusterEnd, item.endMinutes);
+      return;
+    }
 
-    const totalColumns = Math.max(...cluster.map((item) => item.column)) + 1;
+    clusters.push(currentCluster);
+    currentCluster = [item];
+    clusterEnd = item.endMinutes;
+  });
 
-    cluster.forEach((item) => {
+  if (currentCluster.length > 0) {
+    clusters.push(currentCluster);
+  }
+
+  const positioned = [];
+
+  clusters.forEach((cluster) => {
+    const columnsEnd = [];
+    const withColumns = cluster.map((item) => {
+      let column = columnsEnd.findIndex((endMinutes) => endMinutes <= item.startMinutes);
+
+      if (column === -1) {
+        column = columnsEnd.length;
+      }
+
+      columnsEnd[column] = item.endMinutes;
+      return { ...item, column };
+    });
+
+    const totalColumns = Math.max(columnsEnd.length, 1);
+
+    withColumns.forEach((item) => {
       const baseStyle = getTimedEventStyle(item.event);
       const widthPct = 100 / totalColumns;
       const leftPct = item.column * widthPct;
@@ -138,36 +187,7 @@ const buildEventLayoutMap = (dayEvents) => {
         },
       });
     });
-
-    cluster = [];
-    clusterEnd = -1;
-  };
-
-  sorted.forEach((item) => {
-    if (cluster.length === 0 || item.startMinutes < clusterEnd) {
-      const usedColumns = new Set(
-        cluster
-          .filter((current) => current.endMinutes > item.startMinutes)
-          .map((current) => current.column),
-      );
-
-      let column = 0;
-      while (usedColumns.has(column)) {
-        column += 1;
-      }
-
-      cluster = cluster.filter((current) => current.endMinutes > item.startMinutes);
-      cluster.push({ ...item, column });
-      clusterEnd = Math.max(clusterEnd, item.endMinutes);
-      return;
-    }
-
-    flushCluster();
-    cluster.push({ ...item, column: 0 });
-    clusterEnd = item.endMinutes;
   });
-
-  flushCluster();
 
   return new Map(positioned.map((item) => [item.id, item.style]));
 };
@@ -345,7 +365,9 @@ const DailyWidget = ({ events, onEventsChanged }) => {
                       <div className="day-event-time">
                         {formatEventTime(event)}
                       </div>
-                      <div className="day-event-title">{event.title}</div>
+                      {getEventDurationMinutes(event) >= MIN_EVENT_TITLE_MINUTES && (
+                        <div className="day-event-title">{event.title}</div>
+                      )}
 
                       {event.location && (
                         <div className="day-event-location">

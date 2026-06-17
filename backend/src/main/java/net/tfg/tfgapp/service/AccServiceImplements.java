@@ -4,6 +4,8 @@ import net.tfg.tfgapp.DTOs.users.ChangePasswordRequest;
 import net.tfg.tfgapp.DTOs.users.ChangeUsernameRequest;
 import net.tfg.tfgapp.DTOs.users.LoginRequest;
 import net.tfg.tfgapp.DTOs.users.UserProfileResponse;
+import net.tfg.tfgapp.domains.AdminUser;
+import net.tfg.tfgapp.domains.Organization;
 import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.service.interfaces.AccountService;
@@ -231,9 +233,16 @@ public class AccServiceImplements implements AccountService {
         response.setProfileImagePath(user.getProfileImagePath());
         response.setHasAdminView(user.isAdmin());
 
-        if (user instanceof PersonalUser personalUser && personalUser.getOrganization() != null) {
-            response.setOrganizationId(personalUser.getOrganization().getId());
-            response.setOrganizationName(personalUser.getOrganization().getName());
+        Organization organization = null;
+        if (user instanceof PersonalUser personalUser) {
+            organization = personalUser.getOrganization();
+        } else if (user instanceof AdminUser adminUser) {
+            organization = adminUser.getAdministeredOrganization();
+        }
+
+        if (organization != null) {
+            response.setOrganizationId(organization.getId());
+            response.setOrganizationName(organization.getName());
         }
 
         return response;
