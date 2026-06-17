@@ -48,7 +48,6 @@ public class PersonalUser extends User {
     private List<Event> events = new ArrayList<>();
 
     public PersonalUser() {
-        super();
     }
 
     public PersonalUser(String username, String password) {

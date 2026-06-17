@@ -27,7 +27,6 @@ public class AdminUser extends User {
     private Organization administeredOrganization;
 
     public AdminUser() {
-        super();
     }
 
     public AdminUser(String username, String password) {
