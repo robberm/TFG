@@ -15,8 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @RestController
 @RequestMapping("/goals")
@@ -79,12 +78,16 @@ public class GoalController {
         User actor = getActor(token, language);
 
         List<PersonalUser> targets = resolveTargetUsers(actor, request);
+        String assignmentBatchId = actor.isAdmin() && targets.size() > 1
+                ? UUID.randomUUID().toString()
+                : null;
         List<Goal> createdGoals = new ArrayList<>();
 
         for (PersonalUser target : targets) {
             Goal createdGoal = goalService.createGoal(request, target);
             if (actor.isAdmin()) {
                 createdGoal.setAssignedByAdmin((AdminUser) actor);
+                createdGoal.setAssignmentBatchId(assignmentBatchId);
                 createdGoal = goalService.updateGoal(createdGoal, request);
             }
             createdGoals.add(createdGoal);
@@ -125,6 +128,59 @@ public class GoalController {
             );
 
             return ResponseEntity.ok(goalService.updateGoal(existingGoal, restrictedRequest));
+        }
+
+        if (actor.isAdmin() && existingGoal.getAssignedByAdmin() != null) {
+            List<PersonalUser> targets = resolveTargetUsers(actor, request);
+            if (targets.isEmpty()) {
+                throw new IllegalArgumentException("Debes seleccionar al menos un usuario.");
+            }
+
+            String existingBatchId = existingGoal.getAssignmentBatchId();
+            List<Goal> currentBatchGoals;
+
+            if (existingBatchId != null && !existingBatchId.isBlank()) {
+                currentBatchGoals = goalService.getAssignedGoalsByBatch(actor.getId(), existingBatchId);
+            } else {
+                currentBatchGoals = new ArrayList<>();
+                currentBatchGoals.add(existingGoal);
+            }
+
+            Map<Long, Goal> currentByUserId = new HashMap<>();
+            currentBatchGoals.forEach(goal -> currentByUserId.put(goal.getUser().getId(), goal));
+
+            Set<Long> targetIds = new HashSet<>();
+            targets.forEach(user -> targetIds.add(user.getId()));
+
+            String targetBatchId = targets.size() > 1
+                    ? (existingBatchId != null && !existingBatchId.isBlank() ? existingBatchId : UUID.randomUUID().toString())
+                    : null;
+
+            Goal representative = null;
+
+            for (PersonalUser target : targets) {
+                Goal goalForTarget = currentByUserId.get(target.getId());
+
+                if (goalForTarget == null) {
+                    goalForTarget = goalService.createGoal(request, target);
+                    goalForTarget.setAssignedByAdmin((AdminUser) actor);
+                }
+
+                goalForTarget.setAssignmentBatchId(targetBatchId);
+                Goal saved = goalService.updateGoal(goalForTarget, request);
+
+                if (representative == null) {
+                    representative = saved;
+                }
+            }
+
+            for (Goal goal : currentBatchGoals) {
+                if (!targetIds.contains(goal.getUser().getId())) {
+                    goalService.deleteById(goal.getId());
+                }
+            }
+
+            return ResponseEntity.ok(representative);
         }
 
         return ResponseEntity.ok(goalService.updateGoal(existingGoal, request));

@@ -226,6 +226,9 @@ const Objectives = () => {
           valorProgreso: payload.valorProgreso,
           valorObjetivo: payload.valorObjetivo,
           active: payload.active,
+          targetUserId: isAdmin ? payload.targetUserId : null,
+          targetUserIds: isAdmin ? payload.targetUserIds : null,
+          assignToAllUsers: isAdmin ? payload.assignToAllUsers : false,
         });
 
         if (

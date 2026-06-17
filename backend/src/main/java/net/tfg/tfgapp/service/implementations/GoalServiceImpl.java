@@ -107,4 +107,9 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
     public List<Goal> getAssignedGoalsForAdminAndUser(Long adminId, Long userId) {
         return goalRepo.findByAssignedByAdmin_IdAndUser_Id(adminId, userId);
     }
+
+    @Override
+    public List<Goal> getAssignedGoalsByBatch(Long adminId, String assignmentBatchId) {
+        return goalRepo.findByAssignedByAdmin_IdAndAssignmentBatchId(adminId, assignmentBatchId);
+    }
 }

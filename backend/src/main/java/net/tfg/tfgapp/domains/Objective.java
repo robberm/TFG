@@ -48,6 +48,9 @@ public abstract class Objective {
     @JoinColumn(name = "assigned_by_admin_id")
     private AdminUser assignedByAdmin;
 
+    @Column(unique = false)
+    private String assignmentBatchId;
+
 
     @JsonIgnore
     @OneToMany(mappedBy = "objective", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -80,6 +83,11 @@ public abstract class Objective {
     @JsonProperty("assignedToUsername")
     public String getAssignedToUsername() {
         return user != null ? user.getUsername() : null;
+    }
+
+    @JsonProperty("assignedToUserId")
+    public Long getAssignedToUserId() {
+        return user != null ? user.getId() : null;
     }
 
     @PrePersist

@@ -9,6 +9,7 @@ import "../../css/Calendar.css";
 const HOUR_HEIGHT_PX = 28;
 const MINUTES_PER_HOUR = 60;
 const PX_PER_MINUTE = HOUR_HEIGHT_PX / MINUTES_PER_HOUR;
+const MIN_EVENT_HEIGHT_PX = 8;
 
 /**
  * Convierte una fecha del backend a objeto Date de forma estable.
@@ -79,7 +80,7 @@ const getTimedEventStyle = (event) => {
   const top = startMinutes * PX_PER_MINUTE;
   const height = Math.max(
     (endMinutes - startMinutes) * PX_PER_MINUTE,
-    HOUR_HEIGHT_PX * 0.9,
+    MIN_EVENT_HEIGHT_PX,
   );
 
   return {

@@ -75,6 +75,7 @@ Entidad base abstracta para objetivos. Usa herencia JPA de tipo `JOINED`.
 - `created_at`: obligatorio.
 - `user_id`: clave foránea obligatoria hacia `PERSONAL_USERS.id` para indicar el usuario propietario o destinatario.
 - `assigned_by_admin_id`: clave foránea opcional hacia `ADMIN_USERS.id` para indicar el administrador que asignó el objetivo.
+- `assignment_batch_id`: identificador de lote para reasignaciones masivas de objetivos de administrador.
 - `is_numeric`: obligatorio.
 
 ### HABITS
@@ -269,7 +270,7 @@ Usa estas entidades:
 - `ORGANIZATIONS(id PK, name UK, admin_id FK UK)`
 - `EVENTS(id PK, title, description, start_time, end_time, location, category, is_all_day, reminder_minutes_before, assignment_batch_id, user_id FK, assigned_by_admin_id FK)`
 - `EVENTS_REMINDERS(event_id FK, minutes_before)`
-- `OBJECTIVES(id PK, objective_type, titulo, description, active, created_at, user_id FK, assigned_by_admin_id FK, is_numeric)`
+- `OBJECTIVES(id PK, objective_type, titulo, description, active, created_at, user_id FK, assigned_by_admin_id FK, assignment_batch_id, is_numeric)`
 - `HABITS(id PK/FK, current_streak, best_streak)`
 - `GOALS(id PK/FK, priority, status, is_numeric, valor_progreso, valor_objetivo)`
 - `OBJECTIVE_LOGS(id PK, objective_id FK, log_date, completed, progress_value, notes, created_at)`
@@ -348,6 +349,7 @@ erDiagram
         datetime created_at
         bigint user_id FK
         bigint assigned_by_admin_id FK
+        varchar assignment_batch_id
         boolean is_numeric
     }
 

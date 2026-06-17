@@ -221,6 +221,18 @@
   box-shadow: 0 12px 26px rgba(0, 0, 0, 0.12);
 }
 
+body.translucent .homeDailyWidget {
+  transition:
+    width 0.4s ease,
+    height 0.4s ease,
+    border-radius 0.3s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease,
+    background-color 0.3s ease,
+    background 0.3s ease;
+  will-change: width, height, transform;
+}
+
 .homeDailyWidgetInner {
   position: relative;
   width: 100%;
