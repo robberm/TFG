@@ -4,8 +4,8 @@ import net.tfg.tfgapp.DTOs.users.ChangePasswordRequest;
 import net.tfg.tfgapp.DTOs.users.ChangeUsernameRequest;
 import net.tfg.tfgapp.DTOs.users.LoginRequest;
 import net.tfg.tfgapp.DTOs.users.UserProfileResponse;
+import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.domains.User;
-import net.tfg.tfgapp.enumerates.UserRole;
 import net.tfg.tfgapp.service.interfaces.AccountService;
 import net.tfg.tfgapp.service.interfaces.IStorageService;
 import net.tfg.tfgapp.service.interfaces.IUserService;
@@ -75,11 +75,13 @@ public class AccServiceImplements implements AccountService {
         newUser.setUsername(normalizedUsername);
         newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
         newUser.setTokenVersion(0);
-        newUser.setRole(UserRole.PERSONAL);
-        newUser.setOrganization(null);
-        newUser.setCreatedByAdmin(null);
+        PersonalUser personalUser = new PersonalUser();
+        personalUser.setUsername(newUser.getUsername());
+        personalUser.setPassword(newUser.getPassword());
+        personalUser.setTokenVersion(newUser.getTokenVersion());
+        personalUser.setProfileImagePath(newUser.getProfileImagePath());
 
-        return userService.save(newUser);
+        return userService.save(personalUser);
     }
 
     @Override
@@ -227,11 +229,11 @@ public class AccServiceImplements implements AccountService {
         response.setUsername(user.getUsername());
         response.setRole(user.getRole().name());
         response.setProfileImagePath(user.getProfileImagePath());
-        response.setHasAdminView(user.getRole() == UserRole.ADMIN);
+        response.setHasAdminView(user.isAdmin());
 
-        if (user.getOrganization() != null) {
-            response.setOrganizationId(user.getOrganization().getId());
-            response.setOrganizationName(user.getOrganization().getName());
+        if (user instanceof PersonalUser personalUser && personalUser.getOrganization() != null) {
+            response.setOrganizationId(personalUser.getOrganization().getId());
+            response.setOrganizationName(personalUser.getOrganization().getName());
         }
 
         return response;

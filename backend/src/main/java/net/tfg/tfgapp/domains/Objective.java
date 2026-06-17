@@ -39,14 +39,14 @@ public abstract class Objective {
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private PersonalUser user;
 
 
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_by_admin_id")
-    private User assignedByAdmin;
+    private AdminUser assignedByAdmin;
 
 
     @JsonIgnore

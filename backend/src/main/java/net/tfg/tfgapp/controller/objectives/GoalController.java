@@ -3,8 +3,9 @@ package net.tfg.tfgapp.controller.objectives;
 import net.tfg.tfgapp.DTOs.objectives.GoalProgressRequest;
 import net.tfg.tfgapp.DTOs.objectives.GoalRequest;
 import net.tfg.tfgapp.domains.Goal;
+import net.tfg.tfgapp.domains.AdminUser;
+import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.domains.User;
-import net.tfg.tfgapp.enumerates.UserRole;
 import net.tfg.tfgapp.exception.ApiException;
 import net.tfg.tfgapp.i18n.LanguageResolver;
 import net.tfg.tfgapp.security.JwtUtil;
@@ -39,7 +40,7 @@ public class GoalController {
                                         @RequestParam(required = false) Long targetUserId) {
         User actor = getActor(token, language);
 
-        if (actor.getRole() == UserRole.ADMIN) {
+        if (actor.isAdmin()) {
             if (targetUserId != null) {
                 User managedUser = userService.getUserById(targetUserId);
                 if (!canAccessManagedUser(actor, managedUser)) {
@@ -77,13 +78,13 @@ public class GoalController {
                                         @RequestBody GoalRequest request) {
         User actor = getActor(token, language);
 
-        List<User> targets = resolveTargetUsers(actor, request);
+        List<PersonalUser> targets = resolveTargetUsers(actor, request);
         List<Goal> createdGoals = new ArrayList<>();
 
-        for (User target : targets) {
+        for (PersonalUser target : targets) {
             Goal createdGoal = goalService.createGoal(request, target);
-            if (actor.getRole() == UserRole.ADMIN) {
-                createdGoal.setAssignedByAdmin(actor);
+            if (actor.isAdmin()) {
+                createdGoal.setAssignedByAdmin((AdminUser) actor);
                 createdGoal = goalService.updateGoal(createdGoal, request);
             }
             createdGoals.add(createdGoal);
@@ -108,7 +109,7 @@ public class GoalController {
             throw new SecurityException(languageResolver.text(language, "goal.noAccess"));
         }
 
-        if (actor.getRole() != UserRole.ADMIN && existingGoal.isAssignedByAdmin()) {
+        if (!actor.isAdmin() && existingGoal.isAssignedByAdmin()) {
             GoalRequest restrictedRequest = new GoalRequest();
             restrictedRequest.setTitulo(existingGoal.getTitulo());
             restrictedRequest.setDescription(existingGoal.getDescription());
@@ -163,7 +164,7 @@ public class GoalController {
             throw new SecurityException(languageResolver.text(language, "goal.noAccess"));
         }
 
-        if (actor.getRole() != UserRole.ADMIN && goal.isAssignedByAdmin()) {
+        if (!actor.isAdmin() && goal.isAssignedByAdmin()) {
             throw new SecurityException("No puedes eliminar objetivos asignados por administrador.");
         }
 
@@ -180,13 +181,16 @@ public class GoalController {
         return actor;
     }
 
-    private List<User> resolveTargetUsers(User actor, GoalRequest request) {
-        if (actor.getRole() != UserRole.ADMIN) {
-            return List.of(actor);
+    private List<PersonalUser> resolveTargetUsers(User actor, GoalRequest request) {
+        if (!actor.isAdmin()) {
+            return actor instanceof PersonalUser personalActor ? List.of(personalActor) : List.of();
         }
 
         if (Boolean.TRUE.equals(request.getAssignToAllUsers())) {
-            List<User> users = userService.getUsersInAdminScope(actor);
+            List<PersonalUser> users = userService.getUsersInAdminScope(actor).stream()
+                    .filter(PersonalUser.class::isInstance)
+                    .map(PersonalUser.class::cast)
+                    .toList();
             if (users.isEmpty()) {
                 throw new SecurityException("No hay usuarios subordinados para asignar.");
             }
@@ -196,6 +200,8 @@ public class GoalController {
         if (request.getTargetUserIds() != null && !request.getTargetUserIds().isEmpty()) {
             return request.getTargetUserIds().stream()
                     .map(userService::getUserById)
+                    .filter(PersonalUser.class::isInstance)
+                    .map(PersonalUser.class::cast)
                     .peek(user -> {
                         if (!canAccessManagedUser(actor, user)) {
                             throw new SecurityException("No tienes permiso para operar sobre uno de los usuarios seleccionados.");
@@ -210,14 +216,14 @@ public class GoalController {
             if (!canAccessManagedUser(actor, managedUser)) {
                 throw new SecurityException("No tienes permiso para operar sobre ese usuario.");
             }
-            return List.of(managedUser);
+            return managedUser instanceof PersonalUser personalUser ? List.of(personalUser) : List.of();
         }
 
         throw new SecurityException("Debes seleccionar al menos un usuario.");
     }
 
     private boolean canAccessManagedUser(User actor, User target) {
-        if (actor == null || actor.getRole() != UserRole.ADMIN || target == null) {
+        if (actor == null || !actor.isAdmin() || target == null) {
             return false;
         }
 
@@ -230,7 +236,7 @@ public class GoalController {
             return true;
         }
 
-        return actor.getRole() == UserRole.ADMIN
+        return actor.isAdmin()
                 && goal.getAssignedByAdmin() != null
                 && goal.getAssignedByAdmin().getId().equals(actor.getId())
                 && canAccessManagedUser(actor, goal.getUser());

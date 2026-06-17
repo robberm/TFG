@@ -3,10 +3,11 @@ package net.tfg.tfgapp.service;
 import net.tfg.tfgapp.DTOs.users.AdminCreateOrganizationRequest;
 import net.tfg.tfgapp.DTOs.users.AdminCreateUserRequest;
 import net.tfg.tfgapp.DTOs.users.UserSummaryResponse;
+import net.tfg.tfgapp.domains.AdminUser;
 import net.tfg.tfgapp.domains.Goal;
 import net.tfg.tfgapp.domains.Organization;
+import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.domains.User;
-import net.tfg.tfgapp.enumerates.UserRole;
 import net.tfg.tfgapp.repos.OrganizationRepo;
 import net.tfg.tfgapp.service.interfaces.IUserService;
 import net.tfg.tfgapp.service.interfaces.IAdminService;
@@ -65,11 +66,11 @@ public class AdminServiceImpl implements IAdminService {
             throw new IllegalArgumentException("Admin no encontrado.");
         }
 
-        if (admin.getRole() != UserRole.ADMIN) {
+        if (!(admin instanceof AdminUser adminUser)) {
             throw new SecurityException("No tienes permisos de administrador.");
         }
 
-        Organization organization = admin.getOrganization();
+        Organization organization = adminUser.getAdministeredOrganization();
         if (organization == null) {
             throw new IllegalStateException("El administrador no tiene una organización asociada.");
         }
@@ -80,13 +81,12 @@ public class AdminServiceImpl implements IAdminService {
 
         passwordPolicy.validateOrThrow(request.getPassword());
 
-        User managedUser = new User();
+        PersonalUser managedUser = new PersonalUser();
         managedUser.setUsername(request.getUsername().trim());
         managedUser.setPassword(passwordEncoder.encode(request.getPassword()));
         managedUser.setTokenVersion(0);
-        managedUser.setRole(UserRole.PERSONAL);
         managedUser.setOrganization(organization);
-        managedUser.setCreatedByAdmin(admin);
+        managedUser.setCreatedByAdmin(adminUser);
 
         User savedUser = userService.save(managedUser);
         return UserSummaryResponse.fromUser(savedUser);
@@ -110,17 +110,13 @@ public class AdminServiceImpl implements IAdminService {
             throw new IllegalArgumentException("Admin no encontrado.");
         }
 
-        if (admin.getRole() != UserRole.ADMIN) {
+        if (!(admin instanceof AdminUser adminUser)) {
             throw new SecurityException("No tienes permisos de administrador.");
         }
 
         User managedUser = userService.getManagedUser(admin.getId(), userId);
         if (managedUser == null) {
             throw new IllegalArgumentException("No se ha encontrado ningún usuario subordinado con ese id.");
-        }
-
-        if (managedUser.getRole() == UserRole.ADMIN) {
-            throw new IllegalArgumentException("No se puede eliminar otro administrador desde este flujo.");
         }
 
         userService.delete(managedUser);
@@ -140,7 +136,7 @@ public class AdminServiceImpl implements IAdminService {
             throw new IllegalArgumentException("Admin no encontrado.");
         }
 
-        if (admin.getRole() != UserRole.ADMIN) {
+        if (!(admin instanceof AdminUser)) {
             throw new SecurityException("No tienes permisos de administrador.");
         }
 
@@ -165,11 +161,11 @@ public class AdminServiceImpl implements IAdminService {
             throw new IllegalArgumentException("Admin no encontrado.");
         }
 
-        if (admin.getRole() != UserRole.ADMIN) {
+        if (!(admin instanceof AdminUser adminUser)) {
             throw new SecurityException("No tienes permisos de administrador.");
         }
 
-        if (admin.getOrganization() != null) {
+        if (adminUser.getAdministeredOrganization() != null) {
             throw new IllegalStateException("El administrador ya tiene una organización asociada.");
         }
 
@@ -181,12 +177,12 @@ public class AdminServiceImpl implements IAdminService {
 
         Organization organization = new Organization();
         organization.setName(organizationName);
-        organization.setAdmin(admin);
+        organization.setAdmin(adminUser);
 
         Organization savedOrganization = organizationRepo.save(organization);
 
-        admin.setOrganization(savedOrganization);
-        userService.save(admin);
+        adminUser.setAdministeredOrganization(savedOrganization);
+        userService.save(adminUser);
 
         return savedOrganization;
     }
@@ -206,7 +202,7 @@ public class AdminServiceImpl implements IAdminService {
             throw new IllegalArgumentException("Admin no encontrado.");
         }
 
-        if (admin.getRole() != UserRole.ADMIN) {
+        if (!(admin instanceof AdminUser)) {
             throw new SecurityException("No tienes permisos de administrador.");
         }
 

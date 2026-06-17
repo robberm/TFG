@@ -4,6 +4,7 @@ import net.tfg.tfgapp.DTOs.users.ChangePasswordRequest;
 import net.tfg.tfgapp.DTOs.users.ChangeUsernameRequest;
 import net.tfg.tfgapp.DTOs.users.LoginRequest;
 import net.tfg.tfgapp.DTOs.users.UserProfileResponse;
+import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.exception.ApiException;
 import net.tfg.tfgapp.i18n.LanguageResolver;
@@ -58,8 +59,8 @@ public class UserController {
         response.put("token", token);
         response.put("username", user.getUsername());
         response.put("role", user.getRole().name());
-        response.put("organizationId", user.getOrganization() != null ? user.getOrganization().getId() : null);
-        response.put("organizationName", user.getOrganization() != null ? user.getOrganization().getName() : null);
+        response.put("organizationId", organizationId(user));
+        response.put("organizationName", organizationName(user));
         response.put("message", languageResolver.text(acceptLanguage, "auth.login.success"));
 
         return ResponseEntity.ok(response);
@@ -69,7 +70,7 @@ public class UserController {
      * Registro público para usuarios personales.
      */
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody User newUser,
+    public ResponseEntity<?> registerUser(@RequestBody PersonalUser newUser,
                                           @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
                                           @RequestHeader(value = "X-Client-Platform", required = false) String clientPlatform) {
         User user = accountService.register(newUser);
@@ -103,8 +104,8 @@ public class UserController {
         response.put("token", newToken);
         response.put("username", updatedUser.getUsername());
         response.put("role", updatedUser.getRole().name());
-        response.put("organizationId", updatedUser.getOrganization() != null ? updatedUser.getOrganization().getId() : null);
-        response.put("organizationName", updatedUser.getOrganization() != null ? updatedUser.getOrganization().getName() : null);
+        response.put("organizationId", organizationId(updatedUser));
+        response.put("organizationName", organizationName(updatedUser));
 
         return ResponseEntity.ok(response);
     }
@@ -125,8 +126,8 @@ public class UserController {
         response.put("token", newToken);
         response.put("username", updatedUser.getUsername());
         response.put("role", updatedUser.getRole().name());
-        response.put("organizationId", updatedUser.getOrganization() != null ? updatedUser.getOrganization().getId() : null);
-        response.put("organizationName", updatedUser.getOrganization() != null ? updatedUser.getOrganization().getName() : null);
+        response.put("organizationId", organizationId(updatedUser));
+        response.put("organizationName", organizationName(updatedUser));
 
         return ResponseEntity.ok(response);
     }
@@ -182,6 +183,18 @@ public class UserController {
         Map<String, Object> response = new HashMap<>();
         response.put("message", languageResolver.text(acceptLanguage, "account.deleted"));
         return ResponseEntity.ok(response);
+    }
+
+    private Long organizationId(User user) {
+        return user instanceof PersonalUser personalUser && personalUser.getOrganization() != null
+                ? personalUser.getOrganization().getId()
+                : null;
+    }
+
+    private String organizationName(User user) {
+        return user instanceof PersonalUser personalUser && personalUser.getOrganization() != null
+                ? personalUser.getOrganization().getName()
+                : null;
     }
 
     private boolean isDesktopClient(String clientPlatform) {

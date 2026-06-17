@@ -4,6 +4,7 @@ import net.tfg.tfgapp.DTOs.objectives.HabitCompletionRequest;
 import net.tfg.tfgapp.DTOs.objectives.HabitRequest;
 import net.tfg.tfgapp.domains.Habit;
 import net.tfg.tfgapp.domains.ObjectiveLog;
+import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.exception.ApiException;
 import net.tfg.tfgapp.i18n.LanguageResolver;
@@ -67,11 +68,11 @@ public class HabitController {
         String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
         User user = userService.getUserByUsername(username);
 
-        if (user == null) {
+        if (!(user instanceof PersonalUser personalUser)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, languageResolver.text(language, "user.notFound"));
         }
 
-        Habit createdHabit = habitService.createHabit(request, user);
+        Habit createdHabit = habitService.createHabit(request, personalUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdHabit);
     }
 

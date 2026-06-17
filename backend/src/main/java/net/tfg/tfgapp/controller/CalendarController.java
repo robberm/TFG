@@ -2,8 +2,9 @@ package net.tfg.tfgapp.controller;
 
 import net.tfg.tfgapp.DTOs.events.EventRequest;
 import net.tfg.tfgapp.domains.Event;
+import net.tfg.tfgapp.domains.AdminUser;
+import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.domains.User;
-import net.tfg.tfgapp.enumerates.UserRole;
 import net.tfg.tfgapp.exception.ApiException;
 import net.tfg.tfgapp.security.JwtUtil;
 import net.tfg.tfgapp.service.EventService;
@@ -40,7 +41,7 @@ public class CalendarController {
 
         User actor = getActor(token);
 
-        if (actor.getRole() == UserRole.ADMIN) {
+        if (actor.isAdmin()) {
             if (targetUserId != null) {
                 User target = userService.getUserById(targetUserId);
                 if (!canAccessManagedUser(actor, target)) {
@@ -61,21 +62,21 @@ public class CalendarController {
         User actor = getActor(token);
 
         validateEventDates(request);
-        List<User> targets = resolveTargetUsers(actor, request);
+        List<PersonalUser> targets = resolveTargetUsers(actor, request);
         String assignmentBatchId =
-                actor.getRole() == UserRole.ADMIN && targets.size() > 1
+                actor.isAdmin() && targets.size() > 1
                         ? UUID.randomUUID().toString()
                         : null;
 
         List<Event> created = new ArrayList<>();
-        for (User target : targets) {
+        for (PersonalUser target : targets) {
             Event event = new Event();
             eventService.applyEventDetails(event, request);
             event.setUser(target);
             event.setAssignmentBatchId(assignmentBatchId);
 
-            if (actor.getRole() == UserRole.ADMIN) {
-                event.setAssignedByAdmin(actor);
+            if (actor.isAdmin()) {
+                event.setAssignedByAdmin((AdminUser) actor);
             }
 
             created.add(eventService.save(event));
@@ -99,14 +100,14 @@ public class CalendarController {
             throw new SecurityException("No tienes permiso para actualizar este evento.");
         }
 
-        if (actor.getRole() != UserRole.ADMIN && existingEvent.get().getAssignedByAdmin() != null) {
+        if (!actor.isAdmin() && existingEvent.get().getAssignedByAdmin() != null) {
             throw new SecurityException("No puedes modificar eventos asignados por administrador.");
         }
 
         validateEventDates(eventDetails);
 
-        if (actor.getRole() == UserRole.ADMIN && existingEvent.get().getAssignedByAdmin() != null) {
-            List<User> targets = resolveTargetUsers(actor, eventDetails);
+        if (actor.isAdmin() && existingEvent.get().getAssignedByAdmin() != null) {
+            List<PersonalUser> targets = resolveTargetUsers(actor, eventDetails);
             if (targets.isEmpty()) {
                 throw new IllegalArgumentException("Debes seleccionar al menos un usuario.");
             }
@@ -133,13 +134,13 @@ public class CalendarController {
 
             Event representative = null;
 
-            for (User target : targets) {
+            for (PersonalUser target : targets) {
                 Event eventForTarget = currentByUserId.get(target.getId());
 
                 if (eventForTarget == null) {
                     eventForTarget = new Event();
                     eventForTarget.setUser(target);
-                    eventForTarget.setAssignedByAdmin(actor);
+                    eventForTarget.setAssignedByAdmin((AdminUser) actor);
                 }
 
                 eventForTarget.setAssignmentBatchId(targetBatchId);
@@ -182,11 +183,11 @@ public class CalendarController {
             throw new SecurityException("No tienes permiso para eliminar este evento.");
         }
 
-        if (actor.getRole() != UserRole.ADMIN && existingEvent.get().getAssignedByAdmin() != null) {
+        if (!actor.isAdmin() && existingEvent.get().getAssignedByAdmin() != null) {
             throw new SecurityException("No puedes eliminar eventos asignados por administrador.");
         }
 
-        if (actor.getRole() == UserRole.ADMIN) {
+        if (actor.isAdmin()) {
             eventService.deleteAdminAssignedEventCascade(actor.getId(), existingEvent.get());
         } else {
             eventService.deleteEventById(id);
@@ -215,13 +216,16 @@ public class CalendarController {
         }
     }
 
-    private List<User> resolveTargetUsers(User actor, EventRequest request) {
-        if (actor.getRole() != UserRole.ADMIN) {
-            return List.of(actor);
+    private List<PersonalUser> resolveTargetUsers(User actor, EventRequest request) {
+        if (!actor.isAdmin()) {
+            return actor instanceof PersonalUser personalActor ? List.of(personalActor) : List.of();
         }
 
         if (Boolean.TRUE.equals(request.getAssignToAllUsers())) {
-            List<User> allUsers = userService.getUsersInAdminScope(actor);
+            List<PersonalUser> allUsers = userService.getUsersInAdminScope(actor).stream()
+                    .filter(PersonalUser.class::isInstance)
+                    .map(PersonalUser.class::cast)
+                    .toList();
             if (allUsers.isEmpty()) {
                 throw new SecurityException("No hay usuarios subordinados para asignar.");
             }
@@ -231,6 +235,8 @@ public class CalendarController {
         if (request.getTargetUserIds() != null && !request.getTargetUserIds().isEmpty()) {
             return request.getTargetUserIds().stream()
                     .map(userService::getUserById)
+                    .filter(PersonalUser.class::isInstance)
+                    .map(PersonalUser.class::cast)
                     .peek(user -> {
                         if (!canAccessManagedUser(actor, user)) {
                             throw new SecurityException("No tienes permiso para operar sobre uno de los usuarios seleccionados.");
@@ -245,14 +251,14 @@ public class CalendarController {
             if (!canAccessManagedUser(actor, managedUser)) {
                 throw new SecurityException("No tienes permiso para operar sobre ese usuario.");
             }
-            return List.of(managedUser);
+            return managedUser instanceof PersonalUser personalUser ? List.of(personalUser) : List.of();
         }
 
         throw new SecurityException("Debes seleccionar al menos un usuario.");
     }
 
     private boolean canAccessManagedUser(User actor, User target) {
-        if (target == null || actor.getRole() != UserRole.ADMIN) {
+        if (target == null || !actor.isAdmin()) {
             return false;
         }
 
@@ -265,7 +271,7 @@ public class CalendarController {
             return true;
         }
 
-        return actor.getRole() == UserRole.ADMIN
+        return actor.isAdmin()
                 && event.getAssignedByAdmin() != null
                 && event.getAssignedByAdmin().getId().equals(actor.getId())
                 && canAccessManagedUser(actor, event.getUser());
