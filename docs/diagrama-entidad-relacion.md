@@ -120,66 +120,80 @@ No se usa columna discriminadora `role` en el modelo nuevo. El subtipo queda def
 El administrador se relaciona con otras entidades de estas formas:
 
 1. Como administrador principal de una organización:
-   - `ORGANIZATIONS.admin_id` referencia `USERS.id`.
-   - Cardinalidad: `ORGANIZATIONS (1,1) — (0,1) USERS`.
+   - `ORGANIZATIONS.admin_id` referencia `ADMIN_USERS.id`.
+   - Cardinalidad: `ORGANIZATIONS (1,1) — (0,1) ADMIN_USERS`.
 
-2. Como creador o gestor de usuarios:
-   - `USERS.created_by_admin_id` referencia `USERS.id`.
-   - Cardinalidad reflexiva: `USERS administrador (0,N) — (0,1) USERS usuario_gestionado`.
+2. Como creador o gestor de usuarios personales:
+   - `PERSONAL_USERS.created_by_admin_id` referencia `ADMIN_USERS.id`.
+   - Cardinalidad: `ADMIN_USERS administrador (0,N) — (0,1) PERSONAL_USERS usuario_gestionado`.
 
 3. Como asignador de eventos:
-   - `EVENTS.assigned_by_admin_id` referencia `USERS.id`.
-   - Cardinalidad: `USERS administrador (0,N) — (0,1) EVENTS`.
+   - `EVENTS.assigned_by_admin_id` referencia `ADMIN_USERS.id`.
+   - Cardinalidad: `ADMIN_USERS administrador (0,N) — (0,1) EVENTS`.
 
 4. Como asignador de objetivos:
-   - `OBJECTIVES.assigned_by_admin_id` referencia `USERS.id`.
-   - Cardinalidad: `USERS administrador (0,N) — (0,1) OBJECTIVES`.
+   - `OBJECTIVES.assigned_by_admin_id` referencia `ADMIN_USERS.id`.
+   - Cardinalidad: `ADMIN_USERS administrador (0,N) — (0,1) OBJECTIVES`.
 
-Por tanto, si otra IA dibuja el diagrama, debe representar `ADMIN_USERS` y `PERSONAL_USERS` como subentidades de `USERS` mediante herencia `JOINED`.
+El usuario personal se relaciona con otras entidades de estas formas:
+
+1. Como miembro de una organización:
+   - `PERSONAL_USERS.organization_id` referencia `ORGANIZATIONS.id`.
+   - Cardinalidad: `ORGANIZATIONS (0,N) — (0,1) PERSONAL_USERS`.
+
+2. Como propietario o destinatario de eventos:
+   - `EVENTS.user_id` referencia `PERSONAL_USERS.id`.
+   - Cardinalidad: `PERSONAL_USERS (0,N) — (0,1) EVENTS`.
+
+3. Como propietario o destinatario de objetivos:
+   - `OBJECTIVES.user_id` referencia `PERSONAL_USERS.id`.
+   - Cardinalidad: `PERSONAL_USERS (0,N) — (1,1) OBJECTIVES`.
+
+Por tanto, si otra IA dibuja el diagrama, debe representar `ADMIN_USERS` y `PERSONAL_USERS` como subentidades de `USERS` mediante herencia `JOINED`, y debe conectar las relaciones de negocio contra el subtipo concreto, no contra `USERS` genérico.
 
 ## Relaciones y cardinalidades
 
-### ORGANIZATIONS — USERS como administrador
+### ORGANIZATIONS — ADMIN_USERS como administrador
 
 - Relación: una organización tiene un administrador principal.
-- Desde `ORGANIZATIONS` hacia `USERS`: cada organización debe tener exactamente `1` usuario administrador.
-- Desde `USERS` hacia `ORGANIZATIONS`: un usuario puede administrar `0..1` organizaciones.
-- Cardinalidad: `ORGANIZATIONS (1,1) — (0,1) USERS`.
-- Clave foránea: `ORGANIZATIONS.admin_id` referencia `USERS.id`.
-- Observación: `admin_id` es único, por lo que un mismo usuario no puede ser administrador principal de varias organizaciones.
+- Desde `ORGANIZATIONS` hacia `ADMIN_USERS`: cada organización debe tener exactamente `1` administrador.
+- Desde `ADMIN_USERS` hacia `ORGANIZATIONS`: un administrador puede administrar `0..1` organizaciones.
+- Cardinalidad: `ORGANIZATIONS (1,1) — (0,1) ADMIN_USERS`.
+- Clave foránea: `ORGANIZATIONS.admin_id` referencia `ADMIN_USERS.id`.
+- Observación: `admin_id` es único, por lo que un mismo administrador no puede ser administrador principal de varias organizaciones.
 
-### ORGANIZATIONS — USERS como miembros
+### ORGANIZATIONS — PERSONAL_USERS como miembros
 
 - Relación: una organización puede tener usuarios miembros.
-- Desde `ORGANIZATIONS` hacia `USERS`: una organización puede tener `0..N` usuarios.
-- Desde `USERS` hacia `ORGANIZATIONS`: un usuario puede pertenecer a `0..1` organizaciones.
-- Cardinalidad: `ORGANIZATIONS (0,N) — (0,1) USERS`.
-- Clave foránea: `USERS.organization_id` referencia `ORGANIZATIONS.id`.
+- Desde `ORGANIZATIONS` hacia `PERSONAL_USERS`: una organización puede tener `0..N` usuarios personales.
+- Desde `PERSONAL_USERS` hacia `ORGANIZATIONS`: un usuario personal puede pertenecer a `0..1` organizaciones.
+- Cardinalidad: `ORGANIZATIONS (0,N) — (0,1) PERSONAL_USERS`.
+- Clave foránea: `PERSONAL_USERS.organization_id` referencia `ORGANIZATIONS.id`.
 - Observación: los usuarios personales pueden no pertenecer a ninguna organización.
 
-### USERS — USERS como creador administrativo
+### ADMIN_USERS — PERSONAL_USERS como creador administrativo
 
-- Relación reflexiva: un usuario administrador puede crear o gestionar otros usuarios.
-- Desde el usuario administrador hacia usuarios gestionados: un administrador puede gestionar `0..N` usuarios.
-- Desde el usuario gestionado hacia administrador creador: un usuario puede haber sido creado por `0..1` administradores.
-- Cardinalidad: `USERS administrador (0,N) — (0,1) USERS usuario_gestionado`.
-- Clave foránea: `USERS.created_by_admin_id` referencia `USERS.id`.
+- Relación: un administrador puede crear o gestionar usuarios personales.
+- Desde `ADMIN_USERS` hacia `PERSONAL_USERS`: un administrador puede gestionar `0..N` usuarios personales.
+- Desde `PERSONAL_USERS` hacia `ADMIN_USERS`: un usuario personal puede haber sido creado por `0..1` administradores.
+- Cardinalidad: `ADMIN_USERS administrador (0,N) — (0,1) PERSONAL_USERS usuario_gestionado`.
+- Clave foránea: `PERSONAL_USERS.created_by_admin_id` referencia `ADMIN_USERS.id`.
 
-### USERS — EVENTS como propietario o destinatario
+### PERSONAL_USERS — EVENTS como propietario o destinatario
 
 - Relación: un usuario tiene eventos en su calendario.
-- Desde `USERS` hacia `EVENTS`: un usuario puede tener `0..N` eventos.
-- Desde `EVENTS` hacia `USERS`: un evento puede estar asociado a `0..1` usuarios según la anotación JPA actual, porque `user_id` no está marcado como obligatorio.
-- Cardinalidad: `USERS (0,N) — (0,1) EVENTS`.
-- Clave foránea: `EVENTS.user_id` referencia `USERS.id`.
+- Desde `PERSONAL_USERS` hacia `EVENTS`: un usuario personal puede tener `0..N` eventos.
+- Desde `EVENTS` hacia `PERSONAL_USERS`: un evento puede estar asociado a `0..1` usuarios personales según la anotación JPA actual, porque `user_id` no está marcado como obligatorio.
+- Cardinalidad: `PERSONAL_USERS (0,N) — (0,1) EVENTS`.
+- Clave foránea: `EVENTS.user_id` referencia `PERSONAL_USERS.id`.
 
-### USERS — EVENTS como administrador asignador
+### ADMIN_USERS — EVENTS como administrador asignador
 
 - Relación: un administrador puede asignar eventos a usuarios.
-- Desde `USERS` administrador hacia `EVENTS`: un administrador puede asignar `0..N` eventos.
-- Desde `EVENTS` hacia `USERS` administrador: un evento puede haber sido asignado por `0..1` administradores.
-- Cardinalidad: `USERS administrador (0,N) — (0,1) EVENTS`.
-- Clave foránea: `EVENTS.assigned_by_admin_id` referencia `USERS.id`.
+- Desde `ADMIN_USERS` hacia `EVENTS`: un administrador puede asignar `0..N` eventos.
+- Desde `EVENTS` hacia `ADMIN_USERS`: un evento puede haber sido asignado por `0..1` administradores.
+- Cardinalidad: `ADMIN_USERS administrador (0,N) — (0,1) EVENTS`.
+- Clave foránea: `EVENTS.assigned_by_admin_id` referencia `ADMIN_USERS.id`.
 
 ### EVENTS — EVENTS_REMINDERS
 
@@ -190,21 +204,21 @@ Por tanto, si otra IA dibuja el diagrama, debe representar `ADMIN_USERS` y `PERS
 - Clave foránea: `EVENTS_REMINDERS.event_id` referencia `EVENTS.id`.
 - Tipo: entidad dependiente surgida de una colección de valores, no una entidad asociativa muchos-a-muchos.
 
-### USERS — OBJECTIVES como propietario o destinatario
+### PERSONAL_USERS — OBJECTIVES como propietario o destinatario
 
 - Relación: un usuario tiene objetivos.
-- Desde `USERS` hacia `OBJECTIVES`: un usuario puede tener `0..N` objetivos.
-- Desde `OBJECTIVES` hacia `USERS`: cada objetivo debe pertenecer a exactamente `1` usuario.
-- Cardinalidad: `USERS (0,N) — (1,1) OBJECTIVES`.
-- Clave foránea: `OBJECTIVES.user_id` referencia `USERS.id`.
+- Desde `PERSONAL_USERS` hacia `OBJECTIVES`: un usuario personal puede tener `0..N` objetivos.
+- Desde `OBJECTIVES` hacia `PERSONAL_USERS`: cada objetivo debe pertenecer a exactamente `1` usuario personal.
+- Cardinalidad: `PERSONAL_USERS (0,N) — (1,1) OBJECTIVES`.
+- Clave foránea: `OBJECTIVES.user_id` referencia `PERSONAL_USERS.id`.
 
-### USERS — OBJECTIVES como administrador asignador
+### ADMIN_USERS — OBJECTIVES como administrador asignador
 
 - Relación: un administrador puede asignar objetivos a usuarios.
-- Desde `USERS` administrador hacia `OBJECTIVES`: un administrador puede asignar `0..N` objetivos.
-- Desde `OBJECTIVES` hacia `USERS` administrador: un objetivo puede haber sido asignado por `0..1` administradores.
-- Cardinalidad: `USERS administrador (0,N) — (0,1) OBJECTIVES`.
-- Clave foránea: `OBJECTIVES.assigned_by_admin_id` referencia `USERS.id`.
+- Desde `ADMIN_USERS` hacia `OBJECTIVES`: un administrador puede asignar `0..N` objetivos.
+- Desde `OBJECTIVES` hacia `ADMIN_USERS`: un objetivo puede haber sido asignado por `0..1` administradores.
+- Cardinalidad: `ADMIN_USERS administrador (0,N) — (0,1) OBJECTIVES`.
+- Clave foránea: `OBJECTIVES.assigned_by_admin_id` referencia `ADMIN_USERS.id`.
 
 ### OBJECTIVES — HABITS por herencia
 
@@ -259,6 +273,12 @@ Sí aparecen entidades o tablas surgidas de relaciones o estructuras del modelo:
    - Es una entidad dependiente del objetivo.
    - No es una entidad asociativa muchos-a-muchos.
    - Sirve para registrar el histórico diario de cada objetivo.
+
+5. `assignment_batch_id` en `EVENTS` y `OBJECTIVES`:
+   - No crea una entidad nueva ni una relación adicional.
+   - Es un identificador lógico compartido por varias filas creadas en una asignación masiva de administrador.
+   - Permite editar, reasignar o borrar en bloque los eventos u objetivos que proceden de la misma asignación.
+   - En el diagrama puede anotarse como atributo simple de `EVENTS` y `OBJECTIVES`, no como tabla asociativa.
 
 ## Resumen compacto para dibujar
 
