@@ -63,26 +63,12 @@ public class CalendarController {
 
         validateEventDates(request);
         List<PersonalUser> targets = resolveTargetUsers(actor, request);
-        String assignmentBatchId =
-                actor.isAdmin() && targets.size() > 1
-                        ? UUID.randomUUID().toString()
-                        : null;
+        Event event = new Event();
+        eventService.applyEventDetails(event, request);
+        AdminUser assigningAdmin = actor.isAdmin() ? (AdminUser) actor : null;
+        targets.forEach(target -> event.addAssignment(target, assigningAdmin));
 
-        List<Event> created = new ArrayList<>();
-        for (PersonalUser target : targets) {
-            Event event = new Event();
-            eventService.applyEventDetails(event, request);
-            event.setUser(target);
-            event.setAssignmentBatchId(assignmentBatchId);
-
-            if (actor.isAdmin()) {
-                event.setAssignedByAdmin((AdminUser) actor);
-            }
-
-            created.add(eventService.save(event));
-        }
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        return ResponseEntity.status(HttpStatus.CREATED).body(List.of(eventService.save(event)));
     }
 
     @PutMapping("/{id}")
@@ -112,53 +98,9 @@ public class CalendarController {
                 throw new IllegalArgumentException("Debes seleccionar al menos un usuario.");
             }
 
-            String existingBatchId = existingEvent.get().getAssignmentBatchId();
-            List<Event> currentBatchEvents;
-
-            if (existingBatchId != null && !existingBatchId.isBlank()) {
-                currentBatchEvents = eventService.getAssignedEventsByBatch(actor.getId(), existingBatchId);
-            } else {
-                currentBatchEvents = new ArrayList<>();
-                currentBatchEvents.add(existingEvent.get());
-            }
-
-            Map<Long, Event> currentByUserId = new HashMap<>();
-            currentBatchEvents.forEach((event) -> currentByUserId.put(event.getUser().getId(), event));
-
-            Set<Long> targetIds = new HashSet<>();
-            targets.forEach(user -> targetIds.add(user.getId()));
-
-            String targetBatchId = targets.size() > 1
-                    ? (existingBatchId != null && !existingBatchId.isBlank() ? existingBatchId : UUID.randomUUID().toString())
-                    : null;
-
-            Event representative = null;
-
-            for (PersonalUser target : targets) {
-                Event eventForTarget = currentByUserId.get(target.getId());
-
-                if (eventForTarget == null) {
-                    eventForTarget = new Event();
-                    eventForTarget.setUser(target);
-                    eventForTarget.setAssignedByAdmin((AdminUser) actor);
-                }
-
-                eventForTarget.setAssignmentBatchId(targetBatchId);
-                eventService.applyEventDetails(eventForTarget, eventDetails);
-                Event saved = eventService.save(eventForTarget);
-
-                if (representative == null) {
-                    representative = saved;
-                }
-            }
-
-            for (Event event : currentBatchEvents) {
-                if (!targetIds.contains(event.getUser().getId())) {
-                    eventService.deleteEventById(event.getId());
-                }
-            }
-
-            return ResponseEntity.ok(representative);
+            existingEvent.get().replaceAssignments(targets, (AdminUser) actor);
+            eventService.applyEventDetails(existingEvent.get(), eventDetails);
+            return ResponseEntity.ok(eventService.save(existingEvent.get()));
         }
 
         Optional<Event> updatedEvent = eventService.updateEventById(id, eventDetails);
@@ -267,13 +209,13 @@ public class CalendarController {
     }
 
     private boolean canAccessEvent(User actor, Event event) {
-        if (event.getUser().getId().equals(actor.getId())) {
+        if (event.getAssignments().stream().anyMatch(a -> a.getPersonalUser().getId().equals(actor.getId()))) {
             return true;
         }
 
         return actor.isAdmin()
-                && event.getAssignedByAdmin() != null
-                && event.getAssignedByAdmin().getId().equals(actor.getId())
-                && canAccessManagedUser(actor, event.getUser());
+                && event.getAssignments().stream().anyMatch(a -> a.getAssignedByAdmin() != null
+                && a.getAssignedByAdmin().getId().equals(actor.getId())
+                && canAccessManagedUser(actor, a.getPersonalUser()));
     }
 }

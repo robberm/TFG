@@ -412,3 +412,30 @@ erDiagram
     OBJECTIVES ||--|o GOALS : "subtipo goal 0..1"
     OBJECTIVES ||--o{ OBJECTIVE_LOGS : "objetivo 0..N logs, log 1 objetivo"
 ```
+
+## Modelo normalizado de asignaciones
+
+Para evitar duplicar filas cuando un administrador asigna el mismo elemento a muchos usuarios, el modelo separa la definición común de la asignación individual.
+
+### Eventos
+
+```text
+EVENTS (1,1) —— (1,N) EVENT_ASSIGNMENTS
+PERSONAL_USERS (1,1) —— (0,N) EVENT_ASSIGNMENTS
+ADMIN_USERS (1,1) —— (0,N) EVENT_ASSIGNMENTS
+```
+
+Los eventos se guardan una sola vez y se asignan a usuarios mediante `EVENT_ASSIGNMENTS`. Esta tabla conserva qué usuario personal recibe el evento y, cuando aplica, qué administrador realizó la asignación.
+
+### Objetivos
+
+```text
+OBJECTIVES (1,1) —— (1,N) OBJECTIVE_ASSIGNMENTS
+PERSONAL_USERS (1,1) —— (0,N) OBJECTIVE_ASSIGNMENTS
+ADMIN_USERS (1,1) —— (0,N) OBJECTIVE_ASSIGNMENTS
+OBJECTIVE_ASSIGNMENTS (1,1) —— (0,N) OBJECTIVE_LOGS
+```
+
+Los objetivos también se guardan como definición común, pero el progreso individual de cada usuario se guarda en `OBJECTIVE_ASSIGNMENTS` (`status`, `active`, `progress_value`, `target_value`, etc.).
+
+Por eso `OBJECTIVE_LOGS` debe depender de `OBJECTIVE_ASSIGNMENTS` y no directamente del objetivo general: el histórico pertenece al avance de una persona concreta, no a la definición compartida del objetivo.

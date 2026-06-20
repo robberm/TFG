@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Table(
         name = "objective_logs",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"objective_id", "log_date"})
+                @UniqueConstraint(columnNames = {"objective_assignment_id", "log_date"})
         }
 )
 public class ObjectiveLog {
@@ -22,42 +22,28 @@ public class ObjectiveLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    /**
-     * Objetivo al que pertenece el registro histórico.
-     */
+    /** Referencia nueva: el log pertenece al progreso individual de una asignación. */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "objective_id", nullable = false)
+    @JoinColumn(name = "objective_assignment_id")
+    private ObjectiveAssignment objectiveAssignment;
+
+    /** Referencia legacy temporal para migración/trazabilidad desde el modelo anterior. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "objective_id")
     private Objective objective;
 
-    /**
-     * Fecha funcional del registro.
-     */
     @Column(name = "log_date", nullable = false)
     private LocalDate logDate;
 
-    /**
-     * Indica si el hábito fue completado en una fecha concreta.
-     * Se utiliza principalmente para Habit.
-     */
     @Column(nullable = true)
     private Boolean completed;
 
-    /**
-     * Valor de progreso registrado en una fecha concreta.
-     * Se utiliza principalmente para Goal.
-     */
     @Column(nullable = true)
     private Double progressValue;
 
-    /**
-     * Comentario opcional asociado al log.
-     */
     @Column(nullable = true)
     private String notes;
 
-    /**
-     * Fecha real de creación del registro.
-     */
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

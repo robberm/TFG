@@ -1,13 +1,10 @@
 package net.tfg.tfgapp.domains;
 
-
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -15,49 +12,60 @@ import java.util.List;
 
 @Getter
 @Setter
-
 @Entity
 @Table(name = "events")
 public class Event {
 
-@Id
-@GeneratedValue(strategy = GenerationType.IDENTITY)
-private Long id;
-@Column(unique = false)
-private String title;
-@Column(unique = false)
-private String description;
-@Column(unique = false)
-private LocalDateTime startTime;
-@Column(unique = false)
-private LocalDateTime endTime;
-@Column(unique = false)
-private String location;
-@Enumerated(EnumType.STRING)
-@Column(nullable = false)
-private EventCategory category;
-@Column(unique = false)
-private Boolean isAllDay;
-@Column(unique = false)
-private Integer reminderMinutesBefore;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    @Column(unique = false)
+    private String title;
+    @Column(unique = false)
+    private String description;
+    @Column(unique = false)
+    private LocalDateTime startTime;
+    @Column(unique = false)
+    private LocalDateTime endTime;
+    @Column(unique = false)
+    private String location;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EventCategory category;
+    @Column(unique = false)
+    private Boolean isAllDay;
+    @Column(unique = false)
+    private Integer reminderMinutesBefore;
 
-@ElementCollection(fetch = FetchType.EAGER)
-@CollectionTable(name = "EventsReminders", joinColumns = @JoinColumn(name = "event_id"))
-@Column(name = "minutes_before")
-private List<Integer> reminderMinutesBeforeList = new ArrayList<>();
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "EventsReminders", joinColumns = @JoinColumn(name = "event_id"))
+    @Column(name = "minutes_before")
+    private List<Integer> reminderMinutesBeforeList = new ArrayList<>();
 
-@Column(unique = false)
-private String assignmentBatchId;
+    /** Legacy temporal para migración; el modelo correcto usa assignments. */
+    @JsonIgnore
+    @Column(unique = false)
+    private String assignmentBatchId;
 
-@ManyToOne
-@JoinColumn(name = "user_id")
-private PersonalUser user;
+    /** Legacy temporal para migración; se deriva de currentAssignment/asignación representativa. */
+    @JsonIgnore
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private PersonalUser user;
 
-@ManyToOne(fetch = FetchType.LAZY)
-@JoinColumn(name = "assigned_by_admin_id")
-@JsonIgnore
-private AdminUser assignedByAdmin;
+    /** Legacy temporal para migración; se deriva de currentAssignment/asignación representativa. */
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_by_admin_id")
+    private AdminUser assignedByAdmin;
 
+    @JsonIgnore
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<EventAssignment> assignments = new ArrayList<>();
+
+    @Transient
+    @JsonIgnore
+    private EventAssignment currentAssignment;
 
     public Event(Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime, String location, EventCategory category, Boolean isAllDay, Integer reminderMinutesBefore, PersonalUser user) {
         this.id = id;
@@ -70,52 +78,77 @@ private AdminUser assignedByAdmin;
         this.isAllDay = isAllDay;
         this.reminderMinutesBefore = reminderMinutesBefore;
         this.user = user;
+        if (user != null) addAssignment(user, null);
     }
 
     public Event() {
     }
 
+    public void addAssignment(PersonalUser target, AdminUser admin) {
+        if (target == null) return;
+        EventAssignment assignment = new EventAssignment();
+        assignment.setEvent(this);
+        assignment.setPersonalUser(target);
+        assignment.setAssignedByAdmin(admin);
+        assignments.add(assignment);
+        if (currentAssignment == null) currentAssignment = assignment;
+        if (user == null) user = target;
+        if (assignedByAdmin == null) assignedByAdmin = admin;
+    }
 
+    public void replaceAssignments(List<PersonalUser> targets, AdminUser admin) {
+        assignments.clear();
+        currentAssignment = null;
+        user = targets == null || targets.isEmpty() ? null : targets.get(0);
+        assignedByAdmin = admin;
+        if (targets != null) targets.forEach(target -> addAssignment(target, admin));
+    }
+
+    private EventAssignment representativeAssignment() {
+        if (currentAssignment != null) return currentAssignment;
+        return assignments.isEmpty() ? null : assignments.get(0);
+    }
+
+    public PersonalUser getUser() {
+        EventAssignment assignment = representativeAssignment();
+        return assignment != null ? assignment.getPersonalUser() : user;
+    }
+
+    public AdminUser getAssignedByAdmin() {
+        EventAssignment assignment = representativeAssignment();
+        return assignment != null ? assignment.getAssignedByAdmin() : assignedByAdmin;
+    }
 
     @JsonProperty("assignedByAdmin")
     public boolean isAssignedByAdmin() {
-        return assignedByAdmin != null;
+        return getAssignedByAdmin() != null;
     }
 
     @JsonProperty("assignedByAdminUsername")
     public String getAssignedByAdminUsername() {
-        return assignedByAdmin != null ? assignedByAdmin.getUsername() : null;
+        AdminUser admin = getAssignedByAdmin();
+        return admin != null ? admin.getUsername() : null;
     }
 
     @JsonProperty("assignedToUsername")
     public String getAssignedToUsername() {
-        return user != null ? user.getUsername() : null;
+        PersonalUser assignedUser = getUser();
+        return assignedUser != null ? assignedUser.getUsername() : null;
     }
 
     @JsonProperty("assignedToUserId")
     public Long getAssignedToUserId() {
-        return user != null ? user.getId() : null;
+        PersonalUser assignedUser = getUser();
+        return assignedUser != null ? assignedUser.getId() : null;
     }
 
     public enum EventCategory {
-        WORK("Work"),
-        PERSONAL("Personal"),
-        STUDY("Study"),
-        HEALTH("Health"),
-        MANDATORY("Mandatory"),
-        FOCUS("Focus");
-
-        
-
+        WORK("Work"), PERSONAL("Personal"), STUDY("Study"), HEALTH("Health"), MANDATORY("Mandatory"), FOCUS("Focus");
 
         private final String label;
 
-        EventCategory(String label) {
-            this.label = label;
-        }
+        EventCategory(String label) { this.label = label; }
 
-        public String getLabel() {
-            return label;
-        }
+        public String getLabel() { return label; }
     }
 }

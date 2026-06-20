@@ -57,6 +57,14 @@ public abstract class Objective {
     private List<ObjectiveLog> logs = new ArrayList<>();
 
     @JsonIgnore
+    @OneToMany(mappedBy = "objective", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ObjectiveAssignment> assignments = new ArrayList<>();
+
+    @Transient
+    @JsonIgnore
+    private ObjectiveAssignment currentAssignment;
+
+    @JsonIgnore
     @Column(name = "is_numeric", nullable = false)
     private Boolean numeric = false;
 
@@ -70,24 +78,70 @@ public abstract class Objective {
         this.numeric = numeric;
     }
 
+    private ObjectiveAssignment representativeAssignment() {
+        if (currentAssignment != null) {
+            return currentAssignment;
+        }
+        return assignments.isEmpty() ? null : assignments.get(0);
+    }
+
+    public PersonalUser getEffectiveUser() {
+        ObjectiveAssignment assignment = representativeAssignment();
+        return assignment != null ? assignment.getPersonalUser() : user;
+    }
+
+    public AdminUser getEffectiveAssignedByAdmin() {
+        ObjectiveAssignment assignment = representativeAssignment();
+        return assignment != null ? assignment.getAssignedByAdmin() : assignedByAdmin;
+    }
+
+    public void addAssignment(PersonalUser target, AdminUser admin) {
+        if (target == null) {
+            return;
+        }
+        ObjectiveAssignment assignment = new ObjectiveAssignment();
+        assignment.setObjective(this);
+        assignment.setPersonalUser(target);
+        assignment.setAssignedByAdmin(admin);
+        assignment.setActive(active == null || active);
+        if (this instanceof Goal goal) {
+            assignment.setStatus(goal.getStatus());
+            assignment.setProgressValue(goal.getValorProgreso());
+            assignment.setTargetValue(goal.getValorObjetivo());
+        }
+        assignments.add(assignment);
+        if (currentAssignment == null) {
+            currentAssignment = assignment;
+        }
+        if (user == null) {
+            user = target;
+        }
+        if (assignedByAdmin == null) {
+            assignedByAdmin = admin;
+        }
+    }
+
     @JsonProperty("assignedByAdmin")
     public boolean isAssignedByAdmin() {
-        return assignedByAdmin != null;
+        return getEffectiveAssignedByAdmin() != null;
     }
 
     @JsonProperty("assignedByAdminUsername")
     public String getAssignedByAdminUsername() {
-        return assignedByAdmin != null ? assignedByAdmin.getUsername() : null;
+        AdminUser admin = getEffectiveAssignedByAdmin();
+        return admin != null ? admin.getUsername() : null;
     }
 
     @JsonProperty("assignedToUsername")
     public String getAssignedToUsername() {
-        return user != null ? user.getUsername() : null;
+        PersonalUser assignedUser = getEffectiveUser();
+        return assignedUser != null ? assignedUser.getUsername() : null;
     }
 
     @JsonProperty("assignedToUserId")
     public Long getAssignedToUserId() {
-        return user != null ? user.getId() : null;
+        PersonalUser assignedUser = getEffectiveUser();
+        return assignedUser != null ? assignedUser.getId() : null;
     }
 
     @PrePersist

@@ -78,22 +78,14 @@ public class GoalController {
         User actor = getActor(token, language);
 
         List<PersonalUser> targets = resolveTargetUsers(actor, request);
-        String assignmentBatchId = actor.isAdmin() && targets.size() > 1
-                ? UUID.randomUUID().toString()
-                : null;
-        List<Goal> createdGoals = new ArrayList<>();
-
-        for (PersonalUser target : targets) {
-            Goal createdGoal = goalService.createGoal(request, target);
-            if (actor.isAdmin()) {
-                createdGoal.setAssignedByAdmin((AdminUser) actor);
-                createdGoal.setAssignmentBatchId(assignmentBatchId);
-                createdGoal = goalService.updateGoal(createdGoal, request);
-            }
-            createdGoals.add(createdGoal);
+        Goal createdGoal = goalService.createGoal(request, targets.get(0));
+        if (actor.isAdmin()) {
+            createdGoal.setAssignedByAdmin((AdminUser) actor);
+            createdGoal.getAssignments().clear();
+            targets.forEach(target -> createdGoal.addAssignment(target, (AdminUser) actor));
+            createdGoal = goalService.updateGoal(createdGoal, request);
         }
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdGoals);
+        return ResponseEntity.status(HttpStatus.CREATED).body(List.of(createdGoal));
     }
 
     @PutMapping("/{id}")
@@ -136,51 +128,9 @@ public class GoalController {
                 throw new IllegalArgumentException("Debes seleccionar al menos un usuario.");
             }
 
-            String existingBatchId = existingGoal.getAssignmentBatchId();
-            List<Goal> currentBatchGoals;
-
-            if (existingBatchId != null && !existingBatchId.isBlank()) {
-                currentBatchGoals = goalService.getAssignedGoalsByBatch(actor.getId(), existingBatchId);
-            } else {
-                currentBatchGoals = new ArrayList<>();
-                currentBatchGoals.add(existingGoal);
-            }
-
-            Map<Long, Goal> currentByUserId = new HashMap<>();
-            currentBatchGoals.forEach(goal -> currentByUserId.put(goal.getUser().getId(), goal));
-
-            Set<Long> targetIds = new HashSet<>();
-            targets.forEach(user -> targetIds.add(user.getId()));
-
-            String targetBatchId = targets.size() > 1
-                    ? (existingBatchId != null && !existingBatchId.isBlank() ? existingBatchId : UUID.randomUUID().toString())
-                    : null;
-
-            Goal representative = null;
-
-            for (PersonalUser target : targets) {
-                Goal goalForTarget = currentByUserId.get(target.getId());
-
-                if (goalForTarget == null) {
-                    goalForTarget = goalService.createGoal(request, target);
-                    goalForTarget.setAssignedByAdmin((AdminUser) actor);
-                }
-
-                goalForTarget.setAssignmentBatchId(targetBatchId);
-                Goal saved = goalService.updateGoal(goalForTarget, request);
-
-                if (representative == null) {
-                    representative = saved;
-                }
-            }
-
-            for (Goal goal : currentBatchGoals) {
-                if (!targetIds.contains(goal.getUser().getId())) {
-                    goalService.deleteById(goal.getId());
-                }
-            }
-
-            return ResponseEntity.ok(representative);
+            existingGoal.getAssignments().clear();
+            targets.forEach(target -> existingGoal.addAssignment(target, (AdminUser) actor));
+            return ResponseEntity.ok(goalService.updateGoal(existingGoal, request));
         }
 
         return ResponseEntity.ok(goalService.updateGoal(existingGoal, request));
@@ -288,13 +238,13 @@ public class GoalController {
     }
 
     private boolean canAccessGoal(User actor, Goal goal) {
-        if (goal.getUser().getId().equals(actor.getId())) {
+        if (goal.getAssignments().stream().anyMatch(a -> a.getPersonalUser().getId().equals(actor.getId()))) {
             return true;
         }
 
         return actor.isAdmin()
-                && goal.getAssignedByAdmin() != null
-                && goal.getAssignedByAdmin().getId().equals(actor.getId())
-                && canAccessManagedUser(actor, goal.getUser());
+                && goal.getAssignments().stream().anyMatch(a -> a.getAssignedByAdmin() != null
+                && a.getAssignedByAdmin().getId().equals(actor.getId())
+                && canAccessManagedUser(actor, a.getPersonalUser()));
     }
 }

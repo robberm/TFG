@@ -3,6 +3,7 @@ package net.tfg.tfgapp.service.implementations;
 import net.tfg.tfgapp.DTOs.objectives.HabitCompletionRequest;
 import net.tfg.tfgapp.DTOs.objectives.HabitRequest;
 import net.tfg.tfgapp.domains.Habit;
+import net.tfg.tfgapp.domains.ObjectiveAssignment;
 import net.tfg.tfgapp.domains.ObjectiveLog;
 import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.repos.HabitRepo;
@@ -52,6 +53,7 @@ public class HabitServiceImpl extends ObjectiveServiceBase<Habit, HabitRepo> imp
         habit.setDescription(request.getDescription());
         habit.setActive(request.getActive() == null || request.getActive());
         habit.setUser(user);
+        habit.addAssignment(user, null);
 
         return habitRepo.save(habit);
     }
@@ -76,10 +78,11 @@ public class HabitServiceImpl extends ObjectiveServiceBase<Habit, HabitRepo> imp
         LocalDate targetDate = request.getDate() != null ? request.getDate() : LocalDate.now();
 
         ObjectiveLog log = objectiveLogRepo
-                .findByObjectiveIdAndLogDate(habit.getId(), targetDate)
+                .findByObjectiveAssignmentIdAndLogDate(resolveAssignmentId(habit), targetDate)
                 .orElseGet(() -> {
                     ObjectiveLog newLog = new ObjectiveLog();
-                    newLog.setObjective(habit);
+                    newLog.setObjective(habit); // legacy/trazabilidad
+                    newLog.setObjectiveAssignment(resolveAssignment(habit));
                     newLog.setLogDate(targetDate);
                     return newLog;
                 });
@@ -97,7 +100,7 @@ public class HabitServiceImpl extends ObjectiveServiceBase<Habit, HabitRepo> imp
      * Recalcula las rachas de un hábito a partir de su histórico.
      */
     private void recalculateHabitStreaks(Habit habit) {
-        List<ObjectiveLog> logs = objectiveLogRepo.findByObjectiveIdOrderByLogDateAsc(habit.getId());
+        List<ObjectiveLog> logs = objectiveLogRepo.findByObjectiveAssignmentIdOrderByLogDateAsc(resolveAssignmentId(habit));
 
         if (logs.isEmpty()) {
             habit.setCurrentStreak(0);
@@ -164,5 +167,19 @@ public class HabitServiceImpl extends ObjectiveServiceBase<Habit, HabitRepo> imp
         }
 
         return streak;
+    }
+
+    private Integer resolveAssignmentId(Habit habit) {
+        return resolveAssignment(habit).getId();
+    }
+
+    private ObjectiveAssignment resolveAssignment(Habit habit) {
+        if (habit.getCurrentAssignment() != null) {
+            return habit.getCurrentAssignment();
+        }
+        if (habit.getAssignments().isEmpty()) {
+            throw new IllegalStateException("El hábito no tiene asignación asociada.");
+        }
+        return habit.getAssignments().get(0);
     }
 }
