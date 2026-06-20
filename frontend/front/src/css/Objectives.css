@@ -338,6 +338,49 @@
   color: var(--text-main);
 }
 
+.weeklyActivityHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.weeklyActivityHeader h3 {
+  min-width: 150px;
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.weeklyNavButton {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-main);
+  cursor: pointer;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.weeklyNavButton:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+}
+
+.weeklyNavButton:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.weeklyNavButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
 /* Goals Summary Panel */
 .goalsSummaryPanel {
   display: flex;

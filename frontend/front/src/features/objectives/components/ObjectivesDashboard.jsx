@@ -7,17 +7,39 @@ import {
 } from "../utils/objectiveHelpers";
 import { useLanguage } from "../../../context/languageContext";
 
-const ObjectivesDashboard = ({ goals, habits, logs }) => {
-  const { t } = useLanguage();
+const ObjectivesDashboard = ({
+  goals,
+  habits,
+  logs,
+  habitWeekStart,
+  onPreviousHabitWeek,
+  onNextHabitWeek,
+}) => {
+  const { language, t } = useLanguage();
   const todayIso = formatIsoDate(new Date());
+  const currentWeekStart = getStartOfWeek(new Date());
+  const isCurrentHabitWeek =
+    formatIsoDate(habitWeekStart) === formatIsoDate(currentWeekStart);
+  const habitWeekEnd = useMemo(() => {
+    const end = new Date(habitWeekStart);
+    end.setDate(end.getDate() + 6);
+    return end;
+  }, [habitWeekStart]);
+  const habitWeekRangeLabel = useMemo(() => {
+    const formatter = new Intl.DateTimeFormat(language === "es" ? "es-ES" : "en-US", {
+      day: "numeric",
+      month: "short",
+    });
+
+    return `${formatter.format(habitWeekStart)} – ${formatter.format(habitWeekEnd)}`;
+  }, [habitWeekEnd, habitWeekStart, language]);
 
   /**
    * Calcula todas las métricas que usamos en el dashboard.
-   * Se memoizan para no recalcularlas en cada render si los datos no cambian.
+   * La gráfica semanal usa la semana seleccionada con flechas, pero las rachas y el resumen de hoy siguen mirando al día real.
    */
   const metrics = useMemo(() => {
-    const startOfWeek = getStartOfWeek(new Date());
-    const weeklyStats = buildWeeklyHabitStats(habits, logs, startOfWeek);
+    const weeklyStats = buildWeeklyHabitStats(habits, logs, habitWeekStart);
 
     const completedToday = logs.filter(
       (log) => log.logDate === todayIso && log.completed === true,
@@ -88,7 +110,7 @@ const ObjectivesDashboard = ({ goals, habits, logs }) => {
       bestStreakHabitTitle: bestStreakHabit?.titulo || "—",
       todayPercent,
     };
-  }, [goals, habits, logs, todayIso]);
+  }, [goals, habitWeekStart, habits, logs, todayIso]);
 
   /**
    * Renderiza el anillo de progreso reutilizable para las cards superiores.
@@ -240,8 +262,25 @@ const ObjectivesDashboard = ({ goals, habits, logs }) => {
         </article>
 
         <article className="dashboardCard">
-          <div className="cardHeader">
-            <h3>{t.dashboardWeeklyActivity}</h3>
+          <div className="cardHeader weeklyActivityHeader">
+            <button
+              type="button"
+              className="weeklyNavButton"
+              onClick={onPreviousHabitWeek}
+              aria-label="Previous week"
+            >
+              ‹
+            </button>
+            <h3>{habitWeekRangeLabel}</h3>
+            <button
+              type="button"
+              className="weeklyNavButton"
+              onClick={onNextHabitWeek}
+              disabled={isCurrentHabitWeek}
+              aria-label="Next week"
+            >
+              ›
+            </button>
           </div>
 
           <div className="weeklyBars">

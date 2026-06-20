@@ -256,6 +256,10 @@
   border: 1px solid rgba(5, 150, 105, 0.2);
 }
 
+.adminFeedback.hidden {
+  visibility: hidden;
+}
+
 /* Status */
 .adminUsersStatus {
   margin: 20px 0;
@@ -345,7 +349,14 @@
 }
 
 .adminUsersCard.compact .adminUsersForm button {
+  align-self: stretch;
   margin-top: 8px;
+  width: 100%;
+}
+
+.adminUsersCard.compact .adminFeedback {
+  justify-content: center;
+  min-height: 56px;
 }
 
 /* Responsive */

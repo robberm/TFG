@@ -39,14 +39,17 @@ public abstract class Objective {
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private PersonalUser user;
 
 
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_by_admin_id")
-    private User assignedByAdmin;
+    private AdminUser assignedByAdmin;
+
+    @Column(unique = false)
+    private String assignmentBatchId;
 
 
     @JsonIgnore
@@ -80,6 +83,11 @@ public abstract class Objective {
     @JsonProperty("assignedToUsername")
     public String getAssignedToUsername() {
         return user != null ? user.getUsername() : null;
+    }
+
+    @JsonProperty("assignedToUserId")
+    public Long getAssignedToUserId() {
+        return user != null ? user.getId() : null;
     }
 
     @PrePersist

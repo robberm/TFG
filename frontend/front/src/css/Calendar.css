@@ -110,7 +110,7 @@ body.dark {
 
 .days-header {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   background-color: var(--bg-page);
   border-bottom: 1px solid var(--border-color);
 }
@@ -126,7 +126,7 @@ body.dark {
 
 .days-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
 .day {
@@ -135,6 +135,8 @@ body.dark {
   min-height: 90px;
   padding: 8px 10px;
   position: relative;
+  min-width: 0;
+  overflow: hidden;
   cursor: pointer;
   background-color: var(--bg-main);
   transition: background-color 0.2s;
@@ -173,11 +175,16 @@ body.dark .day.disabled {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+  width: 100%;
 }
 
 .event {
   border-radius: 4px;
   padding: 2px 6px;
+  display: block;
+  max-width: 100%;
+  min-width: 0;
   font-size: 11px;
   white-space: nowrap;
   overflow: hidden;

@@ -15,7 +15,7 @@ const HomeHeader = () => {
               <span className="slide-original">{username}</span>
               <span className="slide-duplicate">{username}</span>
             </span>
-          </span>
+          </span>!
         </h1>
       </div>
 

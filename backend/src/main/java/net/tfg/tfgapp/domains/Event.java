@@ -51,15 +51,15 @@ private String assignmentBatchId;
 
 @ManyToOne
 @JoinColumn(name = "user_id")
-private User user;
+private PersonalUser user;
 
 @ManyToOne(fetch = FetchType.LAZY)
 @JoinColumn(name = "assigned_by_admin_id")
 @JsonIgnore
-private User assignedByAdmin;
+private AdminUser assignedByAdmin;
 
 
-    public Event(Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime, String location, EventCategory category, Boolean isAllDay, Integer reminderMinutesBefore, User user) {
+    public Event(Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime, String location, EventCategory category, Boolean isAllDay, Integer reminderMinutesBefore, PersonalUser user) {
         this.id = id;
         this.title = title;
         this.description = description;

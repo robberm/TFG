@@ -28,19 +28,19 @@ public class Organization {
      */
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admin_id", nullable = false, unique = true)
-    private User admin;
+    private AdminUser admin;
 
     /**
      * Usuarios pertenecientes a la organización.
      */
     @JsonIgnore
     @OneToMany(mappedBy = "organization")
-    private List<User> users = new ArrayList<>();
+    private List<PersonalUser> users = new ArrayList<>();
 
     public Organization() {
     }
 
-    public Organization(String name, User admin) {
+    public Organization(String name, AdminUser admin) {
         this.name = name;
         this.admin = admin;
     }

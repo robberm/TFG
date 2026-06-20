@@ -15,4 +15,6 @@ public interface GoalRepo extends JpaRepository<Goal, Integer> {
 
     List<Goal> findByAssignedByAdmin_IdAndUser_Id(Long adminId, Long userId);
 
+    List<Goal> findByAssignedByAdmin_IdAndAssignmentBatchId(Long adminId, String assignmentBatchId);
+
 }

@@ -4,7 +4,7 @@ import net.tfg.tfgapp.DTOs.objectives.GoalProgressRequest;
 import net.tfg.tfgapp.DTOs.objectives.GoalRequest;
 import net.tfg.tfgapp.domains.Goal;
 import net.tfg.tfgapp.domains.ObjectiveLog;
-import net.tfg.tfgapp.domains.User;
+import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.enumerates.GoalStatus;
 import net.tfg.tfgapp.enumerates.ObjectivePriority;
 import net.tfg.tfgapp.repos.GoalRepo;
@@ -33,7 +33,7 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
     }
 
     @Override
-    public Goal createGoal(GoalRequest request, User user) {
+    public Goal createGoal(GoalRequest request, PersonalUser user) {
         Goal goal = new Goal();
         applyGoalDetails(goal, request);
         goal.setUser(user);
@@ -106,5 +106,10 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
     @Override
     public List<Goal> getAssignedGoalsForAdminAndUser(Long adminId, Long userId) {
         return goalRepo.findByAssignedByAdmin_IdAndUser_Id(adminId, userId);
+    }
+
+    @Override
+    public List<Goal> getAssignedGoalsByBatch(Long adminId, String assignmentBatchId) {
+        return goalRepo.findByAssignedByAdmin_IdAndAssignmentBatchId(adminId, assignmentBatchId);
     }
 }

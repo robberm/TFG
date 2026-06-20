@@ -46,6 +46,8 @@ const GoalModal = ({
     if (initialData) {
       const numericGoal = isGoalNumeric(initialData);
 
+      const assignedUserId = initialData.assignedToUserId ?? defaultManagedUserId ?? "";
+
       setForm({
         titulo: initialData.titulo || "",
         description: initialData.description || "",
@@ -60,8 +62,8 @@ const GoalModal = ({
           : "",
         active: initialData.active ?? true,
         notes: "",
-        targetUserId: defaultManagedUserId ?? "",
-        targetUserIds: defaultManagedUserId != null ? [String(defaultManagedUserId)] : [],
+        targetUserId: assignedUserId,
+        targetUserIds: assignedUserId !== "" ? [String(assignedUserId)] : [],
         assignmentMode: "single",
       });
       return;

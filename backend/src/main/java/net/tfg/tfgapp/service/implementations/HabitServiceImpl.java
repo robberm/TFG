@@ -4,7 +4,7 @@ import net.tfg.tfgapp.DTOs.objectives.HabitCompletionRequest;
 import net.tfg.tfgapp.DTOs.objectives.HabitRequest;
 import net.tfg.tfgapp.domains.Habit;
 import net.tfg.tfgapp.domains.ObjectiveLog;
-import net.tfg.tfgapp.domains.User;
+import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.repos.HabitRepo;
 import net.tfg.tfgapp.repos.ObjectiveLogRepo;
 import net.tfg.tfgapp.service.interfaces.IHabitService;
@@ -46,7 +46,7 @@ public class HabitServiceImpl extends ObjectiveServiceBase<Habit, HabitRepo> imp
      * Crea un nuevo hábito asociado al usuario autenticado.
      */
     @Override
-    public Habit createHabit(HabitRequest request, User user) {
+    public Habit createHabit(HabitRequest request, PersonalUser user) {
         Habit habit = new Habit();
         habit.setTitulo(request.getTitulo());
         habit.setDescription(request.getDescription());

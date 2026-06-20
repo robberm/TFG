@@ -1,6 +1,9 @@
 package net.tfg.tfgapp.service;
 
+import net.tfg.tfgapp.domains.AdminUser;
+import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.domains.User;
+import net.tfg.tfgapp.repos.PersonalUserRepo;
 import net.tfg.tfgapp.repos.UserRepo;
 import net.tfg.tfgapp.service.interfaces.IUserService;
 import org.springframework.stereotype.Service;
@@ -14,9 +17,11 @@ public class UserService implements IUserService {
     private static final Logger LOG = Logger.getLogger(UserService.class.getName());
 
     private final UserRepo uRepo;
+    private final PersonalUserRepo personalUserRepo;
 
-    public UserService(UserRepo uRepo) {
+    public UserService(UserRepo uRepo, PersonalUserRepo personalUserRepo) {
         this.uRepo = uRepo;
+        this.personalUserRepo = personalUserRepo;
     }
 
     @Override
@@ -51,24 +56,28 @@ public class UserService implements IUserService {
 
     @Override
     public List<User> getManagedUsers(Long adminId) {
-        return uRepo.findByCreatedByAdmin_Id(adminId);
+        return personalUserRepo.findByCreatedByAdmin_Id(adminId).stream()
+                .map(user -> (User) user)
+                .toList();
     }
 
     @Override
     public User getManagedUser(Long adminId, Long userId) {
-        return uRepo.findByIdAndCreatedByAdmin_Id(userId, adminId).orElse(null);
+        return personalUserRepo.findByIdAndCreatedByAdmin_Id(userId, adminId)
+                .map(user -> (User) user)
+                .orElse(null);
     }
 
 
     @Override
     public List<User> getUsersInAdminScope(User admin) {
-        if (admin == null) {
+        if (!(admin instanceof AdminUser adminUser)) {
             return List.of();
         }
 
-        if (admin.getOrganization() != null) {
-            return uRepo.findByOrganization_Id(admin.getOrganization().getId()).stream()
-                    .filter(user -> !user.getId().equals(admin.getId()))
+        if (adminUser.getAdministeredOrganization() != null) {
+            return personalUserRepo.findByOrganization_Id(adminUser.getAdministeredOrganization().getId()).stream()
+                    .map(user -> (User) user)
                     .toList();
         }
 

@@ -3,13 +3,13 @@ package net.tfg.tfgapp.service.interfaces;
 import net.tfg.tfgapp.DTOs.objectives.GoalProgressRequest;
 import net.tfg.tfgapp.DTOs.objectives.GoalRequest;
 import net.tfg.tfgapp.domains.Goal;
-import net.tfg.tfgapp.domains.User;
+import net.tfg.tfgapp.domains.PersonalUser;
 
 import java.util.List;
 
 public interface IGoalService extends IObjectiveService<Goal> {
 
-    Goal createGoal(GoalRequest request, User user);
+    Goal createGoal(GoalRequest request, PersonalUser user);
 
     Goal updateGoal(Goal existingGoal, GoalRequest request);
 
@@ -20,4 +20,6 @@ public interface IGoalService extends IObjectiveService<Goal> {
     List<Goal> getAssignedGoalsForAdmin(Long adminId);
 
     List<Goal> getAssignedGoalsForAdminAndUser(Long adminId, Long userId);
+
+    List<Goal> getAssignedGoalsByBatch(Long adminId, String assignmentBatchId);
 }

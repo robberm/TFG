@@ -111,16 +111,44 @@ const buildEventLayoutMap = (dayEvents) => {
     })
     .sort((a, b) => a.startMinutes - b.startMinutes || a.endMinutes - b.endMinutes);
 
-  const positioned = [];
-  let cluster = [];
+  const clusters = [];
+  let currentCluster = [];
   let clusterEnd = -1;
 
-  const flushCluster = () => {
-    if (cluster.length === 0) return;
+  sorted.forEach((item) => {
+    if (currentCluster.length === 0 || item.startMinutes < clusterEnd) {
+      currentCluster.push(item);
+      clusterEnd = Math.max(clusterEnd, item.endMinutes);
+      return;
+    }
 
-    const totalColumns = Math.max(...cluster.map((item) => item.column)) + 1;
+    clusters.push(currentCluster);
+    currentCluster = [item];
+    clusterEnd = item.endMinutes;
+  });
 
-    cluster.forEach((item) => {
+  if (currentCluster.length > 0) {
+    clusters.push(currentCluster);
+  }
+
+  const positioned = [];
+
+  clusters.forEach((cluster) => {
+    const columnsEnd = [];
+    const withColumns = cluster.map((item) => {
+      let column = columnsEnd.findIndex((endMinutes) => endMinutes <= item.startMinutes);
+
+      if (column === -1) {
+        column = columnsEnd.length;
+      }
+
+      columnsEnd[column] = item.endMinutes;
+      return { ...item, column };
+    });
+
+    const totalColumns = Math.max(columnsEnd.length, 1);
+
+    withColumns.forEach((item) => {
       const baseStyle = getTimedEventStyle(item.event);
       const widthPct = 100 / totalColumns;
       const leftPct = item.column * widthPct;
@@ -134,36 +162,7 @@ const buildEventLayoutMap = (dayEvents) => {
         },
       });
     });
-
-    cluster = [];
-    clusterEnd = -1;
-  };
-
-  sorted.forEach((item) => {
-    if (cluster.length === 0 || item.startMinutes < clusterEnd) {
-      const usedColumns = new Set(
-        cluster
-          .filter((current) => current.endMinutes > item.startMinutes)
-          .map((current) => current.column),
-      );
-
-      let column = 0;
-      while (usedColumns.has(column)) {
-        column += 1;
-      }
-
-      cluster = cluster.filter((current) => current.endMinutes > item.startMinutes);
-      cluster.push({ ...item, column });
-      clusterEnd = Math.max(clusterEnd, item.endMinutes);
-      return;
-    }
-
-    flushCluster();
-    cluster.push({ ...item, column: 0 });
-    clusterEnd = item.endMinutes;
   });
-
-  flushCluster();
 
   return new Map(positioned.map((item) => [item.id, item.style]));
 };

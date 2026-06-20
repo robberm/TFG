@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useError } from "./components/ErrorContext";
 import "./css/Objectives.css";
 
@@ -41,8 +41,12 @@ const Objectives = () => {
   const [goals, setGoals] = useState([]);
   const [habits, setHabits] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [habitWeekStart, setHabitWeekStart] = useState(() =>
+    getStartOfWeek(new Date()),
+  );
 
   const [isLoading, setIsLoading] = useState(true);
+  const hasLoadedObjectives = useRef(false);
   const [isSubmittingGoal, setIsSubmittingGoal] = useState(false);
   const [isSubmittingHabit, setIsSubmittingHabit] = useState(false);
   const [isHabitUpdating, setIsHabitUpdating] = useState(false);
@@ -93,7 +97,7 @@ const Objectives = () => {
       }
 
       try {
-        const startOfWeek = getStartOfWeek(new Date());
+        const startOfWeek = habitWeekStart;
         const endOfWeek = getEndOfWeek(startOfWeek);
 
         if (isAdmin) {
@@ -102,20 +106,32 @@ const Objectives = () => {
           setHabits([]);
           setLogs([]);
         } else {
-          const [goalsResponse, habitsResponse, logsResponse] = await Promise.all(
-            [
+          const todayWeekStart = getStartOfWeek(new Date());
+          const todayWeekEnd = getEndOfWeek(todayWeekStart);
+          const selectedStartIso = formatIsoDate(startOfWeek);
+          const selectedEndIso = formatIsoDate(endOfWeek);
+          const todayStartIso = formatIsoDate(todayWeekStart);
+          const todayEndIso = formatIsoDate(todayWeekEnd);
+          const shouldLoadTodayWeek = selectedStartIso !== todayStartIso;
+
+          const [goalsResponse, habitsResponse, selectedLogsResponse, todayLogsResponse] =
+            await Promise.all([
               getGoals(),
               getHabits(),
-              getObjectiveLogsByRange(
-                formatIsoDate(startOfWeek),
-                formatIsoDate(endOfWeek),
-              ),
-            ],
-          );
+              getObjectiveLogsByRange(selectedStartIso, selectedEndIso),
+              shouldLoadTodayWeek
+                ? getObjectiveLogsByRange(todayStartIso, todayEndIso)
+                : Promise.resolve([]),
+            ]);
+
+          const mergedLogs = [
+            ...(Array.isArray(selectedLogsResponse) ? selectedLogsResponse : []),
+            ...(Array.isArray(todayLogsResponse) ? todayLogsResponse : []),
+          ];
 
           setGoals(Array.isArray(goalsResponse) ? goalsResponse : []);
           setHabits(Array.isArray(habitsResponse) ? habitsResponse : []);
-          setLogs(Array.isArray(logsResponse) ? logsResponse : []);
+          setLogs(mergedLogs);
         }
       } catch (error) {
         setErrorMessage(
@@ -127,7 +143,7 @@ const Objectives = () => {
         }
       }
     },
-    [isAdmin, selectedManagedUserId, setErrorMessage],
+    [habitWeekStart, isAdmin, selectedManagedUserId, setErrorMessage],
   );
 
   React.useEffect(() => {
@@ -146,8 +162,40 @@ const Objectives = () => {
     if (!profile) {
       return;
     }
-    loadObjectivesData(true);
+
+    const showFullPageLoader = !hasLoadedObjectives.current;
+
+    loadObjectivesData(showFullPageLoader).finally(() => {
+      hasLoadedObjectives.current = true;
+    });
   }, [loadObjectivesData, profile]);
+
+
+  /**
+   * Mueve la gráfica de hábitos una semana hacia atrás.
+   * Es solo navegación de frontend: cambiamos fechas y reutilizamos el endpoint de logs por rango.
+   */
+  const handlePreviousHabitWeek = () => {
+    setHabitWeekStart((currentStart) => {
+      const previousStart = new Date(currentStart);
+      previousStart.setDate(previousStart.getDate() - 7);
+      return previousStart;
+    });
+  };
+
+  /**
+   * Mueve la gráfica hacia delante sin pasar de la semana actual.
+   * Así evitamos pintar semanas futuras vacías que no aportan demasiado.
+   */
+  const handleNextHabitWeek = () => {
+    setHabitWeekStart((currentStart) => {
+      const currentWeekStart = getStartOfWeek(new Date());
+      const nextStart = new Date(currentStart);
+      nextStart.setDate(nextStart.getDate() + 7);
+
+      return nextStart > currentWeekStart ? currentWeekStart : nextStart;
+    });
+  };
 
   /**
    * Mapa auxiliar para consultar rápidamente si un hábito está completado
@@ -226,6 +274,9 @@ const Objectives = () => {
           valorProgreso: payload.valorProgreso,
           valorObjetivo: payload.valorObjetivo,
           active: payload.active,
+          targetUserId: isAdmin ? payload.targetUserId : null,
+          targetUserIds: isAdmin ? payload.targetUserIds : null,
+          assignToAllUsers: isAdmin ? payload.assignToAllUsers : false,
         });
 
         if (
@@ -439,7 +490,14 @@ const Objectives = () => {
       ) : (
         <>
           {!isAdmin && (
-            <ObjectivesDashboard goals={goals} habits={habits} logs={logs} />
+            <ObjectivesDashboard
+              goals={goals}
+              habits={habits}
+              logs={logs}
+              habitWeekStart={habitWeekStart}
+              onPreviousHabitWeek={handlePreviousHabitWeek}
+              onNextHabitWeek={handleNextHabitWeek}
+            />
           )}
 
           <div className="objectivesContent">
