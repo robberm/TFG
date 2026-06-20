@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useError } from "./components/ErrorContext";
 import "./css/Objectives.css";
 
@@ -46,6 +46,7 @@ const Objectives = () => {
   );
 
   const [isLoading, setIsLoading] = useState(true);
+  const hasLoadedObjectives = useRef(false);
   const [isSubmittingGoal, setIsSubmittingGoal] = useState(false);
   const [isSubmittingHabit, setIsSubmittingHabit] = useState(false);
   const [isHabitUpdating, setIsHabitUpdating] = useState(false);
@@ -161,7 +162,12 @@ const Objectives = () => {
     if (!profile) {
       return;
     }
-    loadObjectivesData(true);
+
+    const showFullPageLoader = !hasLoadedObjectives.current;
+
+    loadObjectivesData(showFullPageLoader).finally(() => {
+      hasLoadedObjectives.current = true;
+    });
   }, [loadObjectivesData, profile]);
 
 

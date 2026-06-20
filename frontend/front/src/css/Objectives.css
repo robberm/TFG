@@ -354,25 +354,26 @@
 .weeklyNavButton {
   width: 34px;
   height: 34px;
-  border: 1px solid var(--border-color);
-  border-radius: 999px;
-  background: var(--bg-page);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: var(--text-main);
   cursor: pointer;
   font-size: 1.35rem;
   font-weight: 700;
   line-height: 1;
   transition:
-    transform 0.2s ease,
-    background 0.2s ease,
-    border-color 0.2s ease,
-    opacity 0.2s ease;
+    transform 0.15s ease,
+    background-color 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .weeklyNavButton:hover:not(:disabled) {
-  background: var(--bg-hover);
-  border-color: var(--link-active-bg);
-  transform: translateY(-1px);
+  background-color: var(--bg-hover);
+}
+
+.weeklyNavButton:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .weeklyNavButton:disabled {
