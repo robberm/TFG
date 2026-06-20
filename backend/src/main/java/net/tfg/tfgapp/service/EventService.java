@@ -56,10 +56,6 @@ public class EventService {
         return eventRepo.findAssignedEventsForAdminAndUser(adminId, userId);
     }
 
-    public List<Event> getAssignedEventsByBatch(Long adminId, String assignmentBatchId) {
-        return eventRepo.findByAssignedByAdmin_IdAndAssignmentBatchId(adminId, assignmentBatchId);
-    }
-
     public Optional<Event> updateEventById(Long id, EventRequest eventDetails) {
         Optional<Event> eventOptional = getEventById(id);
 

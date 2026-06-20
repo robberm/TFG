@@ -10,12 +10,13 @@ import java.util.List;
 
 @Repository
 public interface GoalRepo extends JpaRepository<Goal, Integer> {
+
     @Query("SELECT DISTINCT g FROM Goal g JOIN g.assignments a WHERE a.personalUser.username = :username")
     List<Goal> findByUserUsername(@Param("username") String username);
+
     @Query("SELECT DISTINCT g FROM Goal g JOIN g.assignments a WHERE a.assignedByAdmin.id = :adminId")
     List<Goal> findByAssignedByAdmin_Id(@Param("adminId") Long adminId);
+
     @Query("SELECT DISTINCT g FROM Goal g JOIN g.assignments a WHERE a.assignedByAdmin.id = :adminId AND a.personalUser.id = :userId")
     List<Goal> findByAssignedByAdmin_IdAndUser_Id(@Param("adminId") Long adminId, @Param("userId") Long userId);
-    @Query("SELECT DISTINCT g FROM Goal g JOIN g.assignments a WHERE a.assignedByAdmin.id = :adminId")
-    List<Goal> findByAssignedByAdmin_IdAndAssignmentBatchId(@Param("adminId") Long adminId, @Param("assignmentBatchId") String assignmentBatchId);
 }

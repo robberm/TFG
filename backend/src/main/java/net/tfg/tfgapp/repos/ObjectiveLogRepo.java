@@ -27,5 +27,9 @@ public interface ObjectiveLogRepo extends JpaRepository<ObjectiveLog, Integer> {
               AND l.logDate BETWEEN :startDate AND :endDate
             ORDER BY l.logDate ASC
             """)
-    List<ObjectiveLog> findByObjectiveUserUsernameAndLogDateBetween(String username, LocalDate startDate, LocalDate endDate);
+    List<ObjectiveLog> findByObjectiveUserUsernameAndLogDateBetween(
+            @Param("username") String username,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
 }

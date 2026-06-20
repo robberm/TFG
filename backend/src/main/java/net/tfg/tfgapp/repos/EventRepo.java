@@ -39,9 +39,6 @@ public interface EventRepo extends JpaRepository<Event, Long> {
     @Query("SELECT DISTINCT e FROM Event e JOIN e.assignments a WHERE a.assignedByAdmin.id = :adminId AND a.personalUser.id = :userId")
     List<Event> findAssignedEventsForAdminAndUser(@Param("adminId") Long adminId, @Param("userId") Long userId);
 
-    @Query("SELECT DISTINCT e FROM Event e JOIN e.assignments a WHERE a.assignedByAdmin.id = :adminId")
-    List<Event> findByAssignedByAdmin_IdAndAssignmentBatchId(@Param("adminId") Long adminId, @Param("assignmentBatchId") String assignmentBatchId);
-
     @Query("SELECT e FROM Event e WHERE FUNCTION('DATE', e.startTime) = FUNCTION('DATE', :date)")
     List<Event> findByStartDate(@Param("date") LocalDateTime date);
 

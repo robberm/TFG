@@ -32,7 +32,12 @@ public class ObjectiveLogController {
             return ResponseEntity.ok(logs);
         }
 
-        if (!logs.get(0).getObjective().getUser().getUsername().equals(username)) {
+        ObjectiveLog firstLog = logs.get(0);
+        String ownerUsername = firstLog.getObjectiveAssignment() != null
+                ? firstLog.getObjectiveAssignment().getPersonalUser().getUsername()
+                : firstLog.getObjective().getEffectiveUser().getUsername();
+
+        if (!ownerUsername.equals(username)) {
             throw new SecurityException("No tienes permiso para acceder a este histórico.");
         }
 

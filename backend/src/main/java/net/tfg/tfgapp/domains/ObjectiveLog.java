@@ -1,5 +1,6 @@
 package net.tfg.tfgapp.domains;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,11 +24,13 @@ public class ObjectiveLog {
     private Integer id;
 
     /** Referencia nueva: el log pertenece al progreso individual de una asignación. */
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "objective_assignment_id")
     private ObjectiveAssignment objectiveAssignment;
 
     /** Referencia legacy temporal para migración/trazabilidad desde el modelo anterior. */
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "objective_id")
     private Objective objective;

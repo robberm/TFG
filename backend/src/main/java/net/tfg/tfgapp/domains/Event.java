@@ -42,11 +42,6 @@ public class Event {
     @Column(name = "minutes_before")
     private List<Integer> reminderMinutesBeforeList = new ArrayList<>();
 
-    /** Legacy temporal para migración; el modelo correcto usa assignments. */
-    @JsonIgnore
-    @Column(unique = false)
-    private String assignmentBatchId;
-
     /** Legacy temporal para migración; se deriva de currentAssignment/asignación representativa. */
     @JsonIgnore
     @ManyToOne

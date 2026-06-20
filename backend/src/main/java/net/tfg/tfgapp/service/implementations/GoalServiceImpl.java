@@ -121,11 +121,6 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
         return goals;
     }
 
-    @Override
-    public List<Goal> getAssignedGoalsByBatch(Long adminId, String assignmentBatchId) {
-        return goalRepo.findByAssignedByAdmin_IdAndAssignmentBatchId(adminId, assignmentBatchId);
-    }
-
     private void selectAssignmentByUsername(Goal goal, String username) {
         goal.getAssignments().stream()
                 .filter(a -> a.getPersonalUser().getUsername().equals(username))

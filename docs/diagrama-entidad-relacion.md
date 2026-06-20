@@ -50,7 +50,6 @@ Entidad que representa eventos de calendario.
 - `category`: obligatorio. Valores: `WORK`, `PERSONAL`, `STUDY`, `HEALTH`, `MANDATORY`, `FOCUS`.
 - `is_all_day`: indica si el evento dura todo el día.
 - `reminder_minutes_before`: recordatorio simple en minutos.
-- `assignment_batch_id`: identificador de lote de asignación.
 - `user_id`: clave foránea hacia `PERSONAL_USERS.id` para indicar el usuario propietario o destinatario.
 - `assigned_by_admin_id`: clave foránea opcional hacia `ADMIN_USERS.id` para indicar el administrador que asignó el evento.
 
@@ -75,7 +74,6 @@ Entidad base abstracta para objetivos. Usa herencia JPA de tipo `JOINED`.
 - `created_at`: obligatorio.
 - `user_id`: clave foránea obligatoria hacia `PERSONAL_USERS.id` para indicar el usuario propietario o destinatario.
 - `assigned_by_admin_id`: clave foránea opcional hacia `ADMIN_USERS.id` para indicar el administrador que asignó el objetivo.
-- `assignment_batch_id`: identificador de lote para reasignaciones masivas de objetivos de administrador.
 - `is_numeric`: obligatorio.
 
 ### HABITS
@@ -102,14 +100,15 @@ Subtipo de `OBJECTIVES` que representa metas.
 Entidad que representa el histórico de cumplimiento o progreso de un objetivo.
 
 - `id`: clave primaria.
-- `objective_id`: clave foránea obligatoria hacia `OBJECTIVES.id`.
+- `objective_assignment_id`: clave foránea hacia `OBJECTIVE_ASSIGNMENTS.id` para identificar la asignación individual.
+- `objective_id`: clave foránea legacy opcional hacia `OBJECTIVES.id` para trazabilidad durante la transición.
 - `log_date`: obligatorio.
 - `completed`: opcional. Se usa principalmente para hábitos.
 - `progress_value`: opcional. Se usa principalmente para metas numéricas.
 - `notes`: opcional.
 - `created_at`: obligatorio.
 
-Restricción única: no puede haber dos registros con la misma combinación `objective_id` + `log_date`.
+Restricción única en el modelo normalizado: no puede haber dos registros con la misma combinación `objective_assignment_id` + `log_date`.
 
 ## Modelado de administradores y usuarios personales
 
