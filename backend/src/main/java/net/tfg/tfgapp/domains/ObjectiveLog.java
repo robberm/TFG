@@ -24,13 +24,11 @@ public class ObjectiveLog {
     private Integer id;
 
     /** Referencia nueva: el log pertenece al progreso individual de una asignación. */
-    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "objective_assignment_id")
     private ObjectiveAssignment objectiveAssignment;
 
     /** Referencia legacy temporal para migración/trazabilidad desde el modelo anterior. */
-    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "objective_id")
     private Objective objective;
@@ -49,6 +47,11 @@ public class ObjectiveLog {
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @JsonIgnore
+    public ObjectiveAssignment getObjectiveAssignment() {
+        return objectiveAssignment;
+    }
 
     @PrePersist
     public void onCreate() {

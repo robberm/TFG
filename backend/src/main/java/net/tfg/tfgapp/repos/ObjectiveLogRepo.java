@@ -13,17 +13,31 @@ import java.util.Optional;
 @Repository
 public interface ObjectiveLogRepo extends JpaRepository<ObjectiveLog, Integer> {
     Optional<ObjectiveLog> findByObjectiveIdAndLogDate(Integer objectiveId, LocalDate logDate);
-    List<ObjectiveLog> findByObjectiveIdOrderByLogDateAsc(Integer objectiveId);
+    @Query("""
+            SELECT l FROM ObjectiveLog l
+            LEFT JOIN FETCH l.objective
+            LEFT JOIN FETCH l.objectiveAssignment a
+            LEFT JOIN FETCH a.objective
+            WHERE l.objective.id = :objectiveId
+            ORDER BY l.logDate ASC
+            """)
+    List<ObjectiveLog> findByObjectiveIdOrderByLogDateAsc(@Param("objectiveId") Integer objectiveId);
     Optional<ObjectiveLog> findByObjectiveAssignmentIdAndLogDate(Integer objectiveAssignmentId, LocalDate logDate);
     @Query("""
             SELECT l FROM ObjectiveLog l
+            LEFT JOIN FETCH l.objective
+            LEFT JOIN FETCH l.objectiveAssignment a
+            LEFT JOIN FETCH a.objective
             WHERE l.objectiveAssignment.id = :assignmentId
             ORDER BY l.logDate ASC
             """)
     List<ObjectiveLog> findByObjectiveAssignmentIdOrderByLogDateAsc(@Param("assignmentId") Integer assignmentId);
     @Query("""
             SELECT l FROM ObjectiveLog l
-            WHERE l.objectiveAssignment.personalUser.username = :username
+            LEFT JOIN FETCH l.objective
+            LEFT JOIN FETCH l.objectiveAssignment a
+            LEFT JOIN FETCH a.objective
+            WHERE a.personalUser.username = :username
               AND l.logDate BETWEEN :startDate AND :endDate
             ORDER BY l.logDate ASC
             """)
