@@ -12,6 +12,8 @@ const ObjectivesDashboard = ({
   habits,
   logs,
   habitWeekStart,
+  selectedHabitDate,
+  onSelectHabitDate,
   onPreviousHabitWeek,
   onNextHabitWeek,
 }) => {
@@ -287,9 +289,19 @@ const ObjectivesDashboard = ({
             {metrics.weeklyStats.map((day, index) => {
               const heightPercent =
                 habits.length > 0 ? (day.completed / habits.length) * 100 : 0;
+              const isSelectedDay = day.isoDate === selectedHabitDate;
+              const isFutureDay = day.isoDate > todayIso;
 
               return (
-                <div key={day.isoDate} className="weeklyBarItem">
+                <button
+                  key={day.isoDate}
+                  type="button"
+                  className={`weeklyBarItem ${isSelectedDay ? "selectedWeeklyBarItem" : ""}`}
+                  onClick={() => onSelectHabitDate(day.isoDate)}
+                  disabled={isFutureDay}
+                  aria-pressed={isSelectedDay}
+                  title={day.isoDate}
+                >
                   <div className="weeklyBarTrack">
                     <div
                       className={`weeklyBarFill day${index}`}
@@ -298,7 +310,7 @@ const ObjectivesDashboard = ({
                   </div>
                   <span className="weeklyBarValue">{day.completed}</span>
                   <span className="weeklyBarLabel">{day.label}</span>
-                </div>
+                </button>
               );
             })}
           </div>
