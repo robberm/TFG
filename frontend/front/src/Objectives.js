@@ -143,7 +143,7 @@ const Objectives = () => {
         }
       }
     },
-    [habitWeekStart, isAdmin, selectedManagedUserId, setErrorMessage],
+    [habitWeekStart, isAdmin, selectedManagedUserId, setErrorMessage, t.objectivesLoadError],
   );
 
   React.useEffect(() => {
@@ -156,7 +156,7 @@ const Objectives = () => {
     };
 
     initialize();
-  }, [loadSessionScope, setErrorMessage]);
+  }, [loadSessionScope, setErrorMessage, t.objectivesContextError]);
 
   React.useEffect(() => {
     if (!profile) {
@@ -427,7 +427,7 @@ const Objectives = () => {
     );
 
     try {
-      await markHabitCompletion(habit.id, {
+      const savedLog = await markHabitCompletion(habit.id, {
         date: todayIso,
         completed: shouldComplete,
         notes: shouldComplete
@@ -435,7 +435,14 @@ const Objectives = () => {
           : t.objectivesHabitUnmarkedFrontendNote,
       });
 
-      await loadObjectivesData(false);
+      if (savedLog) {
+        setLogs((prevLogs) => {
+          const filteredLogs = prevLogs.filter(
+            (log) => !(log.objective?.id === habit.id && log.logDate === todayIso),
+          );
+          return [...filteredLogs, savedLog];
+        });
+      }
     } catch (error) {
       await loadObjectivesData(false);
       setErrorMessage(error.message || t.objectivesHabitUpdateError);

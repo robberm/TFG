@@ -39,9 +39,6 @@ public interface ObjectiveLogRepo extends JpaRepository<ObjectiveLog, Integer> {
     );
     @Query("""
             SELECT l FROM ObjectiveLog l
-            LEFT JOIN FETCH l.objective
-            LEFT JOIN FETCH l.objectiveAssignment a
-            LEFT JOIN FETCH a.objective
             WHERE l.objectiveAssignment.id = :assignmentId
             ORDER BY l.logDate ASC
             """)
