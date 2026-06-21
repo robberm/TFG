@@ -78,8 +78,8 @@ const ObjectivesDashboard = ({
       (habit) => Number(habit.bestStreak || 0) === bestHabitStreak,
     );
 
-    const activeGoals = goals.filter(
-      (goal) => goal.active !== false && goal.status !== "Done",
+    const notStartedGoals = goals.filter(
+      (goal) => (goal.status || "NotStarted") === "NotStarted",
     ).length;
 
     const completedGoals = goals.filter((goal) => goal.status === "Done").length;
@@ -102,7 +102,7 @@ const ObjectivesDashboard = ({
       weeklyRate,
       bestHabitStreak,
       weeklyStats,
-      activeGoals,
+      notStartedGoals,
       completedGoals,
       goalsInProgress,
       totalGoals,
@@ -233,9 +233,9 @@ const ObjectivesDashboard = ({
 
             <div className="goalsMetricsGrid">
               <div className="goalsMetricCard">
-                <span className="goalsMetricLabel">{t.homeActive}</span>
+                <span className="goalsMetricLabel">{t.goalStatusNotStarted}</span>
                 <strong className="goalsMetricValue">
-                  {metrics.activeGoals}
+                  {metrics.notStartedGoals}
                 </strong>
               </div>
 
