@@ -10,12 +10,21 @@ import net.tfg.tfgapp.exception.ApiException;
 import net.tfg.tfgapp.security.JwtUtil;
 import net.tfg.tfgapp.service.EventService;
 import net.tfg.tfgapp.service.UserService;
+import net.tfg.tfgapp.validation.events.EventRequestValidator;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -30,15 +39,20 @@ public class CalendarController {
     private final EventService eventService;
     private final JwtUtil jwtUtil;
     private final UserService userService;
+    private final EventRequestValidator eventRequestValidator;
 
-    public CalendarController(EventService eventService, JwtUtil jwtUtil, UserService userService) {
+    public CalendarController(EventService eventService,
+                              JwtUtil jwtUtil,
+                              UserService userService,
+                              EventRequestValidator eventRequestValidator) {
         this.eventService = eventService;
         this.jwtUtil = jwtUtil;
         this.userService = userService;
+        this.eventRequestValidator = eventRequestValidator;
     }
 
     @GetMapping("/range")
-    public ResponseEntity<?> getEventsBetween(
+    public ResponseEntity<List<Event>> getEventsBetween(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end,
             @RequestParam(required = false) Long targetUserId,
@@ -62,11 +76,11 @@ public class CalendarController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createEvent(@RequestBody EventRequest request,
+    public ResponseEntity<List<Event>> createEvent(@RequestBody EventRequest request,
                                          @RequestHeader("Authorization") String token) {
         User currentUser = getCurrentUser(token);
 
-        validateEventDates(request);
+        eventRequestValidator.requireValidDates(request);
         List<PersonalUser> targets = resolveTargetUsers(currentUser, request);
         Event event = new Event();
         eventService.applyEventDetails(event, request);
@@ -79,7 +93,7 @@ public class CalendarController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateEvent(@PathVariable Long id,
+    public ResponseEntity<Event> updateEvent(@PathVariable Long id,
                                          @RequestBody EventRequest eventDetails,
                                          @RequestHeader("Authorization") String token) {
         User currentUser = getCurrentUser(token);
@@ -98,7 +112,7 @@ public class CalendarController {
             throw new SecurityException("No puedes modificar eventos asignados por administrador.");
         }
 
-        validateEventDates(eventDetails);
+        eventRequestValidator.requireValidDates(eventDetails);
 
         if (currentUser.isAdmin() && event.getAssignedByAdmin() != null) {
             List<PersonalUser> targets = resolveTargetUsers(currentUser, eventDetails);
@@ -119,7 +133,7 @@ public class CalendarController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteEvent(@PathVariable Long id,
+    public ResponseEntity<Void> deleteEvent(@PathVariable Long id,
                                          @RequestHeader("Authorization") String token) {
         User currentUser = getCurrentUser(token);
         Optional<Event> existingEvent = eventService.getEventById(id);
@@ -146,7 +160,7 @@ public class CalendarController {
     }
 
     @GetMapping("/categories")
-    public ResponseEntity<?> getCategories() {
+    public ResponseEntity<List<String>> getCategories() {
         return ResponseEntity.ok(eventService.getCategories());
     }
 
@@ -159,57 +173,73 @@ public class CalendarController {
         return currentUser;
     }
 
-    private void validateEventDates(EventRequest request) {
-        if (request.getEndTime() == null || request.getStartTime() == null || !request.getEndTime().isAfter(request.getStartTime())) {
-            throw new DateTimeException("La fecha de inicio/fin no es correcta.");
-        }
-    }
-
     private List<PersonalUser> resolveTargetUsers(User currentUser, EventRequest request) {
         if (!currentUser.isAdmin()) {
-            return currentUser instanceof PersonalUser personalUser ? List.of(personalUser) : List.of();
+            return personalTargetForCurrentUser(currentUser);
         }
 
         if (Boolean.TRUE.equals(request.getAssignToAllUsers())) {
-            List<PersonalUser> allUsers = new ArrayList<>();
-            for (User scopedUser : userService.getUsersInAdminScope(currentUser)) {
-                if (scopedUser instanceof PersonalUser personalUser) {
-                    allUsers.add(personalUser);
-                }
-            }
-            if (allUsers.isEmpty()) {
-                throw new SecurityException("No hay usuarios subordinados para asignar.");
-            }
-            return allUsers;
+            return allManagedPersonalUsers(currentUser);
         }
 
         if (request.getTargetUserIds() != null && !request.getTargetUserIds().isEmpty()) {
-            List<PersonalUser> targets = new ArrayList<>();
-            Set<Long> uniqueTargetIds = new HashSet<>();
-            for (Long targetUserId : request.getTargetUserIds()) {
-                User user = userService.getUserById(targetUserId);
-                if (!(user instanceof PersonalUser personalUser)) {
-                    continue;
-                }
-                if (!canAccessManagedUser(currentUser, personalUser)) {
-                    throw new SecurityException("No tienes permiso para operar sobre uno de los usuarios seleccionados.");
-                }
-                if (uniqueTargetIds.add(personalUser.getId())) {
-                    targets.add(personalUser);
-                }
-            }
-            return targets;
+            return selectedManagedPersonalUsers(currentUser, request.getTargetUserIds());
         }
 
         if (request.getTargetUserId() != null) {
-            User managedUser = userService.getUserById(request.getTargetUserId());
-            if (!canAccessManagedUser(currentUser, managedUser)) {
-                throw new SecurityException("No tienes permiso para operar sobre ese usuario.");
-            }
-            return managedUser instanceof PersonalUser personalUser ? List.of(personalUser) : List.of();
+            return selectedManagedPersonalUser(currentUser, request.getTargetUserId());
         }
 
         throw new SecurityException("Debes seleccionar al menos un usuario.");
+    }
+
+    private List<PersonalUser> personalTargetForCurrentUser(User currentUser) {
+        if (currentUser instanceof PersonalUser personalUser) {
+            return List.of(personalUser);
+        }
+        return List.of();
+    }
+
+    private List<PersonalUser> allManagedPersonalUsers(User currentUser) {
+        List<PersonalUser> allUsers = new ArrayList<>();
+        for (User scopedUser : userService.getUsersInAdminScope(currentUser)) {
+            if (scopedUser instanceof PersonalUser personalUser) {
+                allUsers.add(personalUser);
+            }
+        }
+        if (allUsers.isEmpty()) {
+            throw new SecurityException("No hay usuarios subordinados para asignar.");
+        }
+        return allUsers;
+    }
+
+    private List<PersonalUser> selectedManagedPersonalUsers(User currentUser, List<Long> targetUserIds) {
+        List<PersonalUser> targets = new ArrayList<>();
+        Set<Long> uniqueTargetIds = new HashSet<>();
+        for (Long targetUserId : targetUserIds) {
+            User user = userService.getUserById(targetUserId);
+            if (!(user instanceof PersonalUser personalUser)) {
+                continue;
+            }
+            if (!canAccessManagedUser(currentUser, personalUser)) {
+                throw new SecurityException("No tienes permiso para operar sobre uno de los usuarios seleccionados.");
+            }
+            if (uniqueTargetIds.add(personalUser.getId())) {
+                targets.add(personalUser);
+            }
+        }
+        return targets;
+    }
+
+    private List<PersonalUser> selectedManagedPersonalUser(User currentUser, Long targetUserId) {
+        User managedUser = userService.getUserById(targetUserId);
+        if (!canAccessManagedUser(currentUser, managedUser)) {
+            throw new SecurityException("No tienes permiso para operar sobre ese usuario.");
+        }
+        if (managedUser instanceof PersonalUser personalUser) {
+            return List.of(personalUser);
+        }
+        return List.of();
     }
 
     private boolean canAccessManagedUser(User currentUser, User target) {

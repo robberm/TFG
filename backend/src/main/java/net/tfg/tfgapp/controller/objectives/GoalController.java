@@ -14,9 +14,22 @@ import net.tfg.tfgapp.service.interfaces.IGoalService;
 import net.tfg.tfgapp.service.interfaces.IUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/goals")
@@ -35,7 +48,7 @@ public class GoalController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getMyGoals(@RequestHeader("Authorization") String token,
+    public ResponseEntity<List<Goal>> getMyGoals(@RequestHeader("Authorization") String token,
                                         @RequestHeader(value = "Accept-Language", required = false) String language,
                                         @RequestParam(required = false) Long targetUserId) {
         User currentUser = getCurrentUser(token, language);
@@ -55,7 +68,7 @@ public class GoalController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getGoalById(@RequestHeader("Authorization") String token,
+    public ResponseEntity<Goal> getGoalById(@RequestHeader("Authorization") String token,
                                        @RequestHeader(value = "Accept-Language", required = false) String language,
                                        @PathVariable Integer id) {
         User currentUser = getCurrentUser(token, language);
@@ -73,7 +86,7 @@ public class GoalController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createGoal(@RequestHeader("Authorization") String token,
+    public ResponseEntity<List<Goal>> createGoal(@RequestHeader("Authorization") String token,
                                         @RequestHeader(value = "Accept-Language", required = false) String language,
                                         @RequestBody GoalRequest request) {
         User currentUser = getCurrentUser(token, language);
@@ -93,7 +106,7 @@ public class GoalController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateGoal(@RequestHeader("Authorization") String token,
+    public ResponseEntity<Goal> updateGoal(@RequestHeader("Authorization") String token,
                                         @RequestHeader(value = "Accept-Language", required = false) String language,
                                         @PathVariable Integer id,
                                         @RequestBody GoalRequest request) {
@@ -144,7 +157,7 @@ public class GoalController {
     }
 
     @PatchMapping("/{id}/progress")
-    public ResponseEntity<?> updateGoalProgress(@RequestHeader("Authorization") String token,
+    public ResponseEntity<Goal> updateGoalProgress(@RequestHeader("Authorization") String token,
                                                 @RequestHeader(value = "Accept-Language", required = false) String language,
                                                 @PathVariable Integer id,
                                                 @RequestBody GoalProgressRequest request) {
@@ -163,7 +176,7 @@ public class GoalController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteGoal(@RequestHeader("Authorization") String token,
+    public ResponseEntity<String> deleteGoal(@RequestHeader("Authorization") String token,
                                         @RequestHeader(value = "Accept-Language", required = false) String language,
                                         @PathVariable Integer id) {
         User currentUser = getCurrentUser(token, language);

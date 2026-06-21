@@ -16,7 +16,15 @@ import net.tfg.tfgapp.service.interfaces.IUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
@@ -25,6 +33,14 @@ import java.util.Map;
 @RequestMapping("/users")
 @RestController
 public class UserController {
+
+    private static final String TOKEN_KEY = "token";
+    private static final String USERNAME_KEY = "username";
+    private static final String ROLE_KEY = "role";
+    private static final String ORGANIZATION_ID_KEY = "organizationId";
+    private static final String ORGANIZATION_NAME_KEY = "organizationName";
+    private static final String MESSAGE_KEY = "message";
+    private static final String PROFILE_IMAGE_PATH_KEY = "profileImagePath";
 
     private final IUserService userService;
     private final TokenService tokenService;
@@ -42,7 +58,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody LoginRequest request,
+    public ResponseEntity<Map<String, Object>> loginUser(@RequestBody LoginRequest request,
                                        @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
                                        @RequestHeader(value = "X-Client-Platform", required = false) String clientPlatform) {
         boolean authenticated = accountService.authenticate(request);
@@ -57,41 +73,33 @@ public class UserController {
         User user = userService.getUserByUsername(request.getUsername());
         String token = tokenService.generateToken(user.getUsername(), user.getTokenVersion(), isDesktopClient(clientPlatform));
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("token", token);
-        response.put("username", user.getUsername());
-        response.put("role", user.getRole().name());
-        response.put("organizationId", organizationId(user));
-        response.put("organizationName", organizationName(user));
-        response.put("message", languageResolver.text(acceptLanguage, "auth.login.success"));
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(buildAccountResponse(
+                user,
+                token,
+                languageResolver.text(acceptLanguage, "auth.login.success")
+        ));
     }
 
     /**
      * Registro público para usuarios personales.
      */
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody PersonalUser newUser,
+    public ResponseEntity<Map<String, Object>> registerUser(@RequestBody PersonalUser newUser,
                                           @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
                                           @RequestHeader(value = "X-Client-Platform", required = false) String clientPlatform) {
         User user = accountService.register(newUser);
 
         String token = tokenService.generateToken(user.getUsername(), user.getTokenVersion(), isDesktopClient(clientPlatform));
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("token", token);
-        response.put("username", user.getUsername());
-        response.put("role", user.getRole().name());
-        response.put("organizationId", null);
-        response.put("organizationName", null);
-        response.put("message", languageResolver.text(acceptLanguage, "auth.register.success"));
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(buildAccountResponse(
+                user,
+                token,
+                languageResolver.text(acceptLanguage, "auth.register.success")
+        ));
     }
 
     @PostMapping("change/password")
-    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request,
+    public ResponseEntity<Map<String, Object>> changePassword(@RequestBody ChangePasswordRequest request,
                                             @RequestHeader("Authorization") String authHeader,
                                             @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
                                             @RequestHeader(value = "X-Client-Platform", required = false) String clientPlatform) {
@@ -101,19 +109,15 @@ public class UserController {
         User updatedUser = accountService.changePassword(usernameFromToken, request);
         String newToken = tokenService.generateToken(updatedUser.getUsername(), updatedUser.getTokenVersion(), isDesktopClient(clientPlatform));
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", languageResolver.text(acceptLanguage, "account.password.changed"));
-        response.put("token", newToken);
-        response.put("username", updatedUser.getUsername());
-        response.put("role", updatedUser.getRole().name());
-        response.put("organizationId", organizationId(updatedUser));
-        response.put("organizationName", organizationName(updatedUser));
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(buildAccountResponse(
+                updatedUser,
+                newToken,
+                languageResolver.text(acceptLanguage, "account.password.changed")
+        ));
     }
 
     @PostMapping("change/username")
-    public ResponseEntity<?> changeUsername(@RequestBody ChangeUsernameRequest request,
+    public ResponseEntity<Map<String, Object>> changeUsername(@RequestBody ChangeUsernameRequest request,
                                             @RequestHeader("Authorization") String authHeader,
                                             @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
                                             @RequestHeader(value = "X-Client-Platform", required = false) String clientPlatform) {
@@ -123,19 +127,15 @@ public class UserController {
         User updatedUser = accountService.changeUsername(usernameFromToken, request);
         String newToken = tokenService.generateToken(updatedUser.getUsername(), updatedUser.getTokenVersion(), isDesktopClient(clientPlatform));
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", languageResolver.text(acceptLanguage, "account.username.changed"));
-        response.put("token", newToken);
-        response.put("username", updatedUser.getUsername());
-        response.put("role", updatedUser.getRole().name());
-        response.put("organizationId", organizationId(updatedUser));
-        response.put("organizationName", organizationName(updatedUser));
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(buildAccountResponse(
+                updatedUser,
+                newToken,
+                languageResolver.text(acceptLanguage, "account.username.changed")
+        ));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUserProfile(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<UserProfileResponse> getCurrentUserProfile(@RequestHeader("Authorization") String authHeader) {
         String token = extractAndVerifyToken(authHeader, null);
         String usernameFromToken = tokenService.extractUsername(token);
 
@@ -144,7 +144,7 @@ public class UserController {
     }
 
     @PutMapping(value = "/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> updateProfileImage(@RequestParam("file") MultipartFile file,
+    public ResponseEntity<Map<String, Object>> updateProfileImage(@RequestParam("file") MultipartFile file,
                                                 @RequestHeader("Authorization") String authHeader,
                                                 @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
         String token = extractAndVerifyToken(authHeader, acceptLanguage);
@@ -152,39 +152,58 @@ public class UserController {
 
         User updatedUser = accountService.updateProfileImage(usernameFromToken, file);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", languageResolver.text(acceptLanguage, "profile.image.updated"));
-        response.put("profileImagePath", updatedUser.getProfileImagePath());
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(buildProfileImageResponse(
+                languageResolver.text(acceptLanguage, "profile.image.updated"),
+                updatedUser.getProfileImagePath()
+        ));
     }
 
     @DeleteMapping("/profile-image")
-    public ResponseEntity<?> deleteProfileImage(@RequestHeader("Authorization") String authHeader,
+    public ResponseEntity<Map<String, Object>> deleteProfileImage(@RequestHeader("Authorization") String authHeader,
                                                 @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
         String token = extractAndVerifyToken(authHeader, acceptLanguage);
         String usernameFromToken = tokenService.extractUsername(token);
 
         accountService.removeProfileImage(usernameFromToken);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", languageResolver.text(acceptLanguage, "profile.image.deleted"));
-        response.put("profileImagePath", null);
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(buildProfileImageResponse(
+                languageResolver.text(acceptLanguage, "profile.image.deleted"),
+                null
+        ));
     }
 
     @DeleteMapping("/me")
-    public ResponseEntity<?> deleteCurrentUser(@RequestHeader("Authorization") String authHeader,
+    public ResponseEntity<Map<String, Object>> deleteCurrentUser(@RequestHeader("Authorization") String authHeader,
                                                @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
         String token = extractAndVerifyToken(authHeader, acceptLanguage);
         String usernameFromToken = tokenService.extractUsername(token);
 
         accountService.deleteCurrentUser(usernameFromToken);
 
+        return ResponseEntity.ok(buildMessageResponse(languageResolver.text(acceptLanguage, "account.deleted")));
+    }
+
+    private Map<String, Object> buildAccountResponse(User user, String token, String message) {
         Map<String, Object> response = new HashMap<>();
-        response.put("message", languageResolver.text(acceptLanguage, "account.deleted"));
-        return ResponseEntity.ok(response);
+        response.put(TOKEN_KEY, token);
+        response.put(USERNAME_KEY, user.getUsername());
+        response.put(ROLE_KEY, user.getRole().name());
+        response.put(ORGANIZATION_ID_KEY, organizationId(user));
+        response.put(ORGANIZATION_NAME_KEY, organizationName(user));
+        response.put(MESSAGE_KEY, message);
+        return response;
+    }
+
+    private Map<String, Object> buildProfileImageResponse(String message, String profileImagePath) {
+        Map<String, Object> response = buildMessageResponse(message);
+        response.put(PROFILE_IMAGE_PATH_KEY, profileImagePath);
+        return response;
+    }
+
+    private Map<String, Object> buildMessageResponse(String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put(MESSAGE_KEY, message);
+        return response;
     }
 
     private Long organizationId(User user) {

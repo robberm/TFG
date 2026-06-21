@@ -8,7 +8,10 @@ import net.tfg.tfgapp.service.BlockingService;
 import net.tfg.tfgapp.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/session")
@@ -30,7 +33,7 @@ public class SessionController {
     }
 
     @PostMapping("/active-user")
-    public ResponseEntity<?> registerActiveUser(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<Void> registerActiveUser(@RequestHeader("Authorization") String token) {
         String username = jwtUtil.extractUsernameFromAuthorizationHeader(token);
 
         User user = userService.getUserByUsername(username);
@@ -43,7 +46,7 @@ public class SessionController {
     }
 
     @PostMapping("/clear")
-    public ResponseEntity<?> clearActiveUser() {
+    public ResponseEntity<Void> clearActiveUser() {
         var focusState = blockingService.getFocusState();
         Integer workDurationSeconds = ((Number) focusState.getOrDefault("workDurationSeconds", 20 * 60)).intValue();
         Integer breakDurationSeconds = ((Number) focusState.getOrDefault("breakDurationSeconds", 20)).intValue();

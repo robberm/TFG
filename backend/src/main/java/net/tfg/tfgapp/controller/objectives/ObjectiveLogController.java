@@ -5,7 +5,12 @@ import net.tfg.tfgapp.security.JwtUtil;
 import net.tfg.tfgapp.service.interfaces.IObjectiveLogService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -23,7 +28,7 @@ public class ObjectiveLogController {
     }
 
     @GetMapping("/objective/{objectiveId}")
-    public ResponseEntity<?> getLogsByObjective(@RequestHeader("Authorization") String token,
+    public ResponseEntity<List<ObjectiveLog>> getLogsByObjective(@RequestHeader("Authorization") String token,
                                                 @PathVariable Integer objectiveId) {
         String username = jwtUtil.extractUsernameFromAuthorizationHeader(token);
         List<ObjectiveLog> logs = objectiveLogService.getObjectiveLogs(objectiveId);
@@ -45,7 +50,7 @@ public class ObjectiveLogController {
     }
 
     @GetMapping("/range")
-    public ResponseEntity<?> getLogsByRange(@RequestHeader("Authorization") String token,
+    public ResponseEntity<List<ObjectiveLog>> getLogsByRange(@RequestHeader("Authorization") String token,
                                             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
                                             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         String username = jwtUtil.extractUsernameFromAuthorizationHeader(token);

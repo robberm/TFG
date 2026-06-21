@@ -13,7 +13,14 @@ import net.tfg.tfgapp.service.interfaces.IAdminService;
 import net.tfg.tfgapp.service.interfaces.IUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
 import java.util.List;
@@ -39,7 +46,7 @@ public class AdminController {
     }
 
     @GetMapping("/users")
-    public ResponseEntity<?> getManagedUsers(@RequestHeader("Authorization") String authHeader,
+    public ResponseEntity<List<UserSummaryResponse>> getManagedUsers(@RequestHeader("Authorization") String authHeader,
                                              @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
         String token = extractAndVerifyToken(authHeader, acceptLanguage);
         String adminUsername = tokenService.extractUsername(token);
@@ -49,7 +56,7 @@ public class AdminController {
     }
 
     @PostMapping("/users")
-    public ResponseEntity<?> createManagedUser(@RequestHeader("Authorization") String authHeader,
+    public ResponseEntity<UserSummaryResponse> createManagedUser(@RequestHeader("Authorization") String authHeader,
                                                @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
                                                @RequestBody AdminCreateUserRequest request) {
         String token = extractAndVerifyToken(authHeader, acceptLanguage);
@@ -60,7 +67,7 @@ public class AdminController {
     }
 
     @DeleteMapping("/users/{userId}")
-    public ResponseEntity<?> deleteManagedUser(@RequestHeader("Authorization") String authHeader,
+    public ResponseEntity<Void> deleteManagedUser(@RequestHeader("Authorization") String authHeader,
                                                @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
                                                @PathVariable Long userId) {
         String token = extractAndVerifyToken(authHeader, acceptLanguage);
@@ -71,7 +78,7 @@ public class AdminController {
     }
 
     @PostMapping("/organization")
-    public ResponseEntity<?> createOrganization(@RequestHeader("Authorization") String authHeader,
+    public ResponseEntity<Map<String, Object>> createOrganization(@RequestHeader("Authorization") String authHeader,
                                                 @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
                                                 @RequestBody AdminCreateOrganizationRequest request) {
         String token = extractAndVerifyToken(authHeader, acceptLanguage);
@@ -88,7 +95,7 @@ public class AdminController {
     }
 
     @GetMapping("/users/{userId}/goals")
-    public ResponseEntity<?> getManagedUserGoals(@RequestHeader("Authorization") String authHeader,
+    public ResponseEntity<List<Goal>> getManagedUserGoals(@RequestHeader("Authorization") String authHeader,
                                                  @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
                                                  @PathVariable Long userId) {
         String token = extractAndVerifyToken(authHeader, acceptLanguage);
