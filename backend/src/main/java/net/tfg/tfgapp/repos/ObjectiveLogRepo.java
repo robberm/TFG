@@ -23,6 +23,20 @@ public interface ObjectiveLogRepo extends JpaRepository<ObjectiveLog, Integer> {
             """)
     List<ObjectiveLog> findByObjectiveIdOrderByLogDateAsc(@Param("objectiveId") Integer objectiveId);
     Optional<ObjectiveLog> findByObjectiveAssignmentIdAndLogDate(Integer objectiveAssignmentId, LocalDate logDate);
+
+    @Query("""
+            SELECT l FROM ObjectiveLog l
+            LEFT JOIN l.objectiveAssignment a
+            LEFT JOIN l.objective o
+            WHERE (a.id = :assignmentId OR o.id = :objectiveId)
+              AND l.logDate = :logDate
+            ORDER BY CASE WHEN a.id = :assignmentId THEN 0 ELSE 1 END
+            """)
+    List<ObjectiveLog> findExistingAssignmentOrLegacyLogs(
+            @Param("assignmentId") Integer assignmentId,
+            @Param("objectiveId") Integer objectiveId,
+            @Param("logDate") LocalDate logDate
+    );
     @Query("""
             SELECT l FROM ObjectiveLog l
             LEFT JOIN FETCH l.objective

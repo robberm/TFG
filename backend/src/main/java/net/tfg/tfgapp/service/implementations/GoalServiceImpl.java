@@ -89,14 +89,19 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
 
         LocalDate today = LocalDate.now();
         ObjectiveLog log = objectiveLogRepo
-                .findByObjectiveAssignmentIdAndLogDate(resolveAssignmentId(goal), today)
+                .findExistingAssignmentOrLegacyLogs(resolveAssignmentId(goal), goal.getId(), today)
+                .stream()
+                .findFirst()
                 .orElseGet(() -> {
                     ObjectiveLog newLog = new ObjectiveLog();
-                    newLog.setObjective(goal); // legacy/trazabilidad
-                    newLog.setObjectiveAssignment(currentAssignment);
                     newLog.setLogDate(today);
                     return newLog;
                 });
+
+        // Reutilizamos logs legacy si existen para evitar duplicados por fecha y
+        // los dejamos ya enlazados a la asignación normalizada.
+        log.setObjective(goal); // legacy/trazabilidad
+        log.setObjectiveAssignment(currentAssignment);
 
         log.setProgressValue(request.getValorProgreso());
         log.setNotes(request.getNotes());

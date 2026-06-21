@@ -77,15 +77,22 @@ public class HabitServiceImpl extends ObjectiveServiceBase<Habit, HabitRepo> imp
     public ObjectiveLog markHabitCompletion(Habit habit, HabitCompletionRequest request) {
         LocalDate targetDate = request.getDate() != null ? request.getDate() : LocalDate.now();
 
+        ObjectiveAssignment assignment = resolveAssignment(habit);
         ObjectiveLog log = objectiveLogRepo
-                .findByObjectiveAssignmentIdAndLogDate(resolveAssignmentId(habit), targetDate)
+                .findExistingAssignmentOrLegacyLogs(assignment.getId(), habit.getId(), targetDate)
+                .stream()
+                .findFirst()
                 .orElseGet(() -> {
                     ObjectiveLog newLog = new ObjectiveLog();
-                    newLog.setObjective(habit); // legacy/trazabilidad
-                    newLog.setObjectiveAssignment(resolveAssignment(habit));
                     newLog.setLogDate(targetDate);
                     return newLog;
                 });
+
+        // Si el log venía del modelo legacy (objective_id + fecha), lo enlazamos
+        // a la asignación normalizada en vez de intentar insertar otro y chocar
+        // contra una unique antigua que aún pueda existir en la BBDD.
+        log.setObjective(habit); // legacy/trazabilidad
+        log.setObjectiveAssignment(assignment);
 
         log.setCompleted(request.getCompleted());
         log.setNotes(request.getNotes());
@@ -100,7 +107,8 @@ public class HabitServiceImpl extends ObjectiveServiceBase<Habit, HabitRepo> imp
      * Recalcula las rachas de un hábito a partir de su histórico.
      */
     private void recalculateHabitStreaks(Habit habit) {
-        List<ObjectiveLog> logs = objectiveLogRepo.findByObjectiveAssignmentIdOrderByLogDateAsc(resolveAssignmentId(habit));
+        ObjectiveAssignment assignment = resolveAssignment(habit);
+        List<ObjectiveLog> logs = objectiveLogRepo.findByObjectiveAssignmentIdOrderByLogDateAsc(assignment.getId());
 
         if (logs.isEmpty()) {
             habit.setCurrentStreak(0);
