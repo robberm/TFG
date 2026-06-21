@@ -1447,14 +1447,18 @@ body.dark .tableRow:hover {
 
 .weeklyBarItem:not(:disabled):hover .weeklyBarTrack,
 .selectedWeeklyBarItem .weeklyBarTrack {
-  outline: 2px solid var(--primary-color, #4facfe);
-  outline-offset: 3px;
+  outline: 1px solid color-mix(in srgb, var(--text-main) 18%, transparent);
+  outline-offset: 2px;
+}
+
+.selectedWeeklyBarItem .weeklyBarTrack {
+  opacity: 0.88;
 }
 
 .selectedWeeklyBarItem .weeklyBarLabel,
 .selectedWeeklyBarItem .weeklyBarValue {
-  color: var(--text-main);
-  font-weight: 800;
+  color: color-mix(in srgb, var(--text-main) 82%, transparent);
+  font-weight: 600;
 }
 
 .weeklyBarItem:disabled {
