@@ -8,11 +8,9 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface ObjectiveLogRepo extends JpaRepository<ObjectiveLog, Integer> {
-    Optional<ObjectiveLog> findByObjectiveIdAndLogDate(Integer objectiveId, LocalDate logDate);
     @Query("""
             SELECT l FROM ObjectiveLog l
             LEFT JOIN FETCH l.objective
@@ -22,8 +20,6 @@ public interface ObjectiveLogRepo extends JpaRepository<ObjectiveLog, Integer> {
             ORDER BY l.logDate ASC
             """)
     List<ObjectiveLog> findByObjectiveIdOrderByLogDateAsc(@Param("objectiveId") Integer objectiveId);
-    Optional<ObjectiveLog> findByObjectiveAssignmentIdAndLogDate(Integer objectiveAssignmentId, LocalDate logDate);
-
     @Query("""
             SELECT l FROM ObjectiveLog l
             LEFT JOIN l.objectiveAssignment a
@@ -32,7 +28,7 @@ public interface ObjectiveLogRepo extends JpaRepository<ObjectiveLog, Integer> {
               AND l.logDate = :logDate
             ORDER BY CASE WHEN a.id = :assignmentId THEN 0 ELSE 1 END
             """)
-    List<ObjectiveLog> findExistingAssignmentOrLegacyLogs(
+    List<ObjectiveLog> findLogsForAssignmentOrObjectiveOnDate(
             @Param("assignmentId") Integer assignmentId,
             @Param("objectiveId") Integer objectiveId,
             @Param("logDate") LocalDate logDate
@@ -52,7 +48,7 @@ public interface ObjectiveLogRepo extends JpaRepository<ObjectiveLog, Integer> {
               AND l.logDate BETWEEN :startDate AND :endDate
             ORDER BY l.logDate ASC
             """)
-    List<ObjectiveLog> findByObjectiveUserUsernameAndLogDateBetween(
+    List<ObjectiveLog> findLogsForUsernameBetweenDates(
             @Param("username") String username,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate

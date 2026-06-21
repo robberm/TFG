@@ -218,7 +218,7 @@ public class UserController {
             throw new ApiException(HttpStatus.UNAUTHORIZED, languageResolver.text(acceptLanguage, "errors.auth.tokenMissing"));
         }
 
-        String token = authHeader.replace("Bearer ", "").trim();
+        String token = tokenService.extractBearerToken(authHeader);
 
         if (!tokenService.validateToken(token)) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, languageResolver.text(acceptLanguage, "errors.auth.tokenInvalid"));

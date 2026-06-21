@@ -30,6 +30,6 @@ public class ObjectiveLogServiceImpl implements IObjectiveLogService {
      */
     @Override
     public List<ObjectiveLog> getUserLogsBetweenDates(String username, LocalDate startDate, LocalDate endDate) {
-        return objectiveLogRepo.findByObjectiveUserUsernameAndLogDateBetween(username, startDate, endDate);
+        return objectiveLogRepo.findLogsForUsernameBetweenDates(username, startDate, endDate);
     }
 }

@@ -186,7 +186,7 @@ public class GoalController {
     }
 
     private User getCurrentUser(String token, String language) {
-        String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
+        String username = jwtUtil.extractUsernameFromAuthorizationHeader(token);
         User currentUser = userService.getUserByUsername(username);
         if (currentUser == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, languageResolver.text(language, "user.notFound"));

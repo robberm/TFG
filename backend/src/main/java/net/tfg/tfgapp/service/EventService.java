@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -89,9 +88,11 @@ public class EventService {
         LinkedHashSet<Integer> normalized = new LinkedHashSet<>();
 
         if (reminderMinutesBeforeList != null) {
-            reminderMinutesBeforeList.stream()
-                    .filter(value -> value != null && value >= 0)
-                    .forEach(normalized::add);
+            for (Integer value : reminderMinutesBeforeList) {
+                if (value != null && value >= 0) {
+                    normalized.add(value);
+                }
+            }
         }
 
         if (normalized.isEmpty() && legacyReminderMinutesBefore != null && legacyReminderMinutesBefore >= 0) {
@@ -124,9 +125,11 @@ public class EventService {
     }
 
     public List<String> getCategories() {
-        return Arrays.stream(Event.EventCategory.values())
-                .map(Enum::name)
-                .toList();
+        List<String> categories = new ArrayList<>();
+        for (Event.EventCategory category : Event.EventCategory.values()) {
+            categories.add(category.name());
+        }
+        return categories;
     }
 
     private boolean isEventCategoryActive(String category, Long userId) {

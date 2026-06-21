@@ -25,7 +25,7 @@ public class ObjectiveLogController {
     @GetMapping("/objective/{objectiveId}")
     public ResponseEntity<?> getLogsByObjective(@RequestHeader("Authorization") String token,
                                                 @PathVariable Integer objectiveId) {
-        String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
+        String username = jwtUtil.extractUsernameFromAuthorizationHeader(token);
         List<ObjectiveLog> logs = objectiveLogService.getObjectiveLogs(objectiveId);
 
         if (logs.isEmpty()) {
@@ -48,7 +48,7 @@ public class ObjectiveLogController {
     public ResponseEntity<?> getLogsByRange(@RequestHeader("Authorization") String token,
                                             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
                                             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
+        String username = jwtUtil.extractUsernameFromAuthorizationHeader(token);
         return ResponseEntity.ok(objectiveLogService.getUserLogsBetweenDates(username, startDate, endDate));
     }
 }

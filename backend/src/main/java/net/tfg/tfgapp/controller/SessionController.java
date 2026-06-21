@@ -31,8 +31,7 @@ public class SessionController {
 
     @PostMapping("/active-user")
     public ResponseEntity<?> registerActiveUser(@RequestHeader("Authorization") String token) {
-        String tokenF = token.replace("Bearer ", "").trim();
-        String username = jwtUtil.extractUsername(tokenF);
+        String username = jwtUtil.extractUsernameFromAuthorizationHeader(token);
 
         User user = userService.getUserByUsername(username);
         if (user == null) {

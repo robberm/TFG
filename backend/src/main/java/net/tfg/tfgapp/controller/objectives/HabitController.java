@@ -33,13 +33,13 @@ public class HabitController {
 
     @GetMapping
     public ResponseEntity<?> getMyHabits(@RequestHeader("Authorization") String token) {
-        String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
+        String username = jwtUtil.extractUsernameFromAuthorizationHeader(token);
         return ResponseEntity.ok(habitService.getByUsername(username));
     }
 
     @GetMapping("/active")
     public ResponseEntity<?> getMyActiveHabits(@RequestHeader("Authorization") String token) {
-        String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
+        String username = jwtUtil.extractUsernameFromAuthorizationHeader(token);
         return ResponseEntity.ok(habitService.getActiveHabitsByUsername(username));
     }
 
@@ -47,7 +47,7 @@ public class HabitController {
     public ResponseEntity<?> getHabitById(@RequestHeader("Authorization") String token,
                                           @RequestHeader(value = "Accept-Language", required = false) String language,
                                           @PathVariable Integer id) {
-        String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
+        String username = jwtUtil.extractUsernameFromAuthorizationHeader(token);
         Habit habit = habitService.findById(id);
 
         if (habit == null) {
@@ -65,7 +65,7 @@ public class HabitController {
     public ResponseEntity<?> createHabit(@RequestHeader("Authorization") String token,
                                          @RequestHeader(value = "Accept-Language", required = false) String language,
                                          @RequestBody HabitRequest request) {
-        String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
+        String username = jwtUtil.extractUsernameFromAuthorizationHeader(token);
         User user = userService.getUserByUsername(username);
 
         if (!(user instanceof PersonalUser personalUser)) {
@@ -81,7 +81,7 @@ public class HabitController {
                                          @RequestHeader(value = "Accept-Language", required = false) String language,
                                          @PathVariable Integer id,
                                          @RequestBody HabitRequest request) {
-        String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
+        String username = jwtUtil.extractUsernameFromAuthorizationHeader(token);
         Habit existingHabit = habitService.findById(id);
 
         if (existingHabit == null) {
@@ -100,7 +100,7 @@ public class HabitController {
                                                  @RequestHeader(value = "Accept-Language", required = false) String language,
                                                  @PathVariable Integer id,
                                                  @RequestBody HabitCompletionRequest request) {
-        String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
+        String username = jwtUtil.extractUsernameFromAuthorizationHeader(token);
         Habit habit = habitService.findById(id);
 
         if (habit == null) {
@@ -119,7 +119,7 @@ public class HabitController {
     public ResponseEntity<?> deleteHabit(@RequestHeader("Authorization") String token,
                                          @RequestHeader(value = "Accept-Language", required = false) String language,
                                          @PathVariable Integer id) {
-        String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
+        String username = jwtUtil.extractUsernameFromAuthorizationHeader(token);
         Habit habit = habitService.findById(id);
 
         if (habit == null) {

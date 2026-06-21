@@ -31,7 +31,9 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
     @Override
     public List<Goal> getByUsername(String username) {
         List<Goal> goals = goalRepo.findByUserUsername(username);
-        goals.forEach(goal -> selectAssignmentByUsername(goal, username));
+        for (Goal goal : goals) {
+            selectAssignmentByUsername(goal, username);
+        }
         return goals;
     }
 
@@ -88,15 +90,14 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
         currentAssignment.setProgressValue(request.getValorProgreso());
 
         LocalDate today = LocalDate.now();
-        ObjectiveLog log = objectiveLogRepo
-                .findExistingAssignmentOrLegacyLogs(resolveAssignmentId(goal), goal.getId(), today)
-                .stream()
-                .findFirst()
-                .orElseGet(() -> {
-                    ObjectiveLog newLog = new ObjectiveLog();
-                    newLog.setLogDate(today);
-                    return newLog;
-                });
+        List<ObjectiveLog> matchingLogs = objectiveLogRepo.findLogsForAssignmentOrObjectiveOnDate(resolveAssignmentId(goal), goal.getId(), today);
+        ObjectiveLog log;
+        if (matchingLogs.isEmpty()) {
+            log = new ObjectiveLog();
+            log.setLogDate(today);
+        } else {
+            log = matchingLogs.get(0);
+        }
 
         // Reutilizamos logs legacy si existen para evitar duplicados por fecha y
         // los dejamos ya enlazados a la asignación normalizada.
@@ -119,18 +120,28 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
     @Override
     public List<Goal> getAssignedGoalsForAdminAndUser(Long adminId, Long userId) {
         List<Goal> goals = goalRepo.findByAssignedByAdmin_IdAndUser_Id(adminId, userId);
-        goals.forEach(goal -> goal.getAssignments().stream()
-                .filter(a -> a.getPersonalUser().getId().equals(userId))
-                .findFirst()
-                .ifPresent(goal::setCurrentAssignment));
+        for (Goal goal : goals) {
+            selectAssignmentByUserId(goal, userId);
+        }
         return goals;
     }
 
     private void selectAssignmentByUsername(Goal goal, String username) {
-        goal.getAssignments().stream()
-                .filter(a -> a.getPersonalUser().getUsername().equals(username))
-                .findFirst()
-                .ifPresent(goal::setCurrentAssignment);
+        for (ObjectiveAssignment assignment : goal.getAssignments()) {
+            if (assignment.getPersonalUser().getUsername().equals(username)) {
+                goal.setCurrentAssignment(assignment);
+                return;
+            }
+        }
+    }
+
+    private void selectAssignmentByUserId(Goal goal, Long userId) {
+        for (ObjectiveAssignment assignment : goal.getAssignments()) {
+            if (assignment.getPersonalUser().getId().equals(userId)) {
+                goal.setCurrentAssignment(assignment);
+                return;
+            }
+        }
     }
 
     private Integer resolveAssignmentId(Goal goal) {

@@ -96,7 +96,11 @@ public class Event {
         currentAssignment = null;
         user = targets == null || targets.isEmpty() ? null : targets.get(0);
         assignedByAdmin = admin;
-        if (targets != null) targets.forEach(target -> addAssignment(target, admin));
+        if (targets != null) {
+            for (PersonalUser target : targets) {
+                addAssignment(target, admin);
+            }
+        }
     }
 
     private EventAssignment representativeAssignment() {

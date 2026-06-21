@@ -46,10 +46,12 @@ public class AppRestrictionService {
         IStorageService.Config config = storageService.loadConfig();
         Set<String> blockedExecutables = normalizeBlockedExecutables(config.getBlockedApps());
 
-        WindowsUtils.getRunningProcesses().stream()
-                .map(this::normalizeExecutableNameSafely)
-                .filter(blockedExecutables::contains)
-                .forEach(WindowsUtils::killProcess);
+        for (String runningProcess : WindowsUtils.getRunningProcesses()) {
+            String normalizedProcess = normalizeExecutableNameSafely(runningProcess);
+            if (blockedExecutables.contains(normalizedProcess)) {
+                WindowsUtils.killProcess(normalizedProcess);
+            }
+        }
     }
 
     public void addBlockedApp(String executableName) {

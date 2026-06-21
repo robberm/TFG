@@ -140,10 +140,11 @@ public class AdminServiceImpl implements IAdminService {
             throw new SecurityException("No tienes permisos de administrador.");
         }
 
-        return userService.getManagedUsers(admin.getId())
-                .stream()
-                .map(UserSummaryResponse::fromUser)
-                .toList();
+        List<UserSummaryResponse> response = new java.util.ArrayList<>();
+        for (User managedUser : userService.getManagedUsers(admin.getId())) {
+            response.add(UserSummaryResponse.fromUser(managedUser));
+        }
+        return response;
     }
 
     @Override

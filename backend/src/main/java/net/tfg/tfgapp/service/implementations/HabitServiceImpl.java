@@ -78,15 +78,14 @@ public class HabitServiceImpl extends ObjectiveServiceBase<Habit, HabitRepo> imp
         LocalDate targetDate = request.getDate() != null ? request.getDate() : LocalDate.now();
 
         ObjectiveAssignment assignment = resolveAssignment(habit);
-        ObjectiveLog log = objectiveLogRepo
-                .findExistingAssignmentOrLegacyLogs(assignment.getId(), habit.getId(), targetDate)
-                .stream()
-                .findFirst()
-                .orElseGet(() -> {
-                    ObjectiveLog newLog = new ObjectiveLog();
-                    newLog.setLogDate(targetDate);
-                    return newLog;
-                });
+        List<ObjectiveLog> matchingLogs = objectiveLogRepo.findLogsForAssignmentOrObjectiveOnDate(assignment.getId(), habit.getId(), targetDate);
+        ObjectiveLog log;
+        if (matchingLogs.isEmpty()) {
+            log = new ObjectiveLog();
+            log.setLogDate(targetDate);
+        } else {
+            log = matchingLogs.get(0);
+        }
 
         // Si el log venía del modelo legacy (objective_id + fecha), lo enlazamos
         // a la asignación normalizada en vez de intentar insertar otro y chocar
@@ -150,11 +149,13 @@ public class HabitServiceImpl extends ObjectiveServiceBase<Habit, HabitRepo> imp
      * Calcula la racha vigente de días consecutivos completados hasta hoy.
      */
     private int calculateCurrentStreakEndingToday(List<ObjectiveLog> logs) {
-        boolean hasCompletedToday = logs.stream()
-                .anyMatch(log ->
-                        LocalDate.now().isEqual(log.getLogDate()) &&
-                                Boolean.TRUE.equals(log.getCompleted())
-                );
+        boolean hasCompletedToday = false;
+        for (ObjectiveLog log : logs) {
+            if (LocalDate.now().isEqual(log.getLogDate()) && Boolean.TRUE.equals(log.getCompleted())) {
+                hasCompletedToday = true;
+                break;
+            }
+        }
 
         int streak = 0;
         LocalDate expectedDate = hasCompletedToday ? LocalDate.now() : LocalDate.now().minusDays(1);
@@ -175,10 +176,6 @@ public class HabitServiceImpl extends ObjectiveServiceBase<Habit, HabitRepo> imp
         }
 
         return streak;
-    }
-
-    private Integer resolveAssignmentId(Habit habit) {
-        return resolveAssignment(habit).getId();
     }
 
     private ObjectiveAssignment resolveAssignment(Habit habit) {

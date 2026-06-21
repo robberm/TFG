@@ -1,8 +1,9 @@
 package net.tfg.tfgapp.controller;
 
 import net.tfg.tfgapp.DTOs.events.EventRequest;
-import net.tfg.tfgapp.domains.Event;
 import net.tfg.tfgapp.domains.AdminUser;
+import net.tfg.tfgapp.domains.Event;
+import net.tfg.tfgapp.domains.EventAssignment;
 import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.exception.ApiException;
@@ -16,7 +17,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 @RestController
 @RequestMapping("events")
@@ -39,34 +44,36 @@ public class CalendarController {
             @RequestParam(required = false) Long targetUserId,
             @RequestHeader("Authorization") String token) {
 
-        User actor = getActor(token);
+        User currentUser = getCurrentUser(token);
 
-        if (actor.isAdmin()) {
+        if (currentUser.isAdmin()) {
             if (targetUserId != null) {
                 User target = userService.getUserById(targetUserId);
-                if (!canAccessManagedUser(actor, target)) {
+                if (!canAccessManagedUser(currentUser, target)) {
                     throw new SecurityException("No tienes permiso sobre ese usuario.");
                 }
-                return ResponseEntity.ok(eventService.findAssignedEventsForAdminAndUserInRange(actor.getId(), targetUserId, start, end));
+                return ResponseEntity.ok(eventService.findAssignedEventsForAdminAndUserInRange(currentUser.getId(), targetUserId, start, end));
             }
 
-            return ResponseEntity.ok(eventService.findAssignedEventsForAdminInRange(actor.getId(), start, end));
+            return ResponseEntity.ok(eventService.findAssignedEventsForAdminInRange(currentUser.getId(), start, end));
         }
 
-        return ResponseEntity.ok(eventService.findEventsByUserAndDateRange(actor.getUsername(), start, end));
+        return ResponseEntity.ok(eventService.findEventsByUserAndDateRange(currentUser.getUsername(), start, end));
     }
 
     @PostMapping
     public ResponseEntity<?> createEvent(@RequestBody EventRequest request,
                                          @RequestHeader("Authorization") String token) {
-        User actor = getActor(token);
+        User currentUser = getCurrentUser(token);
 
         validateEventDates(request);
-        List<PersonalUser> targets = resolveTargetUsers(actor, request);
+        List<PersonalUser> targets = resolveTargetUsers(currentUser, request);
         Event event = new Event();
         eventService.applyEventDetails(event, request);
-        AdminUser assigningAdmin = actor.isAdmin() ? (AdminUser) actor : null;
-        targets.forEach(target -> event.addAssignment(target, assigningAdmin));
+        AdminUser assigningAdmin = currentUser.isAdmin() ? (AdminUser) currentUser : null;
+        for (PersonalUser target : targets) {
+            event.addAssignment(target, assigningAdmin);
+        }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(List.of(eventService.save(event)));
     }
@@ -75,62 +82,63 @@ public class CalendarController {
     public ResponseEntity<?> updateEvent(@PathVariable Long id,
                                          @RequestBody EventRequest eventDetails,
                                          @RequestHeader("Authorization") String token) {
-        User actor = getActor(token);
+        User currentUser = getCurrentUser(token);
         Optional<Event> existingEvent = eventService.getEventById(id);
 
         if (existingEvent.isEmpty()) {
             throw new ApiException(HttpStatus.NOT_FOUND, "Evento no encontrado.");
         }
 
-        if (!canAccessEvent(actor, existingEvent.get())) {
+        Event event = existingEvent.get();
+        if (!canAccessEvent(currentUser, event)) {
             throw new SecurityException("No tienes permiso para actualizar este evento.");
         }
 
-        if (!actor.isAdmin() && existingEvent.get().getAssignedByAdmin() != null) {
+        if (!currentUser.isAdmin() && event.getAssignedByAdmin() != null) {
             throw new SecurityException("No puedes modificar eventos asignados por administrador.");
         }
 
         validateEventDates(eventDetails);
 
-        if (actor.isAdmin() && existingEvent.get().getAssignedByAdmin() != null) {
-            List<PersonalUser> targets = resolveTargetUsers(actor, eventDetails);
+        if (currentUser.isAdmin() && event.getAssignedByAdmin() != null) {
+            List<PersonalUser> targets = resolveTargetUsers(currentUser, eventDetails);
             if (targets.isEmpty()) {
                 throw new IllegalArgumentException("Debes seleccionar al menos un usuario.");
             }
 
-            existingEvent.get().replaceAssignments(targets, (AdminUser) actor);
-            eventService.applyEventDetails(existingEvent.get(), eventDetails);
-            return ResponseEntity.ok(eventService.save(existingEvent.get()));
+            event.replaceAssignments(targets, (AdminUser) currentUser);
+            eventService.applyEventDetails(event, eventDetails);
+            return ResponseEntity.ok(eventService.save(event));
         }
 
         Optional<Event> updatedEvent = eventService.updateEventById(id, eventDetails);
-        return updatedEvent.<ResponseEntity<?>>map(ResponseEntity::ok)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.NOT_FOUND,
-                        "Evento no encontrado."
-                ));
+        if (updatedEvent.isPresent()) {
+            return ResponseEntity.ok(updatedEvent.get());
+        }
+        throw new ApiException(HttpStatus.NOT_FOUND, "Evento no encontrado.");
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteEvent(@PathVariable Long id,
                                          @RequestHeader("Authorization") String token) {
-        User actor = getActor(token);
+        User currentUser = getCurrentUser(token);
         Optional<Event> existingEvent = eventService.getEventById(id);
 
         if (existingEvent.isEmpty()) {
             throw new ApiException(HttpStatus.NOT_FOUND, "Evento no encontrado.");
         }
 
-        if (!canAccessEvent(actor, existingEvent.get())) {
+        Event event = existingEvent.get();
+        if (!canAccessEvent(currentUser, event)) {
             throw new SecurityException("No tienes permiso para eliminar este evento.");
         }
 
-        if (!actor.isAdmin() && existingEvent.get().getAssignedByAdmin() != null) {
+        if (!currentUser.isAdmin() && event.getAssignedByAdmin() != null) {
             throw new SecurityException("No puedes eliminar eventos asignados por administrador.");
         }
 
-        if (actor.isAdmin()) {
-            eventService.deleteAdminAssignedEventCascade(actor.getId(), existingEvent.get());
+        if (currentUser.isAdmin()) {
+            eventService.deleteAdminAssignedEventCascade(currentUser.getId(), event);
         } else {
             eventService.deleteEventById(id);
         }
@@ -142,14 +150,13 @@ public class CalendarController {
         return ResponseEntity.ok(eventService.getCategories());
     }
 
-    private User getActor(String token) {
-        String tokenF = token.replace("Bearer ", "").trim();
-        String username = jwtUtil.extractUsername(tokenF);
-        User actor = userService.getUserByUsername(username);
-        if (actor == null) {
+    private User getCurrentUser(String authorizationHeader) {
+        String username = jwtUtil.extractUsernameFromAuthorizationHeader(authorizationHeader);
+        User currentUser = userService.getUserByUsername(username);
+        if (currentUser == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Usuario no encontrado.");
         }
-        return actor;
+        return currentUser;
     }
 
     private void validateEventDates(EventRequest request) {
@@ -158,16 +165,18 @@ public class CalendarController {
         }
     }
 
-    private List<PersonalUser> resolveTargetUsers(User actor, EventRequest request) {
-        if (!actor.isAdmin()) {
-            return actor instanceof PersonalUser personalActor ? List.of(personalActor) : List.of();
+    private List<PersonalUser> resolveTargetUsers(User currentUser, EventRequest request) {
+        if (!currentUser.isAdmin()) {
+            return currentUser instanceof PersonalUser personalUser ? List.of(personalUser) : List.of();
         }
 
         if (Boolean.TRUE.equals(request.getAssignToAllUsers())) {
-            List<PersonalUser> allUsers = userService.getUsersInAdminScope(actor).stream()
-                    .filter(PersonalUser.class::isInstance)
-                    .map(PersonalUser.class::cast)
-                    .toList();
+            List<PersonalUser> allUsers = new ArrayList<>();
+            for (User scopedUser : userService.getUsersInAdminScope(currentUser)) {
+                if (scopedUser instanceof PersonalUser personalUser) {
+                    allUsers.add(personalUser);
+                }
+            }
             if (allUsers.isEmpty()) {
                 throw new SecurityException("No hay usuarios subordinados para asignar.");
             }
@@ -175,22 +184,26 @@ public class CalendarController {
         }
 
         if (request.getTargetUserIds() != null && !request.getTargetUserIds().isEmpty()) {
-            return request.getTargetUserIds().stream()
-                    .map(userService::getUserById)
-                    .filter(PersonalUser.class::isInstance)
-                    .map(PersonalUser.class::cast)
-                    .peek(user -> {
-                        if (!canAccessManagedUser(actor, user)) {
-                            throw new SecurityException("No tienes permiso para operar sobre uno de los usuarios seleccionados.");
-                        }
-                    })
-                    .distinct()
-                    .toList();
+            List<PersonalUser> targets = new ArrayList<>();
+            Set<Long> uniqueTargetIds = new HashSet<>();
+            for (Long targetUserId : request.getTargetUserIds()) {
+                User user = userService.getUserById(targetUserId);
+                if (!(user instanceof PersonalUser personalUser)) {
+                    continue;
+                }
+                if (!canAccessManagedUser(currentUser, personalUser)) {
+                    throw new SecurityException("No tienes permiso para operar sobre uno de los usuarios seleccionados.");
+                }
+                if (uniqueTargetIds.add(personalUser.getId())) {
+                    targets.add(personalUser);
+                }
+            }
+            return targets;
         }
 
         if (request.getTargetUserId() != null) {
             User managedUser = userService.getUserById(request.getTargetUserId());
-            if (!canAccessManagedUser(actor, managedUser)) {
+            if (!canAccessManagedUser(currentUser, managedUser)) {
                 throw new SecurityException("No tienes permiso para operar sobre ese usuario.");
             }
             return managedUser instanceof PersonalUser personalUser ? List.of(personalUser) : List.of();
@@ -199,23 +212,37 @@ public class CalendarController {
         throw new SecurityException("Debes seleccionar al menos un usuario.");
     }
 
-    private boolean canAccessManagedUser(User actor, User target) {
-        if (target == null || !actor.isAdmin()) {
+    private boolean canAccessManagedUser(User currentUser, User target) {
+        if (target == null || currentUser == null || !currentUser.isAdmin()) {
             return false;
         }
 
-        return userService.getUsersInAdminScope(actor).stream()
-                .anyMatch(user -> user.getId().equals(target.getId()));
+        for (User scopedUser : userService.getUsersInAdminScope(currentUser)) {
+            if (scopedUser.getId().equals(target.getId())) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    private boolean canAccessEvent(User actor, Event event) {
-        if (event.getAssignments().stream().anyMatch(a -> a.getPersonalUser().getId().equals(actor.getId()))) {
-            return true;
+    private boolean canAccessEvent(User currentUser, Event event) {
+        for (EventAssignment assignment : event.getAssignments()) {
+            if (assignment.getPersonalUser().getId().equals(currentUser.getId())) {
+                return true;
+            }
         }
 
-        return actor.isAdmin()
-                && event.getAssignments().stream().anyMatch(a -> a.getAssignedByAdmin() != null
-                && a.getAssignedByAdmin().getId().equals(actor.getId())
-                && canAccessManagedUser(actor, a.getPersonalUser()));
+        if (!currentUser.isAdmin()) {
+            return false;
+        }
+
+        for (EventAssignment assignment : event.getAssignments()) {
+            if (assignment.getAssignedByAdmin() != null
+                    && assignment.getAssignedByAdmin().getId().equals(currentUser.getId())
+                    && canAccessManagedUser(currentUser, assignment.getPersonalUser())) {
+                return true;
+            }
+        }
+        return false;
     }
 }
