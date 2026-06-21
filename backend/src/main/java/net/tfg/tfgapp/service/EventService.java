@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -79,27 +78,12 @@ public class EventService {
         target.setCategory(details.getCategory() != null ? details.getCategory() : Event.EventCategory.PERSONAL);
         target.setIsAllDay(details.getIsAllDay() != null ? details.getIsAllDay() : false);
 
-        List<Integer> normalizedReminderOffsets = normalizeReminderOffsets(details.getReminderMinutesBeforeList(), details.getReminderMinutesBefore());
-        target.setReminderMinutesBeforeList(normalizedReminderOffsets);
-        target.setReminderMinutesBefore(normalizedReminderOffsets.isEmpty() ? null : normalizedReminderOffsets.get(0));
-    }
-
-    private List<Integer> normalizeReminderOffsets(List<Integer> reminderMinutesBeforeList, Integer legacyReminderMinutesBefore) {
-        LinkedHashSet<Integer> normalized = new LinkedHashSet<>();
-
-        if (reminderMinutesBeforeList != null) {
-            for (Integer value : reminderMinutesBeforeList) {
-                if (value != null && value >= 0) {
-                    normalized.add(value);
-                }
-            }
-        }
-
-        if (normalized.isEmpty() && legacyReminderMinutesBefore != null && legacyReminderMinutesBefore >= 0) {
-            normalized.add(legacyReminderMinutesBefore);
-        }
-
-        return new ArrayList<>(normalized);
+        Integer reminderMinutesBefore = details.getReminderMinutesBefore();
+        target.setReminderMinutesBefore(
+                reminderMinutesBefore != null && reminderMinutesBefore >= 0
+                        ? reminderMinutesBefore
+                        : null
+        );
     }
 
     public Optional<Event> getEventById(Long id) {

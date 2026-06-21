@@ -37,10 +37,6 @@ public class Event {
     @Column(unique = false)
     private Integer reminderMinutesBefore;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "EventsReminders", joinColumns = @JoinColumn(name = "event_id"))
-    @Column(name = "minutes_before")
-    private List<Integer> reminderMinutesBeforeList = new ArrayList<>();
 
     /** Legacy temporal para migración; se deriva de currentAssignment/asignación representativa. */
     @JsonIgnore

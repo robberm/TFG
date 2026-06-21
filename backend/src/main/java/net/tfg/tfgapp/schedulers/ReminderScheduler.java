@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -160,19 +159,11 @@ public class ReminderScheduler {
     }
 
     private List<Integer> resolveReminderOffsets(Event event) {
-        LinkedHashSet<Integer> offsets = new LinkedHashSet<>();
-
-        if (event.getReminderMinutesBeforeList() != null) {
-            event.getReminderMinutesBeforeList().stream()
-                    .filter(value -> value != null && value >= 0)
-                    .forEach(offsets::add);
-        }
-
-        if (offsets.isEmpty() && event.getReminderMinutesBefore() != null && event.getReminderMinutesBefore() >= 0) {
+        List<Integer> offsets = new ArrayList<>();
+        if (event.getReminderMinutesBefore() != null && event.getReminderMinutesBefore() >= 0) {
             offsets.add(event.getReminderMinutesBefore());
         }
-
-        return new ArrayList<>(offsets);
+        return offsets;
     }
 
     /**
