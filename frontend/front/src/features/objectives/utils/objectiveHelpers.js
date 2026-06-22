@@ -43,7 +43,6 @@ export const EMPTY_GOAL_FORM = {
   valorProgreso: "",
   valorObjetivo: "",
   active: true,
-  notes: "",
 };
 
 export const EMPTY_HABIT_FORM = {
@@ -134,8 +133,8 @@ export const sortGoalsByPriority = (goals) => {
       return leftStatus - rightStatus;
     }
 
-    const leftDate = leftGoal.createdAt ? new Date(leftGoal.createdAt) : 0;
-    const rightDate = rightGoal.createdAt ? new Date(rightGoal.createdAt) : 0;
+    const leftDate = leftGoal.audTim ? new Date(leftGoal.audTim) : 0;
+    const rightDate = rightGoal.audTim ? new Date(rightGoal.audTim) : 0;
 
     return rightDate - leftDate;
   });

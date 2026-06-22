@@ -53,15 +53,6 @@
   gap: 10px;
 }
 
-.adminUsersCard h2::before {
-  content: '';
-  display: inline-block;
-  width: 4px;
-  height: 20px;
-  background: var(--link-active-bg);
-  border-radius: 2px;
-}
-
 /* Forms */
 .adminUsersForm {
   display: grid;
@@ -97,16 +88,16 @@
 }
 
 .adminUsersForm input:focus {
-  border-color: var(--link-active-bg);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--link-active-bg) 15%, transparent);
+  border-color: color-mix(in srgb, var(--text-main) 38%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-main) 10%, transparent);
 }
 
 /* Buttons */
 .adminUsersForm button,
 .adminUsersListHeader button {
   border: none;
-  background: var(--link-active-bg);
-  color: var(--link-active-text);
+  background: linear-gradient(135deg, #16a34a 0%, #0f766e 100%);
+  color: #ffffff;
   border-radius: 10px;
   padding: 14px 24px;
   font-size: 14px;
@@ -121,7 +112,7 @@
 
 .adminUsersForm button:hover:not(:disabled),
 .adminUsersListHeader button:hover:not(:disabled) {
-  filter: brightness(1.1);
+  filter: brightness(1.04);
   transform: translateY(-1px);
 }
 

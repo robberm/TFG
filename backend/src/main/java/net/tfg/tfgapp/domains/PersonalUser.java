@@ -2,7 +2,6 @@ package net.tfg.tfgapp.domains;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -20,7 +19,7 @@ import java.util.List;
 @Setter
 @Entity
 @Table(name = "personal_users")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "organization", "createdByAdmin"})
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "organization", "audAdmin"})
 public class PersonalUser extends User {
 
     /**
@@ -32,20 +31,24 @@ public class PersonalUser extends User {
     private Organization organization;
 
     /**
-     * Referencia al admin que ha dado de alta a este usuario.
+     * Referencia audit al admin que ha dado de alta a este usuario.
      * Para usuarios personales registrados por su cuenta será null.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by_admin_id")
-    private AdminUser createdByAdmin;
+    @JoinColumn(name = "aud_admin_id")
+    private AdminUser audAdmin;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user")
     private List<Objective> objetivos = new ArrayList<>();
 
     @JsonIgnore
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Event> events = new ArrayList<>();
+    @OneToMany(mappedBy = "personalUser")
+    private List<EventAssignment> eventAssignments = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "personalUser")
+    private List<ObjectiveAssignment> objectiveAssignments = new ArrayList<>();
 
     public PersonalUser() {
     }

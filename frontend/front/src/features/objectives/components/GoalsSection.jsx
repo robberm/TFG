@@ -83,6 +83,18 @@ const GoalsSection = ({
     [goals],
   );
 
+  const getAssignedUserLabel = (goal) => {
+    const assignedUsernames = Array.isArray(goal.assignedToUsernames)
+      ? goal.assignedToUsernames.filter(Boolean)
+      : [];
+
+    if (assignedUsernames.length > 1) {
+      return t.commonMultipleUsers;
+    }
+
+    return assignedUsernames[0] || goal.assignedToUsername || "—";
+  };
+
   /**
    * Renderiza las filas de la tabla.
    * En la columna progreso pintamos la progress bar tanto para numéricos
@@ -100,7 +112,7 @@ const GoalsSection = ({
           <div className="tableCell">
             <strong className={goal.status === "Done" ? "completedText" : ""}>
               {goal.titulo}
-              {goal.assignedByAdmin && (
+              {goal.assignedByAdmin && !isAdmin && (
                 <span className="ownerTag assigned">{t.goalsAssigned}</span>
               )}
             </strong>
@@ -109,7 +121,7 @@ const GoalsSection = ({
           {showAssignedUserColumn && (
             <div className="tableCell">
               <span className={goal.status === "Done" ? "completedText" : ""}>
-                {goal.assignedToUsername || "—"}
+                {getAssignedUserLabel(goal)}
               </span>
             </div>
           )}

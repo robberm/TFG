@@ -107,6 +107,7 @@ const Calendar = () => {
             events={events}
             onDateClick={handleDateClick}
             onEventClick={handleEventClick}
+            isAdmin={isAdmin}
           />
         )}
 
@@ -116,6 +117,7 @@ const Calendar = () => {
             events={events}
             onTimeSlotClick={handleWeekTimeSlotClick}
             onEventClick={handleEventClick}
+            isAdmin={isAdmin}
           />
         )}
 
@@ -125,6 +127,7 @@ const Calendar = () => {
             events={events}
             onTimeSlotClick={handleDayTimeSlotClick}
             onEventClick={handleEventClick}
+            isAdmin={isAdmin}
           />
         )}
       </div>

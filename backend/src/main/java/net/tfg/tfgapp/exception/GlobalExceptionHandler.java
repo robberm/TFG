@@ -92,7 +92,7 @@ public class GlobalExceptionHandler {
                                                            Map<String, String> details) {
         ApiErrorResponse response = new ApiErrorResponse();
         String acceptLanguage = request.getHeader("Accept-Language");
-        String localizedMessage = languageResolver.textOrLegacy(acceptLanguage, message);
+        String localizedMessage = languageResolver.textOrKey(acceptLanguage, message);
         response.setTimestamp(Instant.now());
         response.setStatus(status.value());
         response.setError(status.name());

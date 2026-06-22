@@ -33,8 +33,8 @@ public abstract class Objective {
     @Column(nullable = false)
     private Boolean active = true;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "aud_tim", nullable = false, updatable = false)
+    private LocalDateTime audTim;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
@@ -45,16 +45,20 @@ public abstract class Objective {
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_by_admin_id")
-    private AdminUser assignedByAdmin;
-
-    @Column(unique = false)
-    private String assignmentBatchId;
-
+    @JoinColumn(name = "aud_admin_id")
+    private AdminUser audAdmin;
 
     @JsonIgnore
     @OneToMany(mappedBy = "objective", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ObjectiveLog> logs = new ArrayList<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "objective", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ObjectiveAssignment> assignments = new ArrayList<>();
+
+    @Transient
+    @JsonIgnore
+    private ObjectiveAssignment currentAssignment;
 
     @JsonIgnore
     @Column(name = "is_numeric", nullable = false)
@@ -70,29 +74,102 @@ public abstract class Objective {
         this.numeric = numeric;
     }
 
+    private ObjectiveAssignment representativeAssignment() {
+        if (currentAssignment != null) {
+            return currentAssignment;
+        }
+        return assignments.isEmpty() ? null : assignments.get(0);
+    }
+
+    public PersonalUser getEffectiveUser() {
+        ObjectiveAssignment assignment = representativeAssignment();
+        return assignment != null ? assignment.getPersonalUser() : user;
+    }
+
+    public AdminUser getEffectiveAssignedByAdmin() {
+        ObjectiveAssignment assignment = representativeAssignment();
+        return assignment != null ? assignment.getAudAdmin() : audAdmin;
+    }
+
+    public void addAssignment(PersonalUser target, AdminUser admin) {
+        if (target == null) {
+            return;
+        }
+        ObjectiveAssignment assignment = new ObjectiveAssignment();
+        assignment.setObjective(this);
+        assignment.setPersonalUser(target);
+        assignment.setAudAdmin(admin);
+        assignment.setActive(active == null || active);
+        if (this instanceof Goal goal) {
+            assignment.setStatus(goal.getStatus());
+            assignment.setProgressValue(goal.getValorProgreso());
+            assignment.setTargetValue(goal.getValorObjetivo());
+        }
+        assignments.add(assignment);
+        if (currentAssignment == null) {
+            currentAssignment = assignment;
+        }
+        if (user == null) {
+            user = target;
+        }
+        if (audAdmin == null) {
+            audAdmin = admin;
+        }
+    }
+
     @JsonProperty("assignedByAdmin")
     public boolean isAssignedByAdmin() {
-        return assignedByAdmin != null;
+        return getEffectiveAssignedByAdmin() != null;
     }
 
     @JsonProperty("assignedByAdminUsername")
     public String getAssignedByAdminUsername() {
-        return assignedByAdmin != null ? assignedByAdmin.getUsername() : null;
+        AdminUser admin = getEffectiveAssignedByAdmin();
+        return admin != null ? admin.getUsername() : null;
     }
 
     @JsonProperty("assignedToUsername")
     public String getAssignedToUsername() {
-        return user != null ? user.getUsername() : null;
+        PersonalUser assignedUser = getEffectiveUser();
+        return assignedUser != null ? assignedUser.getUsername() : null;
     }
 
     @JsonProperty("assignedToUserId")
     public Long getAssignedToUserId() {
-        return user != null ? user.getId() : null;
+        PersonalUser assignedUser = getEffectiveUser();
+        return assignedUser != null ? assignedUser.getId() : null;
+    }
+
+    @JsonProperty("assignedToUsernames")
+    public List<String> getAssignedToUsernames() {
+        List<String> usernames = new ArrayList<>();
+        for (ObjectiveAssignment assignment : assignments) {
+            if (assignment.getPersonalUser() != null && assignment.getPersonalUser().getUsername() != null) {
+                usernames.add(assignment.getPersonalUser().getUsername());
+            }
+        }
+        return usernames;
+    }
+
+    @JsonProperty("assignedToUserIds")
+    public List<Long> getAssignedToUserIds() {
+        List<Long> userIds = new ArrayList<>();
+        for (ObjectiveAssignment assignment : assignments) {
+            if (assignment.getPersonalUser() != null && assignment.getPersonalUser().getId() != null) {
+                userIds.add(assignment.getPersonalUser().getId());
+            }
+        }
+        return userIds;
+    }
+
+    @JsonProperty("assignmentCount")
+    public int getAssignmentCount() {
+        return assignments.size();
     }
 
     @PrePersist
     public void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        this.audTim = LocalDateTime.now();
 
         if (this.active == null) {
             this.active = true;

@@ -19,7 +19,7 @@ import java.util.List;
 public class AdminUser extends User {
 
     @JsonIgnore
-    @OneToMany(mappedBy = "createdByAdmin")
+    @OneToMany(mappedBy = "audAdmin")
     private List<PersonalUser> managedUsers = new ArrayList<>();
 
     @JsonIgnore

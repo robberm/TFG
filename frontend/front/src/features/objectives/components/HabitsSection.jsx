@@ -5,14 +5,17 @@ import { useLanguage } from "../../../context/languageContext";
 const HabitsSection = ({
   habits,
   habitCompletionMap,
+  selectedHabitDate,
   onCreate,
   onEdit,
   onDelete,
-  onToggleToday,
+  onToggleDate,
   isHabitUpdating,
 }) => {
   const { t } = useLanguage();
   const todayIso = formatIsoDate(new Date());
+  const selectedDate = selectedHabitDate || todayIso;
+  const selectedDateLabel = selectedDate === todayIso ? t.commonToday : selectedDate;
   const wrapperRef = useRef(null);
   const tableRef = useRef(null);
   const [hasOverflow, setHasOverflow] = useState(false);
@@ -47,7 +50,7 @@ const HabitsSection = ({
       >
         <div ref={tableRef} className="todoTable">
           <div className="tableRow tableHeader">
-            <div className="tableCell">{t.commonToday}</div>
+            <div className="tableCell">{selectedDateLabel}</div>
             <div className="tableCell">{t.commonTitle}</div>
             <div className="tableCell">{t.commonDescription}</div>
             <div className="tableCell">{t.habitsStreak}</div>
@@ -61,35 +64,35 @@ const HabitsSection = ({
             </div>
           ) : (
             habits.map((habit) => {
-              const isCompletedToday =
+              const isCompletedSelectedDate =
                 habitCompletionMap[habit.id] &&
-                habitCompletionMap[habit.id][todayIso] === true;
+                habitCompletionMap[habit.id][selectedDate] === true;
 
               return (
                 <div
                   key={habit.id}
-                  className={`tableRow ${isCompletedToday ? "completedTableRow" : ""}`}
+                  className={`tableRow ${isCompletedSelectedDate ? "completedTableRow" : ""}`}
                 >
                   <div className="tableCell checkboxCell">
                     <label className="habitCheckbox">
                       <input
                         type="checkbox"
-                        checked={Boolean(isCompletedToday)}
+                        checked={Boolean(isCompletedSelectedDate)}
                         disabled={isHabitUpdating}
-                        onChange={() => onToggleToday(habit, !isCompletedToday)}
+                        onChange={() => onToggleDate(habit, !isCompletedSelectedDate)}
                       />
                       <span className="habitCheckboxVisual"></span>
                     </label>
                   </div>
 
                   <div className="tableCell">
-                    <strong className={isCompletedToday ? "completedText" : ""}>
+                    <strong className={isCompletedSelectedDate ? "completedText" : ""}>
                       {habit.titulo}
                     </strong>
                   </div>
 
                   <div className="tableCell">
-                    <span className={isCompletedToday ? "completedText" : ""}>
+                    <span className={isCompletedSelectedDate ? "completedText" : ""}>
                       {habit.description || "—"}
                     </span>
                   </div>
