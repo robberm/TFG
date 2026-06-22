@@ -45,8 +45,18 @@ const GoalModal = ({
 
     if (initialData) {
       const numericGoal = isGoalNumeric(initialData);
-
+      const assignedUserIds = Array.isArray(initialData.assignedToUserIds)
+        ? initialData.assignedToUserIds
+            .filter((id) => id != null)
+            .map((id) => String(id))
+        : [];
       const assignedUserId = initialData.assignedToUserId ?? defaultManagedUserId ?? "";
+      const assignmentMode = assignedUserIds.length > 1 ? "multiple" : "single";
+      const targetUserIds = assignedUserIds.length > 0
+        ? assignedUserIds
+        : assignedUserId !== ""
+          ? [String(assignedUserId)]
+          : [];
 
       setForm({
         titulo: initialData.titulo || "",
@@ -61,9 +71,9 @@ const GoalModal = ({
           ? toInputNumberValue(initialData.valorObjetivo)
           : "",
         active: initialData.active ?? true,
-        targetUserId: assignedUserId,
-        targetUserIds: assignedUserId !== "" ? [String(assignedUserId)] : [],
-        assignmentMode: "single",
+        targetUserId: assignmentMode === "single" ? assignedUserId : "",
+        targetUserIds,
+        assignmentMode,
       });
       return;
     }

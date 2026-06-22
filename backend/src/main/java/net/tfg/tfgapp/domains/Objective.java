@@ -140,6 +140,33 @@ public abstract class Objective {
         return assignedUser != null ? assignedUser.getId() : null;
     }
 
+    @JsonProperty("assignedToUsernames")
+    public List<String> getAssignedToUsernames() {
+        List<String> usernames = new ArrayList<>();
+        for (ObjectiveAssignment assignment : assignments) {
+            if (assignment.getPersonalUser() != null && assignment.getPersonalUser().getUsername() != null) {
+                usernames.add(assignment.getPersonalUser().getUsername());
+            }
+        }
+        return usernames;
+    }
+
+    @JsonProperty("assignedToUserIds")
+    public List<Long> getAssignedToUserIds() {
+        List<Long> userIds = new ArrayList<>();
+        for (ObjectiveAssignment assignment : assignments) {
+            if (assignment.getPersonalUser() != null && assignment.getPersonalUser().getId() != null) {
+                userIds.add(assignment.getPersonalUser().getId());
+            }
+        }
+        return userIds;
+    }
+
+    @JsonProperty("assignmentCount")
+    public int getAssignmentCount() {
+        return assignments.size();
+    }
+
     @PrePersist
     public void onCreate() {
         this.audTim = LocalDateTime.now();
