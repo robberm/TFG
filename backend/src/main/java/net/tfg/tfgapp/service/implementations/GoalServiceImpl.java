@@ -2,6 +2,7 @@ package net.tfg.tfgapp.service.implementations;
 
 import net.tfg.tfgapp.DTOs.objectives.GoalProgressRequest;
 import net.tfg.tfgapp.DTOs.objectives.GoalRequest;
+import net.tfg.tfgapp.domains.AdminUser;
 import net.tfg.tfgapp.domains.Goal;
 import net.tfg.tfgapp.domains.ObjectiveAssignment;
 import net.tfg.tfgapp.domains.ObjectiveLog;
@@ -59,9 +60,44 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
     }
 
     @Override
+    public Goal createAssignedGoal(GoalRequest request, List<PersonalUser> targets, AdminUser admin) {
+        if (targets == null || targets.isEmpty()) {
+            throw new IllegalArgumentException("Debes seleccionar al menos un usuario.");
+        }
+
+        Goal goal = new Goal();
+        applyGoalDetails(goal, request);
+        goal.setUser(targets.get(0));
+        goal.setAudAdmin(admin);
+
+        for (PersonalUser target : targets) {
+            goal.addAssignment(target, admin);
+        }
+
+        Goal savedGoal = goalRepo.save(goal);
+        createInitialLogsForNumericGoal(savedGoal);
+        return savedGoal;
+    }
+
+    @Override
     public Goal updateGoal(Goal existingGoal, GoalRequest request) {
         applyGoalDetails(existingGoal, request);
         return goalRepo.save(existingGoal);
+    }
+
+    private void createInitialLogsForNumericGoal(Goal goal) {
+        if (!goal.isNumeric()) {
+            return;
+        }
+
+        for (ObjectiveAssignment assignment : goal.getAssignments()) {
+            ObjectiveLog initialLog = new ObjectiveLog();
+            initialLog.setObjective(goal);
+            initialLog.setObjectiveAssignment(assignment);
+            initialLog.setLogDate(LocalDate.now());
+            initialLog.setProgressValue(assignment.getProgressValue());
+            objectiveLogRepo.save(initialLog);
+        }
     }
 
     @Override

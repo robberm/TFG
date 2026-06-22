@@ -58,7 +58,7 @@ public class ObjectiveAssignment {
     @Column(nullable = true)
     private Double targetValue;
 
-    @Column(name = "aud_tim", updatable = false)
+    @Column(name = "aud_tim", nullable = false, updatable = false)
     private LocalDateTime audTim;
 
     @JsonIgnore

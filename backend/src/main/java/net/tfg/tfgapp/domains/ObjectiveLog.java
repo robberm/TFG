@@ -42,7 +42,7 @@ public class ObjectiveLog {
     @Column(nullable = true)
     private Double progressValue;
 
-    @Column(name = "aud_tim", updatable = false)
+    @Column(name = "aud_tim", nullable = false, updatable = false)
     private LocalDateTime audTim;
 
     @JsonIgnore

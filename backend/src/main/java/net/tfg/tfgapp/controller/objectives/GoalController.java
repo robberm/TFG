@@ -92,15 +92,11 @@ public class GoalController {
         User currentUser = getCurrentUser(token, language);
 
         List<PersonalUser> targets = resolveTargetUsers(currentUser, request);
-        Goal createdGoal = goalService.createGoal(request, targets.get(0));
+        Goal createdGoal;
         if (currentUser.isAdmin()) {
-            createdGoal.setAudAdmin((AdminUser) currentUser);
-            createdGoal.getAssignments().clear();
-            AdminUser assigningAdmin = (AdminUser) currentUser;
-            for (PersonalUser target : targets) {
-                createdGoal.addAssignment(target, assigningAdmin);
-            }
-            createdGoal = goalService.updateGoal(createdGoal, request);
+            createdGoal = goalService.createAssignedGoal(request, targets, (AdminUser) currentUser);
+        } else {
+            createdGoal = goalService.createGoal(request, targets.get(0));
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(List.of(createdGoal));
     }

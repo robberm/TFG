@@ -115,6 +115,25 @@
   font-weight: 500;
 }
 
+body.light .gcal-modal .custom-select-dropdown {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.16);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.16);
+}
+
+body.light .gcal-modal .custom-select-option {
+  color: #1f2937 !important;
+}
+
+body.light .gcal-modal .custom-select-option:hover {
+  background: rgba(102, 126, 234, 0.10);
+}
+
+body.light .gcal-modal .custom-select-option.selected {
+  background: rgba(102, 126, 234, 0.18);
+  color: #334155 !important;
+}
+
 @keyframes slideDown {
   from {
     opacity: 0;

@@ -33,7 +33,7 @@ public abstract class Objective {
     @Column(nullable = false)
     private Boolean active = true;
 
-    @Column(name = "aud_tim", updatable = false)
+    @Column(name = "aud_tim", nullable = false, updatable = false)
     private LocalDateTime audTim;
 
     @JsonIgnore
