@@ -52,3 +52,18 @@ select.admin-assignment-input { cursor: pointer; appearance: none; padding-right
   animation: gcal-slide-up 0.15s ease-out;
   transform-origin: top;
 }
+
+body.light .gcal-modal .admin-assignment-input,
+body.light .gcal-modal .admin-assignment-results {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.16);
+  color: #1f2937 !important;
+}
+
+body.light .gcal-modal .admin-assignment-input::placeholder {
+  color: rgba(31, 41, 55, 0.55) !important;
+}
+
+body.light .gcal-modal .admin-assignment-result {
+  color: #1f2937 !important;
+}

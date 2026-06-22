@@ -16,15 +16,15 @@ const AdminGoalsStats = ({ goals, t }) => {
     const total = goals.length;
     const completed = goals.filter((goal) => goal.status === "Done").length;
     const inProgress = goals.filter((goal) => goal.status === "InProgress").length;
-    const active = goals.filter(
-      (goal) => goal.active !== false && goal.status !== "Done",
+    const notStarted = goals.filter(
+      (goal) => (goal.status || "NotStarted") === "NotStarted",
     ).length;
 
     return {
       total,
       completed,
       inProgress,
-      active,
+      notStarted,
       progress: calculateGlobalGoalsProgress(goals),
     };
   }, [goals]);
@@ -38,8 +38,8 @@ const AdminGoalsStats = ({ goals, t }) => {
           <strong>{metrics.total}</strong>
         </article>
         <article className="adminGoalsMetricCard">
-          <span>{t.homeActive}</span>
-          <strong>{metrics.active}</strong>
+          <span>{t.goalStatusNotStarted}</span>
+          <strong>{metrics.notStarted}</strong>
         </article>
         <article className="adminGoalsMetricCard">
           <span>{t.homeInProgress}</span>

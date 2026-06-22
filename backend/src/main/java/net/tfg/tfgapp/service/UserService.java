@@ -9,6 +9,7 @@ import net.tfg.tfgapp.service.interfaces.IUserService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 @Service
@@ -56,16 +57,17 @@ public class UserService implements IUserService {
 
     @Override
     public List<User> getManagedUsers(Long adminId) {
-        return personalUserRepo.findByCreatedByAdmin_Id(adminId).stream()
-                .map(user -> (User) user)
-                .toList();
+        List<User> managedUsers = new java.util.ArrayList<>();
+        for (PersonalUser personalUser : personalUserRepo.findByAudAdmin_Id(adminId)) {
+            managedUsers.add(personalUser);
+        }
+        return managedUsers;
     }
 
     @Override
     public User getManagedUser(Long adminId, Long userId) {
-        return personalUserRepo.findByIdAndCreatedByAdmin_Id(userId, adminId)
-                .map(user -> (User) user)
-                .orElse(null);
+        Optional<PersonalUser> managedUser = personalUserRepo.findByIdAndAudAdmin_Id(userId, adminId);
+        return managedUser.isPresent() ? managedUser.get() : null;
     }
 
 
@@ -76,9 +78,11 @@ public class UserService implements IUserService {
         }
 
         if (adminUser.getAdministeredOrganization() != null) {
-            return personalUserRepo.findByOrganization_Id(adminUser.getAdministeredOrganization().getId()).stream()
-                    .map(user -> (User) user)
-                    .toList();
+            List<User> organizationUsers = new java.util.ArrayList<>();
+            for (PersonalUser personalUser : personalUserRepo.findByOrganization_Id(adminUser.getAdministeredOrganization().getId())) {
+                organizationUsers.add(personalUser);
+            }
+            return organizationUsers;
         }
 
         return getManagedUsers(admin.getId());

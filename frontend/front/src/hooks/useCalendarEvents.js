@@ -15,12 +15,15 @@ import {
   saveCalendarEvent,
   deleteCalendarEvent,
 } from "../api/eventApi";
+import { getApiErrorMessage } from "../api/apiClient";
 import { getCurrentUserProfile } from "../api/userApi";
 import { getManagedUsers } from "../api/adminApi";
 import { useLanguage } from "../context/languageContext";
+import { useError } from "../components/ErrorContext";
 
 const useCalendarEvents = () => {
   const { language } = useLanguage();
+  const { setErrorMessage } = useError();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState([]);
@@ -216,9 +219,10 @@ const useCalendarEvents = () => {
         await fetchEvents();
       } catch (error) {
         console.error("Error saving event:", error);
+        setErrorMessage(getApiErrorMessage(error));
       }
     },
-    [fetchEvents],
+    [fetchEvents, setErrorMessage],
   );
 
   const handleDeleteEvent = useCallback(
@@ -231,9 +235,10 @@ const useCalendarEvents = () => {
         await fetchEvents();
       } catch (error) {
         console.error("Error deleting event:", error);
+        setErrorMessage(getApiErrorMessage(error));
       }
     },
-    [fetchEvents],
+    [fetchEvents, setErrorMessage],
   );
 
  const handleDayTimeSlotClick = useCallback(

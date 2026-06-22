@@ -1436,3 +1436,32 @@ body.dark .tableRow:hover {
   font-size: 11px;
   opacity: 0.75;
 }
+
+.weeklyBarItem {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+}
+
+.weeklyBarItem:not(:disabled):hover .weeklyBarTrack,
+.selectedWeeklyBarItem .weeklyBarTrack {
+  outline: 1px solid color-mix(in srgb, var(--text-main) 18%, transparent);
+  outline-offset: 2px;
+}
+
+.selectedWeeklyBarItem .weeklyBarTrack {
+  opacity: 0.88;
+}
+
+.selectedWeeklyBarItem .weeklyBarLabel,
+.selectedWeeklyBarItem .weeklyBarValue {
+  color: color-mix(in srgb, var(--text-main) 82%, transparent);
+  font-weight: 600;
+}
+
+.weeklyBarItem:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}

@@ -13,59 +13,35 @@ import java.util.List;
 public interface EventRepo extends JpaRepository<Event, Long> {
 
     @Query("SELECT e FROM Event e WHERE e.startTime >= :start AND e.endTime <= :end")
-    List<Event> findEventsBetween(@Param("start") LocalDateTime start,
-                                  @Param("end") LocalDateTime end);
+    List<Event> findEventsBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     @Query("""
-            SELECT e
-            FROM Event e
-            WHERE e.user.username = :username
-              AND e.startTime < :end
-              AND e.endTime > :start
+            SELECT DISTINCT e FROM Event e JOIN e.assignments a
+            WHERE a.personalUser.username = :username
+              AND e.startTime < :end AND e.endTime > :start
             """)
-    List<Event> findEventsByUserAndDateRange(@Param("username") String username,
-                                             @Param("start") LocalDateTime start,
-                                             @Param("end") LocalDateTime end);
+    List<Event> findEventsByUserAndDateRange(@Param("username") String username, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    @Query("SELECT e FROM Event e WHERE e.user.username = :username")
+    @Query("""
+            SELECT DISTINCT e FROM Event e JOIN e.assignments a
+            WHERE a.personalUser.username = :username
+            """)
     List<Event> findEventsByUser(@Param("username") String username);
 
     @Query("""
-            SELECT e
-            FROM Event e
-            WHERE e.assignedByAdmin.id = :adminId
-              AND e.user.id = :userId
-              AND e.startTime < :end
-              AND e.endTime > :start
+            SELECT DISTINCT e FROM Event e JOIN e.assignments a
+            WHERE a.audAdmin.id = :adminId AND a.personalUser.id = :userId AND e.startTime < :end AND e.endTime > :start
             """)
-    List<Event> findAssignedEventsForAdminAndUserInRange(@Param("adminId") Long adminId,
-                                                          @Param("userId") Long userId,
-                                                          @Param("start") LocalDateTime start,
-                                                          @Param("end") LocalDateTime end);
+    List<Event> findAssignedEventsForAdminAndUserInRange(@Param("adminId") Long adminId, @Param("userId") Long userId, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     @Query("""
-            SELECT e
-            FROM Event e
-            WHERE e.assignedByAdmin.id = :adminId
-              AND e.startTime < :end
-              AND e.endTime > :start
+            SELECT DISTINCT e FROM Event e JOIN e.assignments a
+            WHERE a.audAdmin.id = :adminId AND e.startTime < :end AND e.endTime > :start
             """)
-    List<Event> findAssignedEventsForAdminInRange(@Param("adminId") Long adminId,
-                                                   @Param("start") LocalDateTime start,
-                                                   @Param("end") LocalDateTime end);
+    List<Event> findAssignedEventsForAdminInRange(@Param("adminId") Long adminId, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    @Query("SELECT e FROM Event e WHERE e.assignedByAdmin.id = :adminId AND e.user.id = :userId")
-    List<Event> findAssignedEventsForAdminAndUser(@Param("adminId") Long adminId,
-                                                   @Param("userId") Long userId);
-
-    @Query("""
-            SELECT e
-            FROM Event e
-            WHERE e.assignedByAdmin.id = :adminId
-              AND e.assignmentBatchId = :assignmentBatchId
-            """)
-    List<Event> findByAssignedByAdmin_IdAndAssignmentBatchId(@Param("adminId") Long adminId,
-                                                              @Param("assignmentBatchId") String assignmentBatchId);
+    @Query("SELECT DISTINCT e FROM Event e JOIN e.assignments a WHERE a.audAdmin.id = :adminId AND a.personalUser.id = :userId")
+    List<Event> findAssignedEventsForAdminAndUser(@Param("adminId") Long adminId, @Param("userId") Long userId);
 
     @Query("SELECT e FROM Event e WHERE FUNCTION('DATE', e.startTime) = FUNCTION('DATE', :date)")
     List<Event> findByStartDate(@Param("date") LocalDateTime date);
@@ -73,22 +49,17 @@ public interface EventRepo extends JpaRepository<Event, Long> {
     List<Event> findByStartTimeGreaterThanEqual(LocalDateTime now);
 
     @Query("""
-            SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END
-            FROM Event e
+            SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM Event e JOIN e.assignments a
             WHERE e.category = :category
               AND e.startTime <= :now
               AND e.endTime >= :now
-              AND e.user.id = :userId
+              AND a.personalUser.id = :userId
             """)
-    boolean existsActiveEventOfCategory(@Param("category") Event.EventCategory category,
-                                        @Param("now") LocalDateTime now,
-                                        @Param("userId") Long userId);
+    boolean existsActiveEventOfCategory(@Param("category") Event.EventCategory category, @Param("now") LocalDateTime now, @Param("userId") Long userId);
 
     @Query("""
-        SELECT e
-        FROM Event e
-        WHERE (e.reminderMinutesBefore IS NOT NULL OR SIZE(e.reminderMinutesBeforeList) > 0)
-          AND e.endTime > :now
+        SELECT e FROM Event e
+        WHERE SIZE(e.reminderMinutesBeforeList) > 0 AND e.endTime > :now
         ORDER BY e.startTime ASC
         """)
     List<Event> findPendingReminders(@Param("now") LocalDateTime now);

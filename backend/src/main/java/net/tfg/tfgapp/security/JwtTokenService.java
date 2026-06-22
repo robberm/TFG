@@ -22,6 +22,16 @@ public class JwtTokenService implements TokenService {
     }
 
     @Override
+    public String extractBearerToken(String authorizationHeader) {
+        return jwtUtil.extractBearerToken(authorizationHeader);
+    }
+
+    @Override
+    public String extractUsernameFromAuthorizationHeader(String authorizationHeader) {
+        return jwtUtil.extractUsernameFromAuthorizationHeader(authorizationHeader);
+    }
+
+    @Override
     public Integer extractTokenVersion(String token) {
         return jwtUtil.extractTokenVersion(token);
     }

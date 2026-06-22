@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -205,14 +204,32 @@ public class HeuristicInstalledApplicationExecutableResolver implements Installe
         }
 
         try (Stream<Path> pathStream = Files.walk(installDir.toPath(), 2)) {
-            return pathStream
-                    .filter(Files::isRegularFile)
-                    .map(Path::toFile)
-                    .filter(file -> file.getName().toLowerCase().endsWith(".exe"))
-                    .filter(file -> !isExcludedExecutable(file.getName()))
-                    .max(Comparator.comparingInt(file -> scoreExecutableCandidate(file, displayName, installDir)))
-                    .map(File::getAbsolutePath)
-                    .orElse(null);
+            File bestCandidate = null;
+            int bestScore = Integer.MIN_VALUE;
+
+            java.util.Iterator<Path> candidates = pathStream.iterator();
+            while (candidates.hasNext()) {
+                Path candidatePath = candidates.next();
+                if (!Files.isRegularFile(candidatePath)) {
+                    continue;
+                }
+
+                File candidateFile = candidatePath.toFile();
+                if (!candidateFile.getName().toLowerCase().endsWith(".exe")) {
+                    continue;
+                }
+                if (isExcludedExecutable(candidateFile.getName())) {
+                    continue;
+                }
+
+                int candidateScore = scoreExecutableCandidate(candidateFile, displayName, installDir);
+                if (candidateScore > bestScore) {
+                    bestScore = candidateScore;
+                    bestCandidate = candidateFile;
+                }
+            }
+
+            return bestCandidate != null ? bestCandidate.getAbsolutePath() : null;
         } catch (Exception e) {
             return null;
         }

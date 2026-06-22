@@ -4,6 +4,7 @@ import net.tfg.tfgapp.DTOs.objectives.GoalProgressRequest;
 import net.tfg.tfgapp.DTOs.objectives.GoalRequest;
 import net.tfg.tfgapp.domains.Goal;
 import net.tfg.tfgapp.domains.AdminUser;
+import net.tfg.tfgapp.domains.ObjectiveAssignment;
 import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.exception.ApiException;
@@ -13,9 +14,22 @@ import net.tfg.tfgapp.service.interfaces.IGoalService;
 import net.tfg.tfgapp.service.interfaces.IUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/goals")
@@ -34,37 +48,37 @@ public class GoalController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getMyGoals(@RequestHeader("Authorization") String token,
+    public ResponseEntity<List<Goal>> getMyGoals(@RequestHeader("Authorization") String token,
                                         @RequestHeader(value = "Accept-Language", required = false) String language,
                                         @RequestParam(required = false) Long targetUserId) {
-        User actor = getActor(token, language);
+        User currentUser = getCurrentUser(token, language);
 
-        if (actor.isAdmin()) {
+        if (currentUser.isAdmin()) {
             if (targetUserId != null) {
                 User managedUser = userService.getUserById(targetUserId);
-                if (!canAccessManagedUser(actor, managedUser)) {
+                if (!canAccessManagedUser(currentUser, managedUser)) {
                     throw new SecurityException("No tienes permiso sobre ese usuario.");
                 }
-                return ResponseEntity.ok(goalService.getAssignedGoalsForAdminAndUser(actor.getId(), managedUser.getId()));
+                return ResponseEntity.ok(goalService.getAssignedGoalsForAdminAndUser(currentUser.getId(), managedUser.getId()));
             }
-            return ResponseEntity.ok(goalService.getAssignedGoalsForAdmin(actor.getId()));
+            return ResponseEntity.ok(goalService.getAssignedGoalsForAdmin(currentUser.getId()));
         }
 
-        return ResponseEntity.ok(goalService.getByUsername(actor.getUsername()));
+        return ResponseEntity.ok(goalService.getByUsername(currentUser.getUsername()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getGoalById(@RequestHeader("Authorization") String token,
+    public ResponseEntity<Goal> getGoalById(@RequestHeader("Authorization") String token,
                                        @RequestHeader(value = "Accept-Language", required = false) String language,
                                        @PathVariable Integer id) {
-        User actor = getActor(token, language);
+        User currentUser = getCurrentUser(token, language);
         Goal goal = goalService.findById(id);
 
         if (goal == null) {
             throw new ApiException(HttpStatus.NOT_FOUND, languageResolver.text(language, "goal.notFound"));
         }
 
-        if (!canAccessGoal(actor, goal)) {
+        if (!canAccessGoal(currentUser, goal)) {
             throw new SecurityException(languageResolver.text(language, "goal.noAccess"));
         }
 
@@ -72,47 +86,38 @@ public class GoalController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createGoal(@RequestHeader("Authorization") String token,
+    public ResponseEntity<List<Goal>> createGoal(@RequestHeader("Authorization") String token,
                                         @RequestHeader(value = "Accept-Language", required = false) String language,
                                         @RequestBody GoalRequest request) {
-        User actor = getActor(token, language);
+        User currentUser = getCurrentUser(token, language);
 
-        List<PersonalUser> targets = resolveTargetUsers(actor, request);
-        String assignmentBatchId = actor.isAdmin() && targets.size() > 1
-                ? UUID.randomUUID().toString()
-                : null;
-        List<Goal> createdGoals = new ArrayList<>();
-
-        for (PersonalUser target : targets) {
-            Goal createdGoal = goalService.createGoal(request, target);
-            if (actor.isAdmin()) {
-                createdGoal.setAssignedByAdmin((AdminUser) actor);
-                createdGoal.setAssignmentBatchId(assignmentBatchId);
-                createdGoal = goalService.updateGoal(createdGoal, request);
-            }
-            createdGoals.add(createdGoal);
+        List<PersonalUser> targets = resolveTargetUsers(currentUser, request);
+        Goal createdGoal;
+        if (currentUser.isAdmin()) {
+            createdGoal = goalService.createAssignedGoal(request, targets, (AdminUser) currentUser);
+        } else {
+            createdGoal = goalService.createGoal(request, targets.get(0));
         }
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdGoals);
+        return ResponseEntity.status(HttpStatus.CREATED).body(List.of(createdGoal));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateGoal(@RequestHeader("Authorization") String token,
+    public ResponseEntity<Goal> updateGoal(@RequestHeader("Authorization") String token,
                                         @RequestHeader(value = "Accept-Language", required = false) String language,
                                         @PathVariable Integer id,
                                         @RequestBody GoalRequest request) {
-        User actor = getActor(token, language);
+        User currentUser = getCurrentUser(token, language);
         Goal existingGoal = goalService.findById(id);
 
         if (existingGoal == null) {
             throw new ApiException(HttpStatus.NOT_FOUND, languageResolver.text(language, "goal.notFound"));
         }
 
-        if (!canAccessGoal(actor, existingGoal)) {
+        if (!canAccessGoal(currentUser, existingGoal)) {
             throw new SecurityException(languageResolver.text(language, "goal.noAccess"));
         }
 
-        if (!actor.isAdmin() && existingGoal.isAssignedByAdmin()) {
+        if (!currentUser.isAdmin() && existingGoal.isAssignedByAdmin()) {
             GoalRequest restrictedRequest = new GoalRequest();
             restrictedRequest.setTitulo(existingGoal.getTitulo());
             restrictedRequest.setDescription(existingGoal.getDescription());
@@ -130,75 +135,36 @@ public class GoalController {
             return ResponseEntity.ok(goalService.updateGoal(existingGoal, restrictedRequest));
         }
 
-        if (actor.isAdmin() && existingGoal.getAssignedByAdmin() != null) {
-            List<PersonalUser> targets = resolveTargetUsers(actor, request);
+        if (currentUser.isAdmin() && existingGoal.getEffectiveAssignedByAdmin() != null) {
+            List<PersonalUser> targets = resolveTargetUsers(currentUser, request);
             if (targets.isEmpty()) {
                 throw new IllegalArgumentException("Debes seleccionar al menos un usuario.");
             }
 
-            String existingBatchId = existingGoal.getAssignmentBatchId();
-            List<Goal> currentBatchGoals;
-
-            if (existingBatchId != null && !existingBatchId.isBlank()) {
-                currentBatchGoals = goalService.getAssignedGoalsByBatch(actor.getId(), existingBatchId);
-            } else {
-                currentBatchGoals = new ArrayList<>();
-                currentBatchGoals.add(existingGoal);
-            }
-
-            Map<Long, Goal> currentByUserId = new HashMap<>();
-            currentBatchGoals.forEach(goal -> currentByUserId.put(goal.getUser().getId(), goal));
-
-            Set<Long> targetIds = new HashSet<>();
-            targets.forEach(user -> targetIds.add(user.getId()));
-
-            String targetBatchId = targets.size() > 1
-                    ? (existingBatchId != null && !existingBatchId.isBlank() ? existingBatchId : UUID.randomUUID().toString())
-                    : null;
-
-            Goal representative = null;
-
+            existingGoal.getAssignments().clear();
+            AdminUser assigningAdmin = (AdminUser) currentUser;
             for (PersonalUser target : targets) {
-                Goal goalForTarget = currentByUserId.get(target.getId());
-
-                if (goalForTarget == null) {
-                    goalForTarget = goalService.createGoal(request, target);
-                    goalForTarget.setAssignedByAdmin((AdminUser) actor);
-                }
-
-                goalForTarget.setAssignmentBatchId(targetBatchId);
-                Goal saved = goalService.updateGoal(goalForTarget, request);
-
-                if (representative == null) {
-                    representative = saved;
-                }
+                existingGoal.addAssignment(target, assigningAdmin);
             }
-
-            for (Goal goal : currentBatchGoals) {
-                if (!targetIds.contains(goal.getUser().getId())) {
-                    goalService.deleteById(goal.getId());
-                }
-            }
-
-            return ResponseEntity.ok(representative);
+            return ResponseEntity.ok(goalService.updateGoal(existingGoal, request));
         }
 
         return ResponseEntity.ok(goalService.updateGoal(existingGoal, request));
     }
 
     @PatchMapping("/{id}/progress")
-    public ResponseEntity<?> updateGoalProgress(@RequestHeader("Authorization") String token,
+    public ResponseEntity<Goal> updateGoalProgress(@RequestHeader("Authorization") String token,
                                                 @RequestHeader(value = "Accept-Language", required = false) String language,
                                                 @PathVariable Integer id,
                                                 @RequestBody GoalProgressRequest request) {
-        User actor = getActor(token, language);
+        User currentUser = getCurrentUser(token, language);
         Goal goal = goalService.findById(id);
 
         if (goal == null) {
             throw new ApiException(HttpStatus.NOT_FOUND, languageResolver.text(language, "goal.notFound"));
         }
 
-        if (!canAccessGoal(actor, goal)) {
+        if (!canAccessGoal(currentUser, goal)) {
             throw new SecurityException(languageResolver.text(language, "goal.noAccess"));
         }
 
@@ -206,21 +172,21 @@ public class GoalController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteGoal(@RequestHeader("Authorization") String token,
+    public ResponseEntity<String> deleteGoal(@RequestHeader("Authorization") String token,
                                         @RequestHeader(value = "Accept-Language", required = false) String language,
                                         @PathVariable Integer id) {
-        User actor = getActor(token, language);
+        User currentUser = getCurrentUser(token, language);
         Goal goal = goalService.findById(id);
 
         if (goal == null) {
             throw new ApiException(HttpStatus.NOT_FOUND, languageResolver.text(language, "goal.notFound"));
         }
 
-        if (!canAccessGoal(actor, goal)) {
+        if (!canAccessGoal(currentUser, goal)) {
             throw new SecurityException(languageResolver.text(language, "goal.noAccess"));
         }
 
-        if (!actor.isAdmin() && goal.isAssignedByAdmin()) {
+        if (!currentUser.isAdmin() && goal.isAssignedByAdmin()) {
             throw new SecurityException("No puedes eliminar objetivos asignados por administrador.");
         }
 
@@ -228,25 +194,27 @@ public class GoalController {
         return ResponseEntity.ok(languageResolver.text(language, "goal.deleted"));
     }
 
-    private User getActor(String token, String language) {
-        String username = jwtUtil.extractUsername(token.replace("Bearer ", "").trim());
-        User actor = userService.getUserByUsername(username);
-        if (actor == null) {
+    private User getCurrentUser(String token, String language) {
+        String username = jwtUtil.extractUsernameFromAuthorizationHeader(token);
+        User currentUser = userService.getUserByUsername(username);
+        if (currentUser == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, languageResolver.text(language, "user.notFound"));
         }
-        return actor;
+        return currentUser;
     }
 
-    private List<PersonalUser> resolveTargetUsers(User actor, GoalRequest request) {
-        if (!actor.isAdmin()) {
-            return actor instanceof PersonalUser personalActor ? List.of(personalActor) : List.of();
+    private List<PersonalUser> resolveTargetUsers(User currentUser, GoalRequest request) {
+        if (!currentUser.isAdmin()) {
+            return currentUser instanceof PersonalUser personalUser ? List.of(personalUser) : List.of();
         }
 
         if (Boolean.TRUE.equals(request.getAssignToAllUsers())) {
-            List<PersonalUser> users = userService.getUsersInAdminScope(actor).stream()
-                    .filter(PersonalUser.class::isInstance)
-                    .map(PersonalUser.class::cast)
-                    .toList();
+            List<PersonalUser> users = new ArrayList<>();
+            for (User user : userService.getUsersInAdminScope(currentUser)) {
+                if (user instanceof PersonalUser personalUser) {
+                    users.add(personalUser);
+                }
+            }
             if (users.isEmpty()) {
                 throw new SecurityException("No hay usuarios subordinados para asignar.");
             }
@@ -254,22 +222,28 @@ public class GoalController {
         }
 
         if (request.getTargetUserIds() != null && !request.getTargetUserIds().isEmpty()) {
-            return request.getTargetUserIds().stream()
-                    .map(userService::getUserById)
-                    .filter(PersonalUser.class::isInstance)
-                    .map(PersonalUser.class::cast)
-                    .peek(user -> {
-                        if (!canAccessManagedUser(actor, user)) {
-                            throw new SecurityException("No tienes permiso para operar sobre uno de los usuarios seleccionados.");
-                        }
-                    })
-                    .distinct()
-                    .toList();
+            List<PersonalUser> targets = new ArrayList<>();
+            Set<Long> targetIds = new HashSet<>();
+
+            for (Long targetUserId : request.getTargetUserIds()) {
+                User user = userService.getUserById(targetUserId);
+                if (!(user instanceof PersonalUser personalUser)) {
+                    continue;
+                }
+                if (!canAccessManagedUser(currentUser, personalUser)) {
+                    throw new SecurityException("No tienes permiso para operar sobre uno de los usuarios seleccionados.");
+                }
+                if (targetIds.add(personalUser.getId())) {
+                    targets.add(personalUser);
+                }
+            }
+
+            return targets;
         }
 
         if (request.getTargetUserId() != null) {
             User managedUser = userService.getUserById(request.getTargetUserId());
-            if (!canAccessManagedUser(actor, managedUser)) {
+            if (!canAccessManagedUser(currentUser, managedUser)) {
                 throw new SecurityException("No tienes permiso para operar sobre ese usuario.");
             }
             return managedUser instanceof PersonalUser personalUser ? List.of(personalUser) : List.of();
@@ -278,23 +252,39 @@ public class GoalController {
         throw new SecurityException("Debes seleccionar al menos un usuario.");
     }
 
-    private boolean canAccessManagedUser(User actor, User target) {
-        if (actor == null || !actor.isAdmin() || target == null) {
+    private boolean canAccessManagedUser(User currentUser, User target) {
+        if (currentUser == null || !currentUser.isAdmin() || target == null) {
             return false;
         }
 
-        return userService.getUsersInAdminScope(actor).stream()
-                .anyMatch(user -> user.getId().equals(target.getId()));
-    }
-
-    private boolean canAccessGoal(User actor, Goal goal) {
-        if (goal.getUser().getId().equals(actor.getId())) {
-            return true;
+        for (User managedUser : userService.getUsersInAdminScope(currentUser)) {
+            if (managedUser.getId().equals(target.getId())) {
+                return true;
+            }
         }
 
-        return actor.isAdmin()
-                && goal.getAssignedByAdmin() != null
-                && goal.getAssignedByAdmin().getId().equals(actor.getId())
-                && canAccessManagedUser(actor, goal.getUser());
+        return false;
+    }
+
+    private boolean canAccessGoal(User currentUser, Goal goal) {
+        for (ObjectiveAssignment assignment : goal.getAssignments()) {
+            if (assignment.getPersonalUser().getId().equals(currentUser.getId())) {
+                return true;
+            }
+        }
+
+        if (!currentUser.isAdmin()) {
+            return false;
+        }
+
+        for (ObjectiveAssignment assignment : goal.getAssignments()) {
+            if (assignment.getAudAdmin() != null
+                    && assignment.getAudAdmin().getId().equals(currentUser.getId())
+                    && canAccessManagedUser(currentUser, assignment.getPersonalUser())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

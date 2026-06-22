@@ -8,5 +8,4 @@ import lombok.Setter;
 public class GoalProgressRequest {
 
     private Double valorProgreso;
-    private String notes;
 }

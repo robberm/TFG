@@ -6,6 +6,10 @@ public interface TokenService {
 
     String extractUsername(String token);
 
+    String extractBearerToken(String authorizationHeader);
+
+    String extractUsernameFromAuthorizationHeader(String authorizationHeader);
+
     Integer extractTokenVersion(String token);
 
     boolean validateToken(String token);

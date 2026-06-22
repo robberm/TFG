@@ -195,7 +195,7 @@ const EventModal = ({
     assignmentMode: "single",
   });
   const [reminderMinutesBeforeList, setReminderMinutesBeforeList] = useState([]);
-  const [customReminderMinutes, setCustomReminderMinutes] = useState("");
+  const [customReminderHours, setCustomReminderHours] = useState("");
   const [categories, setCategories] = useState([]);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const titleInputRef = useRef(null);
@@ -240,15 +240,12 @@ const EventModal = ({
         targetUserIds: assignedUserIds,
         assignmentMode: inferredAssignmentMode,
       });
-      const hydratedReminders =
-        Array.isArray(event.reminderMinutesBeforeList) &&
-        event.reminderMinutesBeforeList.length > 0
-          ? event.reminderMinutesBeforeList
-          : event.reminderMinutesBefore != null
-            ? [event.reminderMinutesBefore]
-            : [];
-      setReminderMinutesBeforeList(normalizeReminderList(hydratedReminders));
-      setCustomReminderMinutes("");
+      setReminderMinutesBeforeList(
+        Array.isArray(event.reminderMinutesBeforeList)
+          ? normalizeReminderList(event.reminderMinutesBeforeList)
+          : [],
+      );
+      setCustomReminderHours("");
       setShowMoreOptions(true);
     } else if (selectedDate) {
       const startDateTime = new Date(selectedDate);
@@ -272,7 +269,7 @@ const EventModal = ({
         assignmentMode: "single",
       });
       setReminderMinutesBeforeList([]);
-      setCustomReminderMinutes("");
+      setCustomReminderHours("");
       setShowMoreOptions(false);
     }
 
@@ -329,8 +326,8 @@ const EventModal = ({
       return;
     }
 
-    setReminderMinutesBeforeList((prev) =>
-      normalizeReminderList([...prev, value]),
+    setReminderMinutesBeforeList((previousReminders) =>
+      normalizeReminderList([...previousReminders, value]),
     );
   };
 
@@ -339,20 +336,20 @@ const EventModal = ({
       return;
     }
 
-    setReminderMinutesBeforeList((prev) =>
-      prev.filter((value) => value !== valueToRemove),
+    setReminderMinutesBeforeList((previousReminders) =>
+      previousReminders.filter((value) => value !== valueToRemove),
     );
   };
 
   const handleCustomReminderAdd = () => {
-    const parsed = Number(customReminderMinutes);
+    const parsedHours = Number(customReminderHours);
 
-    if (!Number.isInteger(parsed) || parsed < 0) {
+    if (!Number.isFinite(parsedHours) || parsedHours <= 0) {
       return;
     }
 
-    addReminderMinutes(parsed);
-    setCustomReminderMinutes("");
+    addReminderMinutes(Math.round(parsedHours * 60));
+    setCustomReminderHours("");
   };
 
   const handleSubmit = (e) => {
@@ -375,7 +372,6 @@ const EventModal = ({
       category: formData.category,
       isAllDay: formData.isAllDay,
       reminderMinutesBeforeList,
-      reminderMinutesBefore: reminderMinutesBeforeList[0] ?? null,
       targetUserId:
         isAdmin && formData.assignmentMode === "single" && formData.targetUserId
           ? Number(formData.targetUserId)
@@ -636,10 +632,10 @@ const EventModal = ({
                   <input
                     type="number"
                     min="0"
-                    step="1"
-                    value={customReminderMinutes}
+                    step="0.25"
+                    value={customReminderHours}
                     disabled={isAssignedEventReadOnly}
-                    onChange={(e) => setCustomReminderMinutes(e.target.value)}
+                    onChange={(e) => setCustomReminderHours(e.target.value)}
                     placeholder={t.calendarCustomMinutes}
                   />
                   <button
@@ -661,7 +657,7 @@ const EventModal = ({
                         disabled={isAssignedEventReadOnly}
                         onClick={() => removeReminderMinutes(minutes)}
                       >
-                        {minutes} min ✕
+                        {minutes >= 60 ? `${minutes / 60}h` : `${minutes} min`} ✕
                       </button>
                     ))
                   )}

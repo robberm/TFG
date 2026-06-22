@@ -46,6 +46,17 @@ public class JwtUtil {
         return extractAllClaims(token).getSubject();
     }
 
+    public String extractBearerToken(String authorizationHeader) {
+        if (authorizationHeader == null) {
+            throw new IllegalArgumentException("Authorization header is required.");
+        }
+        return authorizationHeader.replace("Bearer ", "").trim();
+    }
+
+    public String extractUsernameFromAuthorizationHeader(String authorizationHeader) {
+        return extractUsername(extractBearerToken(authorizationHeader));
+    }
+
     public Integer extractTokenVersion(String token) {
         Object claim = extractAllClaims(token).get("tokenVersion");
 

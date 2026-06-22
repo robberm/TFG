@@ -2,6 +2,8 @@ package net.tfg.tfgapp.repos;
 
 import net.tfg.tfgapp.domains.Goal;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -9,12 +11,12 @@ import java.util.List;
 @Repository
 public interface GoalRepo extends JpaRepository<Goal, Integer> {
 
-    List<Goal> findByUserUsername(String username);
+    @Query("SELECT DISTINCT g FROM Goal g JOIN g.assignments a WHERE a.personalUser.username = :username")
+    List<Goal> findByUserUsername(@Param("username") String username);
 
-    List<Goal> findByAssignedByAdmin_Id(Long adminId);
+    @Query("SELECT DISTINCT g FROM Goal g JOIN g.assignments a WHERE a.audAdmin.id = :adminId")
+    List<Goal> findByAssignedByAdmin_Id(@Param("adminId") Long adminId);
 
-    List<Goal> findByAssignedByAdmin_IdAndUser_Id(Long adminId, Long userId);
-
-    List<Goal> findByAssignedByAdmin_IdAndAssignmentBatchId(Long adminId, String assignmentBatchId);
-
+    @Query("SELECT DISTINCT g FROM Goal g JOIN g.assignments a WHERE a.audAdmin.id = :adminId AND a.personalUser.id = :userId")
+    List<Goal> findByAssignedByAdmin_IdAndUser_Id(@Param("adminId") Long adminId, @Param("userId") Long userId);
 }
