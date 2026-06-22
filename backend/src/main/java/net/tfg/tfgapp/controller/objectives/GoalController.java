@@ -141,12 +141,7 @@ public class GoalController {
                 throw new IllegalArgumentException("Debes seleccionar al menos un usuario.");
             }
 
-            existingGoal.getAssignments().clear();
-            AdminUser assigningAdmin = (AdminUser) currentUser;
-            for (PersonalUser target : targets) {
-                existingGoal.addAssignment(target, assigningAdmin);
-            }
-            return ResponseEntity.ok(goalService.updateGoal(existingGoal, request));
+            return ResponseEntity.ok(goalService.updateAssignedGoal(existingGoal, request, targets, (AdminUser) currentUser));
         }
 
         return ResponseEntity.ok(goalService.updateGoal(existingGoal, request));

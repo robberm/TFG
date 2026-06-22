@@ -15,6 +15,7 @@ import net.tfg.tfgapp.service.interfaces.IGoalService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.Iterator;
 import java.util.List;
 
 @Service
@@ -83,6 +84,63 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
     public Goal updateGoal(Goal existingGoal, GoalRequest request) {
         applyGoalDetails(existingGoal, request);
         return goalRepo.save(existingGoal);
+    }
+
+    @Override
+    public Goal updateAssignedGoal(Goal existingGoal, GoalRequest request, List<PersonalUser> targets, AdminUser admin) {
+        if (targets == null || targets.isEmpty()) {
+            throw new IllegalArgumentException("Debes seleccionar al menos un usuario.");
+        }
+
+        applyGoalDetails(existingGoal, request);
+        existingGoal.setUser(targets.get(0));
+        existingGoal.setAudAdmin(admin);
+        reconcileAssignments(existingGoal, targets, admin);
+        return goalRepo.save(existingGoal);
+    }
+
+    private void reconcileAssignments(Goal goal, List<PersonalUser> targets, AdminUser admin) {
+        Iterator<ObjectiveAssignment> iterator = goal.getAssignments().iterator();
+        while (iterator.hasNext()) {
+            ObjectiveAssignment assignment = iterator.next();
+            if (!containsUser(targets, assignment.getPersonalUser().getId())) {
+                iterator.remove();
+                continue;
+            }
+            syncAssignment(assignment, goal, admin);
+        }
+
+        for (PersonalUser target : targets) {
+            if (findAssignmentForUser(goal, target.getId()) == null) {
+                goal.addAssignment(target, admin);
+            }
+        }
+    }
+
+    private boolean containsUser(List<PersonalUser> targets, Long userId) {
+        for (PersonalUser target : targets) {
+            if (target.getId().equals(userId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private ObjectiveAssignment findAssignmentForUser(Goal goal, Long userId) {
+        for (ObjectiveAssignment assignment : goal.getAssignments()) {
+            if (assignment.getPersonalUser().getId().equals(userId)) {
+                return assignment;
+            }
+        }
+        return null;
+    }
+
+    private void syncAssignment(ObjectiveAssignment assignment, Goal goal, AdminUser admin) {
+        assignment.setAudAdmin(admin);
+        assignment.setActive(goal.getActive() == null || goal.getActive());
+        assignment.setStatus(goal.getStatus());
+        assignment.setProgressValue(goal.getValorProgreso());
+        assignment.setTargetValue(goal.getValorObjetivo());
     }
 
     private void createInitialLogsForNumericGoal(Goal goal) {

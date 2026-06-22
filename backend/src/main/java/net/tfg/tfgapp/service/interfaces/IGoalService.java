@@ -16,6 +16,8 @@ public interface IGoalService extends IObjectiveService<Goal> {
 
     Goal updateGoal(Goal existingGoal, GoalRequest request);
 
+    Goal updateAssignedGoal(Goal existingGoal, GoalRequest request, List<PersonalUser> targets, AdminUser admin);
+
     Goal updateGoalProgress(Goal goal, GoalProgressRequest request);
 
     void applyGoalDetails(Goal goal, GoalRequest request);
