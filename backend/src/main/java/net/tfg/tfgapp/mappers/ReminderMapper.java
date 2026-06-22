@@ -14,7 +14,10 @@ public class ReminderMapper {
      * @return dto del reminder
      */
     public ReminderDTO toDto(Event event) {
-        return toDto(event, event.getReminderMinutesBefore());
+        Integer firstReminder = event.getReminderMinutesBeforeList() == null || event.getReminderMinutesBeforeList().isEmpty()
+                ? null
+                : event.getReminderMinutesBeforeList().get(0);
+        return toDto(event, firstReminder);
     }
 
     public ReminderDTO toDto(Event event, Integer reminderMinutesBefore) {

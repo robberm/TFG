@@ -2,7 +2,9 @@ package net.tfg.tfgapp.service.implementations;
 
 import net.tfg.tfgapp.DTOs.objectives.GoalProgressRequest;
 import net.tfg.tfgapp.DTOs.objectives.GoalRequest;
+import net.tfg.tfgapp.domains.AdminUser;
 import net.tfg.tfgapp.domains.Goal;
+import net.tfg.tfgapp.domains.ObjectiveAssignment;
 import net.tfg.tfgapp.domains.ObjectiveLog;
 import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.enumerates.GoalStatus;
@@ -29,7 +31,11 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
 
     @Override
     public List<Goal> getByUsername(String username) {
-        return goalRepo.findByUserUsername(username);
+        List<Goal> goals = goalRepo.findByUserUsername(username);
+        for (Goal goal : goals) {
+            selectAssignmentByUsername(goal, username);
+        }
+        return goals;
     }
 
     @Override
@@ -37,15 +43,16 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
         Goal goal = new Goal();
         applyGoalDetails(goal, request);
         goal.setUser(user);
+        goal.addAssignment(user, null);
 
         Goal savedGoal = goalRepo.save(goal);
 
         if (savedGoal.isNumeric()) {
             ObjectiveLog initialLog = new ObjectiveLog();
             initialLog.setObjective(savedGoal);
+            initialLog.setObjectiveAssignment(resolveAssignment(savedGoal));
             initialLog.setLogDate(LocalDate.now());
             initialLog.setProgressValue(savedGoal.getValorProgreso());
-            initialLog.setNotes("Creación inicial del objetivo.");
             objectiveLogRepo.save(initialLog);
         }
 
@@ -53,9 +60,44 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
     }
 
     @Override
+    public Goal createAssignedGoal(GoalRequest request, List<PersonalUser> targets, AdminUser admin) {
+        if (targets == null || targets.isEmpty()) {
+            throw new IllegalArgumentException("Debes seleccionar al menos un usuario.");
+        }
+
+        Goal goal = new Goal();
+        applyGoalDetails(goal, request);
+        goal.setUser(targets.get(0));
+        goal.setAudAdmin(admin);
+
+        for (PersonalUser target : targets) {
+            goal.addAssignment(target, admin);
+        }
+
+        Goal savedGoal = goalRepo.save(goal);
+        createInitialLogsForNumericGoal(savedGoal);
+        return savedGoal;
+    }
+
+    @Override
     public Goal updateGoal(Goal existingGoal, GoalRequest request) {
         applyGoalDetails(existingGoal, request);
         return goalRepo.save(existingGoal);
+    }
+
+    private void createInitialLogsForNumericGoal(Goal goal) {
+        if (!goal.isNumeric()) {
+            return;
+        }
+
+        for (ObjectiveAssignment assignment : goal.getAssignments()) {
+            ObjectiveLog initialLog = new ObjectiveLog();
+            initialLog.setObjective(goal);
+            initialLog.setObjectiveAssignment(assignment);
+            initialLog.setLogDate(LocalDate.now());
+            initialLog.setProgressValue(assignment.getProgressValue());
+            objectiveLogRepo.save(initialLog);
+        }
     }
 
     @Override
@@ -79,19 +121,25 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
     @Override
     public Goal updateGoalProgress(Goal goal, GoalProgressRequest request) {
         goal.setValorProgreso(request.getValorProgreso());
+        ObjectiveAssignment currentAssignment = resolveAssignment(goal);
+        currentAssignment.setProgressValue(request.getValorProgreso());
 
         LocalDate today = LocalDate.now();
-        ObjectiveLog log = objectiveLogRepo
-                .findByObjectiveIdAndLogDate(goal.getId(), today)
-                .orElseGet(() -> {
-                    ObjectiveLog newLog = new ObjectiveLog();
-                    newLog.setObjective(goal);
-                    newLog.setLogDate(today);
-                    return newLog;
-                });
+        List<ObjectiveLog> matchingLogs = objectiveLogRepo.findLogsForAssignmentOrObjectiveOnDate(resolveAssignmentId(goal), goal.getId(), today);
+        ObjectiveLog log;
+        if (matchingLogs.isEmpty()) {
+            log = new ObjectiveLog();
+            log.setLogDate(today);
+        } else {
+            log = matchingLogs.get(0);
+        }
+
+        // Reutilizamos logs legacy si existen para evitar duplicados por fecha y
+        // los dejamos ya enlazados a la asignación normalizada.
+        log.setObjective(goal); // legacy/trazabilidad
+        log.setObjectiveAssignment(currentAssignment);
 
         log.setProgressValue(request.getValorProgreso());
-        log.setNotes(request.getNotes());
 
         objectiveLogRepo.save(log);
 
@@ -105,11 +153,42 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
 
     @Override
     public List<Goal> getAssignedGoalsForAdminAndUser(Long adminId, Long userId) {
-        return goalRepo.findByAssignedByAdmin_IdAndUser_Id(adminId, userId);
+        List<Goal> goals = goalRepo.findByAssignedByAdmin_IdAndUser_Id(adminId, userId);
+        for (Goal goal : goals) {
+            selectAssignmentByUserId(goal, userId);
+        }
+        return goals;
     }
 
-    @Override
-    public List<Goal> getAssignedGoalsByBatch(Long adminId, String assignmentBatchId) {
-        return goalRepo.findByAssignedByAdmin_IdAndAssignmentBatchId(adminId, assignmentBatchId);
+    private void selectAssignmentByUsername(Goal goal, String username) {
+        for (ObjectiveAssignment assignment : goal.getAssignments()) {
+            if (assignment.getPersonalUser().getUsername().equals(username)) {
+                goal.setCurrentAssignment(assignment);
+                return;
+            }
+        }
+    }
+
+    private void selectAssignmentByUserId(Goal goal, Long userId) {
+        for (ObjectiveAssignment assignment : goal.getAssignments()) {
+            if (assignment.getPersonalUser().getId().equals(userId)) {
+                goal.setCurrentAssignment(assignment);
+                return;
+            }
+        }
+    }
+
+    private Integer resolveAssignmentId(Goal goal) {
+        return resolveAssignment(goal).getId();
+    }
+
+    private ObjectiveAssignment resolveAssignment(Goal goal) {
+        if (goal.getCurrentAssignment() != null) {
+            return goal.getCurrentAssignment();
+        }
+        if (goal.getAssignments().isEmpty()) {
+            throw new IllegalStateException("La meta no tiene asignación asociada.");
+        }
+        return goal.getAssignments().get(0);
     }
 }

@@ -86,7 +86,7 @@ public class AdminServiceImpl implements IAdminService {
         managedUser.setPassword(passwordEncoder.encode(request.getPassword()));
         managedUser.setTokenVersion(0);
         managedUser.setOrganization(organization);
-        managedUser.setCreatedByAdmin(adminUser);
+        managedUser.setAudAdmin(adminUser);
 
         User savedUser = userService.save(managedUser);
         return UserSummaryResponse.fromUser(savedUser);
@@ -140,10 +140,11 @@ public class AdminServiceImpl implements IAdminService {
             throw new SecurityException("No tienes permisos de administrador.");
         }
 
-        return userService.getManagedUsers(admin.getId())
-                .stream()
-                .map(UserSummaryResponse::fromUser)
-                .toList();
+        List<UserSummaryResponse> response = new java.util.ArrayList<>();
+        for (User managedUser : userService.getManagedUsers(admin.getId())) {
+            response.add(UserSummaryResponse.fromUser(managedUser));
+        }
+        return response;
     }
 
     @Override

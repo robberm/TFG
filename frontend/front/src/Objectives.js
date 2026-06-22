@@ -44,6 +44,9 @@ const Objectives = () => {
   const [habitWeekStart, setHabitWeekStart] = useState(() =>
     getStartOfWeek(new Date()),
   );
+  const [selectedHabitDate, setSelectedHabitDate] = useState(() =>
+    formatIsoDate(new Date()),
+  );
 
   const [isLoading, setIsLoading] = useState(true);
   const hasLoadedObjectives = useRef(false);
@@ -143,7 +146,7 @@ const Objectives = () => {
         }
       }
     },
-    [habitWeekStart, isAdmin, selectedManagedUserId, setErrorMessage],
+    [habitWeekStart, isAdmin, selectedManagedUserId, setErrorMessage, t.objectivesLoadError],
   );
 
   React.useEffect(() => {
@@ -156,7 +159,7 @@ const Objectives = () => {
     };
 
     initialize();
-  }, [loadSessionScope, setErrorMessage]);
+  }, [loadSessionScope, setErrorMessage, t.objectivesContextError]);
 
   React.useEffect(() => {
     if (!profile) {
@@ -195,6 +198,14 @@ const Objectives = () => {
 
       return nextStart > currentWeekStart ? currentWeekStart : nextStart;
     });
+  };
+
+  const handleSelectHabitDate = (isoDate) => {
+    const todayIso = formatIsoDate(new Date());
+    if (isoDate > todayIso) {
+      return;
+    }
+    setSelectedHabitDate(isoDate);
   };
 
   /**
@@ -286,7 +297,6 @@ const Objectives = () => {
         ) {
           await updateGoalProgress(selectedGoal.id, {
             valorProgreso: nextProgress,
-            notes: payload.notes || t.objectivesProgressUpdateNote,
           });
         }
       } else {
@@ -376,66 +386,78 @@ const Objectives = () => {
   };
 
   /**
-   * Marca o desmarca un hábito para hoy.
+   * Marca o desmarca un hábito para el día seleccionado en la gráfica.
    * Primero actualizamos la UI de forma optimista y luego sincronizamos
    * con backend. Si falla, recargamos el estado real.
    */
-  const handleToggleHabitToday = async (habit, shouldComplete) => {
+  const handleToggleHabitForSelectedDate = async (habit, shouldComplete) => {
+    const selectedDateIso = selectedHabitDate;
     const todayIso = formatIsoDate(new Date());
+    const isTodaySelected = selectedDateIso === todayIso;
 
     setIsHabitUpdating(true);
 
     setLogs((prevLogs) => {
       const filteredLogs = prevLogs.filter(
-        (log) => !(log.objective?.id === habit.id && log.logDate === todayIso),
+        (log) => !(log.objective?.id === habit.id && log.logDate === selectedDateIso),
       );
 
       return [
         ...filteredLogs,
         {
           objective: { id: habit.id },
-          logDate: todayIso,
+          logDate: selectedDateIso,
           completed: shouldComplete,
         },
       ];
     });
 
-    setHabits((prevHabits) =>
-      prevHabits.map((currentHabit) => {
-        if (currentHabit.id !== habit.id) {
-          return currentHabit;
-        }
+    if (isTodaySelected) {
+      setHabits((prevHabits) =>
+        prevHabits.map((currentHabit) => {
+          if (currentHabit.id !== habit.id) {
+            return currentHabit;
+          }
 
-        const currentStreak = Number(currentHabit.currentStreak || 0);
-        const bestStreak = Number(currentHabit.bestStreak || 0);
+          const currentStreak = Number(currentHabit.currentStreak || 0);
+          const bestStreak = Number(currentHabit.bestStreak || 0);
 
-        if (shouldComplete) {
-          const updatedStreak = currentStreak + 1;
+          if (shouldComplete) {
+            const updatedStreak = currentStreak + 1;
+
+            return {
+              ...currentHabit,
+              currentStreak: updatedStreak,
+              bestStreak: Math.max(bestStreak, updatedStreak),
+            };
+          }
 
           return {
             ...currentHabit,
-            currentStreak: updatedStreak,
-            bestStreak: Math.max(bestStreak, updatedStreak),
+            currentStreak: Math.max(0, currentStreak - 1),
           };
-        }
-
-        return {
-          ...currentHabit,
-          currentStreak: Math.max(0, currentStreak - 1),
-        };
-      }),
-    );
+        }),
+      );
+    }
 
     try {
-      await markHabitCompletion(habit.id, {
-        date: todayIso,
+      const savedLog = await markHabitCompletion(habit.id, {
+        date: selectedDateIso,
         completed: shouldComplete,
-        notes: shouldComplete
-          ? t.objectivesHabitMarkedTodayNote
-          : t.objectivesHabitUnmarkedFrontendNote,
       });
 
-      await loadObjectivesData(false);
+      if (savedLog) {
+        setLogs((prevLogs) => {
+          const filteredLogs = prevLogs.filter(
+            (log) => !(log.objective?.id === habit.id && log.logDate === selectedDateIso),
+          );
+          return [...filteredLogs, savedLog];
+        });
+      }
+
+      if (!isTodaySelected) {
+        await loadObjectivesData(false);
+      }
     } catch (error) {
       await loadObjectivesData(false);
       setErrorMessage(error.message || t.objectivesHabitUpdateError);
@@ -495,6 +517,8 @@ const Objectives = () => {
               habits={habits}
               logs={logs}
               habitWeekStart={habitWeekStart}
+              selectedHabitDate={selectedHabitDate}
+              onSelectHabitDate={handleSelectHabitDate}
               onPreviousHabitWeek={handlePreviousHabitWeek}
               onNextHabitWeek={handleNextHabitWeek}
             />
@@ -505,10 +529,11 @@ const Objectives = () => {
               <HabitsSection
                 habits={habits}
                 habitCompletionMap={habitCompletionMap}
+                selectedHabitDate={selectedHabitDate}
                 onCreate={openCreateHabitModal}
                 onEdit={openEditHabitModal}
                 onDelete={handleHabitDelete}
-                onToggleToday={handleToggleHabitToday}
+                onToggleDate={handleToggleHabitForSelectedDate}
                 isHabitUpdating={isHabitUpdating}
               />
             )}

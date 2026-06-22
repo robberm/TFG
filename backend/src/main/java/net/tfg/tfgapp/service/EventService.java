@@ -13,11 +13,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.LinkedHashSet;
 
 @Service
 public class EventService {
@@ -57,10 +55,6 @@ public class EventService {
         return eventRepo.findAssignedEventsForAdminAndUser(adminId, userId);
     }
 
-    public List<Event> getAssignedEventsByBatch(Long adminId, String assignmentBatchId) {
-        return eventRepo.findByAssignedByAdmin_IdAndAssignmentBatchId(adminId, assignmentBatchId);
-    }
-
     public Optional<Event> updateEventById(Long id, EventRequest eventDetails) {
         Optional<Event> eventOptional = getEventById(id);
 
@@ -85,22 +79,18 @@ public class EventService {
         target.setCategory(details.getCategory() != null ? details.getCategory() : Event.EventCategory.PERSONAL);
         target.setIsAllDay(details.getIsAllDay() != null ? details.getIsAllDay() : false);
 
-        List<Integer> normalizedReminderOffsets = normalizeReminderOffsets(details.getReminderMinutesBeforeList(), details.getReminderMinutesBefore());
-        target.setReminderMinutesBeforeList(normalizedReminderOffsets);
-        target.setReminderMinutesBefore(normalizedReminderOffsets.isEmpty() ? null : normalizedReminderOffsets.get(0));
+        target.setReminderMinutesBeforeList(normalizeReminderOffsets(details.getReminderMinutesBeforeList()));
     }
 
-    private List<Integer> normalizeReminderOffsets(List<Integer> reminderMinutesBeforeList, Integer legacyReminderMinutesBefore) {
+    private List<Integer> normalizeReminderOffsets(List<Integer> reminderMinutesBeforeList) {
         LinkedHashSet<Integer> normalized = new LinkedHashSet<>();
 
         if (reminderMinutesBeforeList != null) {
-            reminderMinutesBeforeList.stream()
-                    .filter(value -> value != null && value >= 0)
-                    .forEach(normalized::add);
-        }
-
-        if (normalized.isEmpty() && legacyReminderMinutesBefore != null && legacyReminderMinutesBefore >= 0) {
-            normalized.add(legacyReminderMinutesBefore);
+            for (Integer value : reminderMinutesBeforeList) {
+                if (value != null && value >= 0) {
+                    normalized.add(value);
+                }
+            }
         }
 
         return new ArrayList<>(normalized);
@@ -125,38 +115,15 @@ public class EventService {
         if (event == null || event.getId() == null) {
             return;
         }
-
-        if (event.getAssignedByAdmin() == null || !Objects.equals(event.getAssignedByAdmin().getId(), adminId)) {
-            deleteEventById(event.getId());
-            return;
-        }
-
-        if (event.getAssignmentBatchId() != null && !event.getAssignmentBatchId().isBlank()) {
-            List<Event> groupedEvents = eventRepo.findByAssignedByAdmin_IdAndAssignmentBatchId(
-                    event.getAssignedByAdmin().getId(),
-                    event.getAssignmentBatchId()
-            );
-
-            if (!groupedEvents.isEmpty() && event.getStartTime() != null && event.getEndTime() != null) {
-                groupedEvents = groupedEvents.stream()
-                        .filter(candidate -> Objects.equals(candidate.getStartTime(), event.getStartTime())
-                                && Objects.equals(candidate.getEndTime(), event.getEndTime()))
-                        .toList();
-            }
-
-            if (!groupedEvents.isEmpty()) {
-                groupedEvents.forEach(candidate -> deleteEventById(candidate.getId()));
-                return;
-            }
-        }
-
         deleteEventById(event.getId());
     }
 
     public List<String> getCategories() {
-        return Arrays.stream(Event.EventCategory.values())
-                .map(Enum::name)
-                .toList();
+        List<String> categories = new ArrayList<>();
+        for (Event.EventCategory category : Event.EventCategory.values()) {
+            categories.add(category.name());
+        }
+        return categories;
     }
 
     private boolean isEventCategoryActive(String category, Long userId) {

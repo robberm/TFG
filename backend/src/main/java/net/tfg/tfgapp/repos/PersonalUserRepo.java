@@ -10,9 +10,9 @@ import java.util.Optional;
 @Repository
 public interface PersonalUserRepo extends JpaRepository<PersonalUser, Long> {
 
-    List<PersonalUser> findByCreatedByAdmin_Id(Long adminId);
+    List<PersonalUser> findByAudAdmin_Id(Long adminId);
 
-    Optional<PersonalUser> findByIdAndCreatedByAdmin_Id(Long userId, Long adminId);
+    Optional<PersonalUser> findByIdAndAudAdmin_Id(Long userId, Long adminId);
 
     List<PersonalUser> findByOrganization_Id(Long organizationId);
 }

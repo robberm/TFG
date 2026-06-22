@@ -11,5 +11,4 @@ public class HabitCompletionRequest {
 
     private LocalDate date;
     private Boolean completed;
-    private String notes;
 }

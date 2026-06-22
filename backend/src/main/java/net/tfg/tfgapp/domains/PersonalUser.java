@@ -20,7 +20,7 @@ import java.util.List;
 @Setter
 @Entity
 @Table(name = "personal_users")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "organization", "createdByAdmin"})
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "organization", "audAdmin"})
 public class PersonalUser extends User {
 
     /**
@@ -32,20 +32,20 @@ public class PersonalUser extends User {
     private Organization organization;
 
     /**
-     * Referencia al admin que ha dado de alta a este usuario.
+     * Referencia audit al admin que ha dado de alta a este usuario.
      * Para usuarios personales registrados por su cuenta será null.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by_admin_id")
-    private AdminUser createdByAdmin;
+    @JoinColumn(name = "aud_admin_id")
+    private AdminUser audAdmin;
 
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Objective> objetivos = new ArrayList<>();
 
     @JsonIgnore
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Event> events = new ArrayList<>();
+    @OneToMany(mappedBy = "personalUser", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<EventAssignment> eventAssignments = new ArrayList<>();
 
     public PersonalUser() {
     }
