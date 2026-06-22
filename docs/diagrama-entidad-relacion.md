@@ -49,8 +49,6 @@ Entidad que representa eventos de calendario.
 - `location`: ubicación.
 - `category`: obligatorio. Valores: `WORK`, `PERSONAL`, `STUDY`, `HEALTH`, `MANDATORY`, `FOCUS`.
 - `is_all_day`: indica si el evento dura todo el día.
-- `user_id`: clave foránea opcional hacia `PERSONAL_USERS.id`. Se usa como propietario cuando un usuario personal crea su propio evento.
-- `assigned_by_admin_id`: clave foránea opcional de compatibilidad. La asignación administrativa normalizada vive en `EVENT_ASSIGNMENTS`.
 
 ### EVENTS_REMINDERS
 
@@ -72,7 +70,7 @@ Entidad base abstracta para objetivos. Usa herencia JPA de tipo `JOINED`.
 - `active`: obligatorio.
 - `aud_tim`: obligatorio.
 - `user_id`: clave foránea obligatoria hacia `PERSONAL_USERS.id` para indicar el usuario propietario o destinatario.
-- `assigned_by_admin_id`: clave foránea opcional hacia `ADMIN_USERS.id` para indicar el administrador que asignó el objetivo.
+- `aud_admin_id`: clave foránea opcional hacia `ADMIN_USERS.id` para indicar el administrador relacionado a nivel audit.
 - `is_numeric`: obligatorio.
 
 ### HABITS
@@ -125,11 +123,11 @@ El administrador se relaciona con otras entidades de estas formas:
    - Cardinalidad: `ADMIN_USERS administrador (0,N) — (0,1) PERSONAL_USERS usuario_gestionado`.
 
 3. Como asignador de eventos:
-   - `EVENT_ASSIGNMENTS.assigned_by_admin_id` referencia `ADMIN_USERS.id`.
+   - `EVENT_ASSIGNMENTS.aud_admin_id` referencia `ADMIN_USERS.id`.
    - Cardinalidad: `ADMIN_USERS administrador (0,N) — (0,1) EVENT_ASSIGNMENTS`.
 
 4. Como asignador de objetivos:
-   - `OBJECTIVES.assigned_by_admin_id` referencia `ADMIN_USERS.id`.
+   - `OBJECTIVES.aud_admin_id` referencia `ADMIN_USERS.id`.
    - Cardinalidad: `ADMIN_USERS administrador (0,N) — (0,1) OBJECTIVES`.
 
 El usuario personal se relaciona con otras entidades de estas formas:
@@ -208,7 +206,7 @@ Por tanto, si otra IA dibuja el diagrama, debe representar `ADMIN_USERS` y `PERS
 - Desde `ADMIN_USERS` hacia `OBJECTIVES`: un administrador puede asignar `0..N` objetivos.
 - Desde `OBJECTIVES` hacia `ADMIN_USERS`: un objetivo puede haber sido asignado por `0..1` administradores.
 - Cardinalidad: `ADMIN_USERS administrador (0,N) — (0,1) OBJECTIVES`.
-- Clave foránea: `OBJECTIVES.assigned_by_admin_id` referencia `ADMIN_USERS.id`.
+- Clave foránea: `OBJECTIVES.aud_admin_id` referencia `ADMIN_USERS.id`.
 
 ### OBJECTIVES — HABITS por herencia
 
@@ -273,11 +271,11 @@ Usa estas entidades:
 - `ADMIN_USERS(id PK/FK)`
 - `PERSONAL_USERS(id PK/FK, organization_id FK, aud_admin_id FK)`
 - `ORGANIZATIONS(id PK, name UK, admin_id FK UK)`
-- `EVENTS(id PK, title, description, start_time, end_time, location, category, is_all_day, user_id FK, assigned_by_admin_id FK)`
-- `EVENT_ASSIGNMENTS(id PK, event_id FK, personal_user_id FK, assigned_by_admin_id FK, assigned_at)`
+- `EVENTS(id PK, title, description, start_time, end_time, location, category, is_all_day)`
+- `EVENT_ASSIGNMENTS(id PK, event_id FK, personal_user_id FK, aud_admin_id FK, aud_tim)`
 - `EVENTS_REMINDERS(event_id FK, minutes_before)`
-- `OBJECTIVES(id PK, objective_type, titulo, description, active, aud_tim, user_id FK, assigned_by_admin_id FK, is_numeric)`
-- `OBJECTIVE_ASSIGNMENTS(id PK, objective_id FK, personal_user_id FK, assigned_by_admin_id FK, status, active, progress_value, target_value, assigned_at)`
+- `OBJECTIVES(id PK, objective_type, titulo, description, active, aud_tim, user_id FK, aud_admin_id FK, is_numeric)`
+- `OBJECTIVE_ASSIGNMENTS(id PK, objective_id FK, personal_user_id FK, aud_admin_id FK, status, active, progress_value, target_value, aud_tim)`
 - `HABITS(id PK/FK, current_streak, best_streak)`
 - `GOALS(id PK/FK, priority, status, is_numeric, valor_progreso, valor_objetivo)`
 - `OBJECTIVE_LOGS(id PK, objective_assignment_id FK, objective_id FK legacy, log_date, completed, progress_value, aud_tim)`
@@ -290,16 +288,15 @@ Dibuja estas relaciones. Importante: dibuja herencia `JOINED` para usuarios; `AD
 - `ORGANIZATIONS (1,1) — (0,1) ADMIN_USERS`, rol: administrador principal, FK `organizations.admin_id`.
 - `ORGANIZATIONS (0,N) — (0,1) PERSONAL_USERS`, rol: miembros, FK `personal_users.organization_id`.
 - `ADMIN_USERS administrador (0,N) — (0,1) PERSONAL_USERS usuario_gestionado`, FK `personal_users.aud_admin_id`.
-- `PERSONAL_USERS (0,N) — (0,1) EVENTS`, rol: propietario/destinatario, FK `events.user_id`.
 - `EVENTS (1,1) — (0,N) EVENTS_REMINDERS`, FK `events_reminders.event_id`.
 - `EVENTS (1,1) — (0,N) EVENT_ASSIGNMENTS`, FK `event_assignments.event_id`.
 - `PERSONAL_USERS (1,1) — (0,N) EVENT_ASSIGNMENTS`, FK `event_assignments.personal_user_id`.
-- `ADMIN_USERS (1,1) — (0,N) EVENT_ASSIGNMENTS`, FK `event_assignments.assigned_by_admin_id`.
+- `ADMIN_USERS (1,1) — (0,N) EVENT_ASSIGNMENTS`, FK `event_assignments.aud_admin_id`.
 - `PERSONAL_USERS (0,N) — (1,1) OBJECTIVES`, rol: propietario/destinatario, FK `objectives.user_id`.
-- `ADMIN_USERS administrador (0,N) — (0,1) OBJECTIVES`, rol: asignador, FK `objectives.assigned_by_admin_id`.
+- `ADMIN_USERS administrador (0,N) — (0,1) OBJECTIVES`, rol: asignador, FK `objectives.aud_admin_id`.
 - `OBJECTIVES (1,1) — (0,N) OBJECTIVE_ASSIGNMENTS`, FK `objective_assignments.objective_id`.
 - `PERSONAL_USERS (1,1) — (0,N) OBJECTIVE_ASSIGNMENTS`, FK `objective_assignments.personal_user_id`.
-- `ADMIN_USERS (1,1) — (0,N) OBJECTIVE_ASSIGNMENTS`, FK `objective_assignments.assigned_by_admin_id`.
+- `ADMIN_USERS (1,1) — (0,N) OBJECTIVE_ASSIGNMENTS`, FK `objective_assignments.aud_admin_id`.
 - `OBJECTIVES (0,1) — (1,1) HABITS`, herencia/especialización, FK `habits.id`.
 - `OBJECTIVES (0,1) — (1,1) GOALS`, herencia/especialización, FK `goals.id`.
 - `OBJECTIVE_ASSIGNMENTS (0,N) — (1,1) OBJECTIVE_LOGS`, FK `objective_logs.objective_assignment_id`.
@@ -341,8 +338,6 @@ erDiagram
         varchar location
         varchar category
         boolean is_all_day
-        bigint user_id FK
-        bigint assigned_by_admin_id FK
     }
 
     EVENTS_REMINDERS {
@@ -354,8 +349,8 @@ erDiagram
         bigint id PK
         bigint event_id FK
         bigint personal_user_id FK
-        bigint assigned_by_admin_id FK
-        datetime assigned_at
+        bigint aud_admin_id FK
+        datetime aud_tim
     }
 
     OBJECTIVES {
@@ -365,8 +360,6 @@ erDiagram
         varchar description
         boolean active
         datetime aud_tim
-        bigint user_id FK
-        bigint assigned_by_admin_id FK
         boolean is_numeric
     }
 
@@ -399,12 +392,12 @@ erDiagram
         integer id PK
         integer objective_id FK
         bigint personal_user_id FK
-        bigint assigned_by_admin_id FK
+        bigint aud_admin_id FK
         varchar status
         boolean active
         double progress_value
         double target_value
-        datetime assigned_at
+        datetime aud_tim
     }
 
     USERS ||--|o ADMIN_USERS : "herencia JOINED admin 0..1"
@@ -412,7 +405,6 @@ erDiagram
     ORGANIZATIONS |o--|| ADMIN_USERS : "admin obligatorio en organizacion, admin 0..1 organizacion"
     ORGANIZATIONS ||--o{ PERSONAL_USERS : "miembros 0..N, personal 0..1 organizacion"
     ADMIN_USERS ||--o{ PERSONAL_USERS : "admin crea 0..N, personal creado por 0..1"
-    PERSONAL_USERS |o--o{ EVENTS : "personal 0..N eventos, evento 0..1 personal"
     EVENTS ||--o{ EVENTS_REMINDERS : "evento 0..N recordatorios, recordatorio 1 evento"
     EVENTS ||--o{ EVENT_ASSIGNMENTS : "evento 0..N asignaciones"
     PERSONAL_USERS ||--o{ EVENT_ASSIGNMENTS : "personal 0..N asignaciones de evento"

@@ -42,8 +42,8 @@ public class ObjectiveAssignment {
     private PersonalUser personalUser;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_by_admin_id")
-    private AdminUser assignedByAdmin;
+    @JoinColumn(name = "aud_admin_id")
+    private AdminUser audAdmin;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -58,8 +58,8 @@ public class ObjectiveAssignment {
     @Column(nullable = true)
     private Double targetValue;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime assignedAt;
+    @Column(name = "aud_tim", nullable = false, updatable = false)
+    private LocalDateTime audTim;
 
     @JsonIgnore
     @OneToMany(mappedBy = "objectiveAssignment", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -67,7 +67,7 @@ public class ObjectiveAssignment {
 
     @PrePersist
     public void onCreate() {
-        if (assignedAt == null) assignedAt = LocalDateTime.now();
+        if (audTim == null) audTim = LocalDateTime.now();
         if (active == null) active = true;
         if (status == null) status = GoalStatus.NotStarted;
     }

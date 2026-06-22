@@ -94,7 +94,7 @@ public class GoalController {
         List<PersonalUser> targets = resolveTargetUsers(currentUser, request);
         Goal createdGoal = goalService.createGoal(request, targets.get(0));
         if (currentUser.isAdmin()) {
-            createdGoal.setAssignedByAdmin((AdminUser) currentUser);
+            createdGoal.setAudAdmin((AdminUser) currentUser);
             createdGoal.getAssignments().clear();
             AdminUser assigningAdmin = (AdminUser) currentUser;
             for (PersonalUser target : targets) {
@@ -139,7 +139,7 @@ public class GoalController {
             return ResponseEntity.ok(goalService.updateGoal(existingGoal, restrictedRequest));
         }
 
-        if (currentUser.isAdmin() && existingGoal.getAssignedByAdmin() != null) {
+        if (currentUser.isAdmin() && existingGoal.getEffectiveAssignedByAdmin() != null) {
             List<PersonalUser> targets = resolveTargetUsers(currentUser, request);
             if (targets.isEmpty()) {
                 throw new IllegalArgumentException("Debes seleccionar al menos un usuario.");
@@ -282,8 +282,8 @@ public class GoalController {
         }
 
         for (ObjectiveAssignment assignment : goal.getAssignments()) {
-            if (assignment.getAssignedByAdmin() != null
-                    && assignment.getAssignedByAdmin().getId().equals(currentUser.getId())
+            if (assignment.getAudAdmin() != null
+                    && assignment.getAudAdmin().getId().equals(currentUser.getId())
                     && canAccessManagedUser(currentUser, assignment.getPersonalUser())) {
                 return true;
             }

@@ -10,9 +10,9 @@ import java.time.LocalDateTime;
 /**
  * Asignación individual de un evento a un usuario personal.
  *
- * Esta tabla evita duplicar la fila de EVENTS cuando un administrador asigna
- * el mismo evento a varios usuarios: el evento queda como definición común y
- * aquí queda la trazabilidad de cada usuario asignado y del admin que lo hizo.
+ * Esta tabla conecta cada evento con su usuario personal. Para eventos propios
+ * el admin audit será null; para eventos asignados queda trazado el admin y el
+ * instante audit de creación sin duplicar la definición del evento.
  */
 @Getter
 @Setter
@@ -39,16 +39,16 @@ public class EventAssignment {
     private PersonalUser personalUser;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_by_admin_id")
-    private AdminUser assignedByAdmin;
+    @JoinColumn(name = "aud_admin_id")
+    private AdminUser audAdmin;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime assignedAt;
+    @Column(name = "aud_tim", nullable = false, updatable = false)
+    private LocalDateTime audTim;
 
     @PrePersist
     public void onCreate() {
-        if (assignedAt == null) {
-            assignedAt = LocalDateTime.now();
+        if (audTim == null) {
+            audTim = LocalDateTime.now();
         }
     }
 }

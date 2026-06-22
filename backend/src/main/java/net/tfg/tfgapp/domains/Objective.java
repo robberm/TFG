@@ -45,8 +45,8 @@ public abstract class Objective {
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_by_admin_id")
-    private AdminUser assignedByAdmin;
+    @JoinColumn(name = "aud_admin_id")
+    private AdminUser audAdmin;
 
     @JsonIgnore
     @OneToMany(mappedBy = "objective", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -88,7 +88,7 @@ public abstract class Objective {
 
     public AdminUser getEffectiveAssignedByAdmin() {
         ObjectiveAssignment assignment = representativeAssignment();
-        return assignment != null ? assignment.getAssignedByAdmin() : assignedByAdmin;
+        return assignment != null ? assignment.getAudAdmin() : audAdmin;
     }
 
     public void addAssignment(PersonalUser target, AdminUser admin) {
@@ -98,7 +98,7 @@ public abstract class Objective {
         ObjectiveAssignment assignment = new ObjectiveAssignment();
         assignment.setObjective(this);
         assignment.setPersonalUser(target);
-        assignment.setAssignedByAdmin(admin);
+        assignment.setAudAdmin(admin);
         assignment.setActive(active == null || active);
         if (this instanceof Goal goal) {
             assignment.setStatus(goal.getStatus());
@@ -112,8 +112,8 @@ public abstract class Objective {
         if (user == null) {
             user = target;
         }
-        if (assignedByAdmin == null) {
-            assignedByAdmin = admin;
+        if (audAdmin == null) {
+            audAdmin = admin;
         }
     }
 

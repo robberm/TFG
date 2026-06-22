@@ -83,14 +83,10 @@ public class CalendarController {
         eventRequestValidator.requireValidDates(request);
         Event event = new Event();
         eventService.applyEventDetails(event, request);
-        if (currentUser instanceof PersonalUser personalUser) {
-            event.setUser(personalUser);
-        } else {
-            List<PersonalUser> targets = resolveTargetUsers(currentUser, request);
-            AdminUser assigningAdmin = (AdminUser) currentUser;
-            for (PersonalUser target : targets) {
-                event.addAssignment(target, assigningAdmin);
-            }
+        List<PersonalUser> targets = resolveTargetUsers(currentUser, request);
+        AdminUser audAdmin = currentUser.isAdmin() ? (AdminUser) currentUser : null;
+        for (PersonalUser target : targets) {
+            event.addAssignment(target, audAdmin);
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(List.of(eventService.save(event)));
@@ -112,13 +108,13 @@ public class CalendarController {
             throw new SecurityException("No tienes permiso para actualizar este evento.");
         }
 
-        if (!currentUser.isAdmin() && event.getAssignedByAdmin() != null) {
+        if (!currentUser.isAdmin() && event.getAudAdmin() != null) {
             throw new SecurityException("No puedes modificar eventos asignados por administrador.");
         }
 
         eventRequestValidator.requireValidDates(eventDetails);
 
-        if (currentUser.isAdmin() && event.getAssignedByAdmin() != null) {
+        if (currentUser.isAdmin() && event.getAudAdmin() != null) {
             List<PersonalUser> targets = resolveTargetUsers(currentUser, eventDetails);
             if (targets.isEmpty()) {
                 throw new IllegalArgumentException("Debes seleccionar al menos un usuario.");
@@ -151,7 +147,7 @@ public class CalendarController {
             throw new SecurityException("No tienes permiso para eliminar este evento.");
         }
 
-        if (!currentUser.isAdmin() && event.getAssignedByAdmin() != null) {
+        if (!currentUser.isAdmin() && event.getAudAdmin() != null) {
             throw new SecurityException("No puedes eliminar eventos asignados por administrador.");
         }
 
@@ -260,10 +256,6 @@ public class CalendarController {
     }
 
     private boolean canAccessEvent(User currentUser, Event event) {
-        if (event.getUser() != null && event.getUser().getId().equals(currentUser.getId())) {
-            return true;
-        }
-
         for (EventAssignment assignment : event.getAssignments()) {
             if (assignment.getPersonalUser().getId().equals(currentUser.getId())) {
                 return true;
@@ -275,8 +267,8 @@ public class CalendarController {
         }
 
         for (EventAssignment assignment : event.getAssignments()) {
-            if (assignment.getAssignedByAdmin() != null
-                    && assignment.getAssignedByAdmin().getId().equals(currentUser.getId())
+            if (assignment.getAudAdmin() != null
+                    && assignment.getAudAdmin().getId().equals(currentUser.getId())
                     && canAccessManagedUser(currentUser, assignment.getPersonalUser())) {
                 return true;
             }

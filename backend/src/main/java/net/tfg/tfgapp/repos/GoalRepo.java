@@ -14,9 +14,9 @@ public interface GoalRepo extends JpaRepository<Goal, Integer> {
     @Query("SELECT DISTINCT g FROM Goal g JOIN g.assignments a WHERE a.personalUser.username = :username")
     List<Goal> findByUserUsername(@Param("username") String username);
 
-    @Query("SELECT DISTINCT g FROM Goal g JOIN g.assignments a WHERE a.assignedByAdmin.id = :adminId")
+    @Query("SELECT DISTINCT g FROM Goal g JOIN g.assignments a WHERE a.audAdmin.id = :adminId")
     List<Goal> findByAssignedByAdmin_Id(@Param("adminId") Long adminId);
 
-    @Query("SELECT DISTINCT g FROM Goal g JOIN g.assignments a WHERE a.assignedByAdmin.id = :adminId AND a.personalUser.id = :userId")
+    @Query("SELECT DISTINCT g FROM Goal g JOIN g.assignments a WHERE a.audAdmin.id = :adminId AND a.personalUser.id = :userId")
     List<Goal> findByAssignedByAdmin_IdAndUser_Id(@Param("adminId") Long adminId, @Param("userId") Long userId);
 }

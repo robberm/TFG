@@ -40,18 +40,6 @@ public class Event {
     @Column(name = "minutes_before")
     private List<Integer> reminderMinutesBeforeList = new ArrayList<>();
 
-    /** Legacy temporal para migración; se deriva de currentAssignment/asignación representativa. */
-    @JsonIgnore
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private PersonalUser user;
-
-    /** Legacy temporal para migración; se deriva de currentAssignment/asignación representativa. */
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_by_admin_id")
-    private AdminUser assignedByAdmin;
-
     @JsonIgnore
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EventAssignment> assignments = new ArrayList<>();
@@ -70,7 +58,7 @@ public class Event {
         this.category = category;
         this.isAllDay = isAllDay;
         this.reminderMinutesBeforeList = reminderMinutesBeforeList != null ? reminderMinutesBeforeList : new ArrayList<>();
-        this.user = user;
+        addAssignment(user, null);
     }
 
     public Event() {
@@ -81,18 +69,14 @@ public class Event {
         EventAssignment assignment = new EventAssignment();
         assignment.setEvent(this);
         assignment.setPersonalUser(target);
-        assignment.setAssignedByAdmin(admin);
+        assignment.setAudAdmin(admin);
         assignments.add(assignment);
         if (currentAssignment == null) currentAssignment = assignment;
-        if (admin == null && user == null) user = target;
-        if (assignedByAdmin == null) assignedByAdmin = admin;
     }
 
     public void replaceAssignments(List<PersonalUser> targets, AdminUser admin) {
         assignments.clear();
         currentAssignment = null;
-        user = admin == null && targets != null && !targets.isEmpty() ? targets.get(0) : null;
-        assignedByAdmin = admin;
         if (targets != null) {
             for (PersonalUser target : targets) {
                 addAssignment(target, admin);
@@ -107,22 +91,22 @@ public class Event {
 
     public PersonalUser getUser() {
         EventAssignment assignment = representativeAssignment();
-        return assignment != null ? assignment.getPersonalUser() : user;
+        return assignment != null ? assignment.getPersonalUser() : null;
     }
 
-    public AdminUser getAssignedByAdmin() {
+    public AdminUser getAudAdmin() {
         EventAssignment assignment = representativeAssignment();
-        return assignment != null ? assignment.getAssignedByAdmin() : assignedByAdmin;
+        return assignment != null ? assignment.getAudAdmin() : null;
     }
 
     @JsonProperty("assignedByAdmin")
     public boolean isAssignedByAdmin() {
-        return getAssignedByAdmin() != null;
+        return getAudAdmin() != null;
     }
 
     @JsonProperty("assignedByAdminUsername")
     public String getAssignedByAdminUsername() {
-        AdminUser admin = getAssignedByAdmin();
+        AdminUser admin = getAudAdmin();
         return admin != null ? admin.getUsername() : null;
     }
 
