@@ -198,8 +198,11 @@ const Settings = () => {
     const confirmed = window.confirm(t.messages.accountDeleteConfirm);
     if (!confirmed) return;
 
+    const currentPassword = window.prompt(t.messages.accountDeletePasswordPrompt);
+    if (!currentPassword) return;
+
     try {
-      const data = await deleteCurrentUser();
+      const data = await deleteCurrentUser(currentPassword);
       window.alert(data?.message || t.messages.accountDeleteSuccess);
       localStorage.removeItem("token");
       localStorage.removeItem("username");

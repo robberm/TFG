@@ -2,6 +2,7 @@ package net.tfg.tfgapp.service;
 
 import net.tfg.tfgapp.DTOs.users.ChangePasswordRequest;
 import net.tfg.tfgapp.DTOs.users.ChangeUsernameRequest;
+import net.tfg.tfgapp.DTOs.users.DeleteAccountRequest;
 import net.tfg.tfgapp.DTOs.users.LoginRequest;
 import net.tfg.tfgapp.DTOs.users.UserProfileResponse;
 import net.tfg.tfgapp.domains.AdminUser;
@@ -249,14 +250,22 @@ public class AccServiceImplements implements AccountService {
     }
 
     @Override
-    public void deleteCurrentUser(String tokenUsername) {
+    public void deleteCurrentUser(String tokenUsername, DeleteAccountRequest request) {
         if (tokenUsername == null || tokenUsername.isBlank()) {
             throw new IllegalArgumentException("Token inválido.");
+        }
+
+        if (request == null || request.getCurrentPassword() == null || request.getCurrentPassword().isBlank()) {
+            throw new IllegalArgumentException("Debes introducir tu contraseña actual.");
         }
 
         User user = userService.getUserByUsername(tokenUsername);
         if (user == null) {
             throw new IllegalArgumentException("Usuario no encontrado.");
+        }
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new SecurityException("Contraseña incorrecta.");
         }
 
         if (user.getProfileImagePath() != null && !user.getProfileImagePath().isBlank()) {

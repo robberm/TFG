@@ -1,6 +1,7 @@
 package net.tfg.tfgapp.validation.objectives;
 
 import net.tfg.tfgapp.domains.Habit;
+import net.tfg.tfgapp.domains.ObjectiveAssignment;
 import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.exception.ApiException;
@@ -35,9 +36,15 @@ public class HabitValidator {
     }
 
     public void requireHabitOwner(Habit habit, String username, String language) {
-        if (habit.getUser() == null || !habit.getUser().getUsername().equals(username)) {
-            throw new SecurityException(languageResolver.text(language, HABIT_NO_ACCESS_KEY));
+        for (ObjectiveAssignment assignment : habit.getAssignments()) {
+            if (assignment.getPersonalUser() != null
+                    && username.equals(assignment.getPersonalUser().getUsername())) {
+                habit.setCurrentAssignment(assignment);
+                return;
+            }
         }
+
+        throw new SecurityException(languageResolver.text(language, HABIT_NO_ACCESS_KEY));
     }
 
     public PersonalUser requirePersonalUser(User user, String language) {
