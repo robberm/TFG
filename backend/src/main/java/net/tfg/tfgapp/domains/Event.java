@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 @Getter
@@ -75,13 +76,68 @@ public class Event {
     }
 
     public void replaceAssignments(List<PersonalUser> targets, AdminUser admin) {
-        assignments.clear();
-        currentAssignment = null;
-        if (targets != null) {
-            for (PersonalUser target : targets) {
+        removeAssignmentsNotIn(targets);
+        updateExistingAssignments(targets, admin);
+        addMissingAssignments(targets, admin);
+        currentAssignment = assignments.isEmpty() ? null : assignments.get(0);
+    }
+
+    private void removeAssignmentsNotIn(List<PersonalUser> targets) {
+        if (targets == null || targets.isEmpty()) {
+            assignments.clear();
+            return;
+        }
+
+        Iterator<EventAssignment> iterator = assignments.iterator();
+        while (iterator.hasNext()) {
+            EventAssignment assignment = iterator.next();
+            if (!containsUser(targets, assignment.getPersonalUser().getId())) {
+                iterator.remove();
+            }
+        }
+    }
+
+    private void updateExistingAssignments(List<PersonalUser> targets, AdminUser admin) {
+        if (targets == null) {
+            return;
+        }
+
+        for (PersonalUser target : targets) {
+            EventAssignment assignment = findAssignmentForUser(target.getId());
+            if (assignment != null) {
+                assignment.setAudAdmin(admin);
+            }
+        }
+    }
+
+    private void addMissingAssignments(List<PersonalUser> targets, AdminUser admin) {
+        if (targets == null) {
+            return;
+        }
+
+        for (PersonalUser target : targets) {
+            if (findAssignmentForUser(target.getId()) == null) {
                 addAssignment(target, admin);
             }
         }
+    }
+
+    private boolean containsUser(List<PersonalUser> targets, Long userId) {
+        for (PersonalUser target : targets) {
+            if (target.getId().equals(userId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private EventAssignment findAssignmentForUser(Long userId) {
+        for (EventAssignment assignment : assignments) {
+            if (assignment.getPersonalUser().getId().equals(userId)) {
+                return assignment;
+            }
+        }
+        return null;
     }
 
     private EventAssignment representativeAssignment() {
