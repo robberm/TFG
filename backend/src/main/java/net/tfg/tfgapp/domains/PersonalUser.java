@@ -44,8 +44,8 @@ public class PersonalUser extends User {
     private List<Objective> objetivos = new ArrayList<>();
 
     @JsonIgnore
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Event> events = new ArrayList<>();
+    @OneToMany(mappedBy = "personalUser", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<EventAssignment> eventAssignments = new ArrayList<>();
 
     public PersonalUser() {
     }
