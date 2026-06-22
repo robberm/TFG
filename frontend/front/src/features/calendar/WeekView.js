@@ -168,7 +168,7 @@ const buildEventLayoutMap = (dayEvents) => {
   return new Map(positioned.map((item) => [item.id, item.style]));
 };
 
-const WeekView = ({ currentDate, events, onTimeSlotClick, onEventClick }) => {
+const WeekView = ({ currentDate, events, onTimeSlotClick, onEventClick, isAdmin = false }) => {
   const { language, t } = useLanguage();
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -348,8 +348,8 @@ const WeekView = ({ currentDate, events, onTimeSlotClick, onEventClick }) => {
                             {formatEventTime(event)}
                           </div>
                           <div className="week-event-title">{event.title}</div>
-                          {event.assignedByAdmin && (
-                            <div className="week-event-assigned">Asignado</div>
+                          {event.assignedByAdmin && !isAdmin && (
+                            <div className="week-event-assigned">{t.calendarAssignedTag}</div>
                           )}
                         </div>
                       );

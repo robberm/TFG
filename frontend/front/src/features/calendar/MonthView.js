@@ -60,6 +60,7 @@ const MonthView = ({
   events,
   onDateClick,
   onEventClick,
+  isAdmin = false,
 }) => {
   const { language, t } = useLanguage();
   const calendarLocale = language === "es" ? es : enUS;
@@ -111,7 +112,7 @@ const MonthView = ({
               onClick={(e) => onEventClick(event, e)}
             >
               {event.title}
-              {event.assignedByAdmin && <span className="eventOwnerTag">{t.calendarAssignedTag}</span>}
+              {event.assignedByAdmin && !isAdmin && <span className="eventOwnerTag">{t.calendarAssignedTag}</span>}
             </div>
           ))}
         </div>

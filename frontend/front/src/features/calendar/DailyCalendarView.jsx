@@ -172,6 +172,7 @@ const DailyCalendarView = ({
   events,
   onTimeSlotClick,
   onEventClick,
+  isAdmin = false,
 }) => {
   const { language, t } = useLanguage();
   const calendarLocale = language === "es" ? es : enUS;
@@ -265,7 +266,7 @@ const DailyCalendarView = ({
               >
                 <div className="day-event-time">{formatEventTime(event)}</div>
                 <div className="day-event-title">{event.title}</div>
-                {event.assignedByAdmin && (
+                {event.assignedByAdmin && !isAdmin && (
                   <div className="day-event-assigned">{t.calendarAssignedTag}</div>
                 )}
                 {event.location && (
@@ -355,7 +356,7 @@ const DailyCalendarView = ({
                 >
                   <div className="day-event-time">{formatEventTime(event)}</div>
                   <div className="day-event-title">{event.title}</div>
-                {event.assignedByAdmin && (
+                {event.assignedByAdmin && !isAdmin && (
                   <div className="day-event-assigned">{t.calendarAssignedTag}</div>
                 )}
                   {event.location && (

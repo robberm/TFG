@@ -126,6 +126,7 @@ public class UserService implements IUserService {
         detachEventAssignments(managedUser);
         Set<Integer> removedObjectiveIds = detachObjectiveAssignments(managedUser);
         reassignOrDeleteOwnedObjectives(managedUser, removedObjectiveIds);
+        entityManager.flush();
         return managedUser;
     }
 
@@ -138,7 +139,7 @@ public class UserService implements IUserService {
             }
 
             event.getAssignments().remove(assignment);
-            personalUser.getEventAssignments().remove(assignment);
+            removeAssignment(assignment);
 
             if (event.getAssignments().isEmpty()) {
                 entityManager.remove(entityManager.contains(event) ? event : entityManager.merge(event));
@@ -158,7 +159,7 @@ public class UserService implements IUserService {
             }
 
             objective.getAssignments().remove(assignment);
-            personalUser.getObjectiveAssignments().remove(assignment);
+            removeAssignment(assignment);
             reassignObjectiveOwnerIfNeeded(objective, personalUser);
 
             if (objective.getAssignments().isEmpty()) {
@@ -215,5 +216,9 @@ public class UserService implements IUserService {
 
     private void removeObjective(Objective objective) {
         entityManager.remove(entityManager.contains(objective) ? objective : entityManager.merge(objective));
+    }
+
+    private void removeAssignment(Object assignment) {
+        entityManager.remove(entityManager.contains(assignment) ? assignment : entityManager.merge(assignment));
     }
 }

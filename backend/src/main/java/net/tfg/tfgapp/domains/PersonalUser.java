@@ -2,7 +2,6 @@ package net.tfg.tfgapp.domains;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -44,7 +43,7 @@ public class PersonalUser extends User {
     private List<Objective> objetivos = new ArrayList<>();
 
     @JsonIgnore
-    @OneToMany(mappedBy = "personalUser", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "personalUser")
     private List<EventAssignment> eventAssignments = new ArrayList<>();
 
     @JsonIgnore
