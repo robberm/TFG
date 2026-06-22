@@ -61,7 +61,6 @@ const GoalModal = ({
           ? toInputNumberValue(initialData.valorObjetivo)
           : "",
         active: initialData.active ?? true,
-        notes: "",
         targetUserId: assignedUserId,
         targetUserIds: assignedUserId !== "" ? [String(assignedUserId)] : [],
         assignmentMode: "single",
@@ -99,7 +98,6 @@ const GoalModal = ({
       isNumeric: checked,
       valorProgreso: checked ? prev.valorProgreso : "",
       valorObjetivo: checked ? prev.valorObjetivo : "",
-      notes: checked ? prev.notes : "",
     }));
   };
 
@@ -142,7 +140,6 @@ const GoalModal = ({
         valorProgreso: isGoalNumeric(initialData)
           ? normalizedForm.valorProgreso
           : null,
-        notes: form.notes?.trim() || "",
         targetUserId: null,
         targetUserIds: null,
         assignToAllUsers: false,
@@ -153,7 +150,6 @@ const GoalModal = ({
     onSubmit({
       ...normalizedForm,
       status: isAdmin ? (initialData?.status || "NotStarted") : normalizedForm.status,
-      notes: form.notes?.trim() || "",
       targetUserId:
         isAdmin && form.assignmentMode === "single" && form.targetUserId !== ""
           ? Number(form.targetUserId)
@@ -304,21 +300,6 @@ const GoalModal = ({
                         handleChange("valorObjetivo", event.target.value)
                       }
                       placeholder={t.goalTargetValuePlaceholder}
-                    />
-                  </div>
-                </div>
-
-                <div className="formRow singleColumn">
-                  <div className="formGroup">
-                    <label htmlFor="goal-notes">{t.goalProgressNote}</label>
-                    <textarea
-                      id="goal-notes"
-                      rows="2"
-                      value={form.notes}
-                      onChange={(event) =>
-                        handleChange("notes", event.target.value)
-                      }
-                      placeholder={t.goalProgressNotePlaceholder}
                     />
                   </div>
                 </div>

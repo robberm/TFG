@@ -81,12 +81,16 @@ public class CalendarController {
         User currentUser = getCurrentUser(token);
 
         eventRequestValidator.requireValidDates(request);
-        List<PersonalUser> targets = resolveTargetUsers(currentUser, request);
         Event event = new Event();
         eventService.applyEventDetails(event, request);
-        AdminUser assigningAdmin = currentUser.isAdmin() ? (AdminUser) currentUser : null;
-        for (PersonalUser target : targets) {
-            event.addAssignment(target, assigningAdmin);
+        if (currentUser instanceof PersonalUser personalUser) {
+            event.setUser(personalUser);
+        } else {
+            List<PersonalUser> targets = resolveTargetUsers(currentUser, request);
+            AdminUser assigningAdmin = (AdminUser) currentUser;
+            for (PersonalUser target : targets) {
+                event.addAssignment(target, assigningAdmin);
+            }
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(List.of(eventService.save(event)));
@@ -256,6 +260,10 @@ public class CalendarController {
     }
 
     private boolean canAccessEvent(User currentUser, Event event) {
+        if (event.getUser() != null && event.getUser().getId().equals(currentUser.getId())) {
+            return true;
+        }
+
         for (EventAssignment assignment : event.getAssignments()) {
             if (assignment.getPersonalUser().getId().equals(currentUser.getId())) {
                 return true;

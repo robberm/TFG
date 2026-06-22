@@ -33,8 +33,8 @@ public abstract class Objective {
     @Column(nullable = false)
     private Boolean active = true;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "aud_tim", nullable = false, updatable = false)
+    private LocalDateTime audTim;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
@@ -142,7 +142,7 @@ public abstract class Objective {
 
     @PrePersist
     public void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        this.audTim = LocalDateTime.now();
 
         if (this.active == null) {
             this.active = true;

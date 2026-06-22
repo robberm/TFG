@@ -297,7 +297,6 @@ const Objectives = () => {
         ) {
           await updateGoalProgress(selectedGoal.id, {
             valorProgreso: nextProgress,
-            notes: payload.notes || t.objectivesProgressUpdateNote,
           });
         }
       } else {
@@ -445,9 +444,6 @@ const Objectives = () => {
       const savedLog = await markHabitCompletion(habit.id, {
         date: selectedDateIso,
         completed: shouldComplete,
-        notes: shouldComplete
-          ? t.objectivesHabitMarkedSelectedDateNote
-          : t.objectivesHabitUnmarkedSelectedDateNote,
       });
 
       if (savedLog) {

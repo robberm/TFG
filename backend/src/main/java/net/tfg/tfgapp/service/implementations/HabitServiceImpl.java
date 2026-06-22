@@ -94,7 +94,6 @@ public class HabitServiceImpl extends ObjectiveServiceBase<Habit, HabitRepo> imp
         log.setObjectiveAssignment(assignment);
 
         log.setCompleted(request.getCompleted());
-        log.setNotes(request.getNotes());
 
         ObjectiveLog savedLog = objectiveLogRepo.save(log);
         recalculateHabitStreaks(habit);

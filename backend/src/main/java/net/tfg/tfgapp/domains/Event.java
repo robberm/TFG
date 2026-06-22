@@ -71,7 +71,6 @@ public class Event {
         this.isAllDay = isAllDay;
         this.reminderMinutesBeforeList = reminderMinutesBeforeList != null ? reminderMinutesBeforeList : new ArrayList<>();
         this.user = user;
-        if (user != null) addAssignment(user, null);
     }
 
     public Event() {
@@ -85,14 +84,14 @@ public class Event {
         assignment.setAssignedByAdmin(admin);
         assignments.add(assignment);
         if (currentAssignment == null) currentAssignment = assignment;
-        if (user == null) user = target;
+        if (admin == null && user == null) user = target;
         if (assignedByAdmin == null) assignedByAdmin = admin;
     }
 
     public void replaceAssignments(List<PersonalUser> targets, AdminUser admin) {
         assignments.clear();
         currentAssignment = null;
-        user = targets == null || targets.isEmpty() ? null : targets.get(0);
+        user = admin == null && targets != null && !targets.isEmpty() ? targets.get(0) : null;
         assignedByAdmin = admin;
         if (targets != null) {
             for (PersonalUser target : targets) {

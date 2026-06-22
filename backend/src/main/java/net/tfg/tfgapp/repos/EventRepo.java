@@ -16,12 +16,16 @@ public interface EventRepo extends JpaRepository<Event, Long> {
     List<Event> findEventsBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     @Query("""
-            SELECT DISTINCT e FROM Event e JOIN e.assignments a
-            WHERE a.personalUser.username = :username AND e.startTime < :end AND e.endTime > :start
+            SELECT DISTINCT e FROM Event e LEFT JOIN e.assignments a
+            WHERE (e.user.username = :username OR a.personalUser.username = :username)
+              AND e.startTime < :end AND e.endTime > :start
             """)
     List<Event> findEventsByUserAndDateRange(@Param("username") String username, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    @Query("SELECT DISTINCT e FROM Event e JOIN e.assignments a WHERE a.personalUser.username = :username")
+    @Query("""
+            SELECT DISTINCT e FROM Event e LEFT JOIN e.assignments a
+            WHERE e.user.username = :username OR a.personalUser.username = :username
+            """)
     List<Event> findEventsByUser(@Param("username") String username);
 
     @Query("""
@@ -45,8 +49,11 @@ public interface EventRepo extends JpaRepository<Event, Long> {
     List<Event> findByStartTimeGreaterThanEqual(LocalDateTime now);
 
     @Query("""
-            SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM Event e JOIN e.assignments a
-            WHERE e.category = :category AND e.startTime <= :now AND e.endTime >= :now AND a.personalUser.id = :userId
+            SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM Event e LEFT JOIN e.assignments a
+            WHERE e.category = :category
+              AND e.startTime <= :now
+              AND e.endTime >= :now
+              AND (e.user.id = :userId OR a.personalUser.id = :userId)
             """)
     boolean existsActiveEventOfCategory(@Param("category") Event.EventCategory category, @Param("now") LocalDateTime now, @Param("userId") Long userId);
 

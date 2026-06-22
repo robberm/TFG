@@ -58,7 +58,7 @@ public class UserService implements IUserService {
     @Override
     public List<User> getManagedUsers(Long adminId) {
         List<User> managedUsers = new java.util.ArrayList<>();
-        for (PersonalUser personalUser : personalUserRepo.findByCreatedByAdmin_Id(adminId)) {
+        for (PersonalUser personalUser : personalUserRepo.findByAudAdmin_Id(adminId)) {
             managedUsers.add(personalUser);
         }
         return managedUsers;
@@ -66,7 +66,7 @@ public class UserService implements IUserService {
 
     @Override
     public User getManagedUser(Long adminId, Long userId) {
-        Optional<PersonalUser> managedUser = personalUserRepo.findByIdAndCreatedByAdmin_Id(userId, adminId);
+        Optional<PersonalUser> managedUser = personalUserRepo.findByIdAndAudAdmin_Id(userId, adminId);
         return managedUser.isPresent() ? managedUser.get() : null;
     }
 

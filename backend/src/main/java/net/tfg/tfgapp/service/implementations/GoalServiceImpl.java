@@ -52,7 +52,6 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
             initialLog.setObjectiveAssignment(resolveAssignment(savedGoal));
             initialLog.setLogDate(LocalDate.now());
             initialLog.setProgressValue(savedGoal.getValorProgreso());
-            initialLog.setNotes("Creación inicial del objetivo.");
             objectiveLogRepo.save(initialLog);
         }
 
@@ -105,7 +104,6 @@ public class GoalServiceImpl extends ObjectiveServiceBase<Goal, GoalRepo> implem
         log.setObjectiveAssignment(currentAssignment);
 
         log.setProgressValue(request.getValorProgreso());
-        log.setNotes(request.getNotes());
 
         objectiveLogRepo.save(log);
 

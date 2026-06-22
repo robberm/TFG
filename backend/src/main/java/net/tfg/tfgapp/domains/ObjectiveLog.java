@@ -42,11 +42,8 @@ public class ObjectiveLog {
     @Column(nullable = true)
     private Double progressValue;
 
-    @Column(nullable = true)
-    private String notes;
-
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "aud_tim", nullable = false, updatable = false)
+    private LocalDateTime audTim;
 
     @JsonIgnore
     public ObjectiveAssignment getObjectiveAssignment() {
@@ -55,6 +52,6 @@ public class ObjectiveLog {
 
     @PrePersist
     public void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        this.audTim = LocalDateTime.now();
     }
 }

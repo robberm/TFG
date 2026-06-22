@@ -86,7 +86,7 @@ public class AdminServiceImpl implements IAdminService {
         managedUser.setPassword(passwordEncoder.encode(request.getPassword()));
         managedUser.setTokenVersion(0);
         managedUser.setOrganization(organization);
-        managedUser.setCreatedByAdmin(adminUser);
+        managedUser.setAudAdmin(adminUser);
 
         User savedUser = userService.save(managedUser);
         return UserSummaryResponse.fromUser(savedUser);
