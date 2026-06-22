@@ -34,9 +34,11 @@ public class Event {
     private EventCategory category;
     @Column(unique = false)
     private Boolean isAllDay;
-    @Column(unique = false)
-    private Integer reminderMinutesBefore;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "EventsReminders", joinColumns = @JoinColumn(name = "event_id"))
+    @Column(name = "minutes_before")
+    private List<Integer> reminderMinutesBeforeList = new ArrayList<>();
 
     /** Legacy temporal para migración; se deriva de currentAssignment/asignación representativa. */
     @JsonIgnore
@@ -58,7 +60,7 @@ public class Event {
     @JsonIgnore
     private EventAssignment currentAssignment;
 
-    public Event(Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime, String location, EventCategory category, Boolean isAllDay, Integer reminderMinutesBefore, PersonalUser user) {
+    public Event(Long id, String title, String description, LocalDateTime startTime, LocalDateTime endTime, String location, EventCategory category, Boolean isAllDay, List<Integer> reminderMinutesBeforeList, PersonalUser user) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -67,7 +69,7 @@ public class Event {
         this.location = location;
         this.category = category;
         this.isAllDay = isAllDay;
-        this.reminderMinutesBefore = reminderMinutesBefore;
+        this.reminderMinutesBeforeList = reminderMinutesBeforeList != null ? reminderMinutesBeforeList : new ArrayList<>();
         this.user = user;
         if (user != null) addAssignment(user, null);
     }

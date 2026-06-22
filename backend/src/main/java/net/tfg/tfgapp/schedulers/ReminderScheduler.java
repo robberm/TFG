@@ -160,8 +160,14 @@ public class ReminderScheduler {
 
     private List<Integer> resolveReminderOffsets(Event event) {
         List<Integer> offsets = new ArrayList<>();
-        if (event.getReminderMinutesBefore() != null && event.getReminderMinutesBefore() >= 0) {
-            offsets.add(event.getReminderMinutesBefore());
+        if (event.getReminderMinutesBeforeList() == null) {
+            return offsets;
+        }
+
+        for (Integer value : event.getReminderMinutesBeforeList()) {
+            if (value != null && value >= 0 && !offsets.contains(value)) {
+                offsets.add(value);
+            }
         }
         return offsets;
     }

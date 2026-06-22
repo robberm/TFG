@@ -49,9 +49,17 @@ Entidad que representa eventos de calendario.
 - `location`: ubicación.
 - `category`: obligatorio. Valores: `WORK`, `PERSONAL`, `STUDY`, `HEALTH`, `MANDATORY`, `FOCUS`.
 - `is_all_day`: indica si el evento dura todo el día.
-- `reminder_minutes_before`: recordatorio simple en minutos. Es el único modelo de recordatorio persistido para eventos.
 - `user_id`: clave foránea hacia `PERSONAL_USERS.id` para indicar el usuario propietario o destinatario.
 - `assigned_by_admin_id`: clave foránea opcional hacia `ADMIN_USERS.id` para indicar el administrador que asignó el evento.
+
+### EVENTS_REMINDERS
+
+Entidad dependiente que representa los recordatorios múltiples de un evento.
+
+- `event_id`: clave foránea hacia `EVENTS.id`.
+- `minutes_before`: minutos antes del evento.
+
+Surge de la colección `reminderMinutesBeforeList` de `Event`.
 
 ### OBJECTIVES
 
@@ -185,6 +193,15 @@ Por tanto, si otra IA dibuja el diagrama, debe representar `ADMIN_USERS` y `PERS
 - Cardinalidad: `ADMIN_USERS administrador (0,N) — (0,1) EVENTS`.
 - Clave foránea: `EVENTS.assigned_by_admin_id` referencia `ADMIN_USERS.id`.
 
+### EVENTS — EVENTS_REMINDERS
+
+- Relación: un evento puede tener varios recordatorios.
+- Desde `EVENTS` hacia `EVENTS_REMINDERS`: un evento puede tener `0..N` recordatorios.
+- Desde `EVENTS_REMINDERS` hacia `EVENTS`: cada recordatorio pertenece a exactamente `1` evento.
+- Cardinalidad: `EVENTS (1,1) — (0,N) EVENTS_REMINDERS`.
+- Clave foránea: `EVENTS_REMINDERS.event_id` referencia `EVENTS.id`.
+- Tipo: entidad dependiente surgida de una colección de valores, no una entidad asociativa muchos-a-muchos.
+
 ### PERSONAL_USERS — OBJECTIVES como propietario o destinatario
 
 - Relación: un usuario tiene objetivos.
@@ -234,22 +251,28 @@ No hay una relación muchos-a-muchos pura en el modelo actual que exija una enti
 
 Sí aparecen entidades o tablas surgidas de relaciones o estructuras del modelo:
 
-1. `HABITS`:
+1. `EVENTS_REMINDERS`:
+   - Surge de la lista de enteros `reminderMinutesBeforeList` en `Event`.
+   - Es una tabla dependiente de `EVENTS`.
+   - Cardinalidad: un evento tiene `0..N` recordatorios y cada recordatorio pertenece a `1` evento.
+   - No representa una relación muchos-a-muchos.
+
+2. `HABITS`:
    - Surge por herencia/especialización de `OBJECTIVES`.
    - No es una entidad de relación.
    - Comparte identificador con `OBJECTIVES`.
 
-2. `GOALS`:
+3. `GOALS`:
    - Surge por herencia/especialización de `OBJECTIVES`.
    - No es una entidad de relación.
    - Comparte identificador con `OBJECTIVES`.
 
-3. `OBJECTIVE_LOGS`:
+4. `OBJECTIVE_LOGS`:
    - Es una entidad dependiente del objetivo.
    - No es una entidad asociativa muchos-a-muchos.
    - Sirve para registrar el histórico diario de cada objetivo.
 
-4. `assignment_batch_id` en `EVENTS` y `OBJECTIVES`:
+5. `assignment_batch_id` en `EVENTS` y `OBJECTIVES`:
    - No crea una entidad nueva ni una relación adicional.
    - Es un identificador lógico compartido por varias filas creadas en una asignación masiva de administrador.
    - Permite editar, reasignar o borrar en bloque los eventos u objetivos que proceden de la misma asignación.
@@ -263,7 +286,8 @@ Usa estas entidades:
 - `ADMIN_USERS(id PK/FK)`
 - `PERSONAL_USERS(id PK/FK, organization_id FK, created_by_admin_id FK)`
 - `ORGANIZATIONS(id PK, name UK, admin_id FK UK)`
-- `EVENTS(id PK, title, description, start_time, end_time, location, category, is_all_day, reminder_minutes_before, assignment_batch_id, user_id FK, assigned_by_admin_id FK)`
+- `EVENTS(id PK, title, description, start_time, end_time, location, category, is_all_day, assignment_batch_id, user_id FK, assigned_by_admin_id FK)`
+- `EVENTS_REMINDERS(event_id FK, minutes_before)`
 - `OBJECTIVES(id PK, objective_type, titulo, description, active, created_at, user_id FK, assigned_by_admin_id FK, assignment_batch_id, is_numeric)`
 - `HABITS(id PK/FK, current_streak, best_streak)`
 - `GOALS(id PK/FK, priority, status, is_numeric, valor_progreso, valor_objetivo)`
@@ -279,6 +303,7 @@ Dibuja estas relaciones. Importante: dibuja herencia `JOINED` para usuarios; `AD
 - `ADMIN_USERS administrador (0,N) — (0,1) PERSONAL_USERS usuario_gestionado`, FK `personal_users.created_by_admin_id`.
 - `PERSONAL_USERS (0,N) — (0,1) EVENTS`, rol: propietario/destinatario, FK `events.user_id`.
 - `ADMIN_USERS administrador (0,N) — (0,1) EVENTS`, rol: asignador, FK `events.assigned_by_admin_id`.
+- `EVENTS (1,1) — (0,N) EVENTS_REMINDERS`, FK `events_reminders.event_id`.
 - `PERSONAL_USERS (0,N) — (1,1) OBJECTIVES`, rol: propietario/destinatario, FK `objectives.user_id`.
 - `ADMIN_USERS administrador (0,N) — (0,1) OBJECTIVES`, rol: asignador, FK `objectives.assigned_by_admin_id`.
 - `OBJECTIVES (0,1) — (1,1) HABITS`, herencia/especialización, FK `habits.id`.
@@ -322,10 +347,14 @@ erDiagram
         varchar location
         varchar category
         boolean is_all_day
-        integer reminder_minutes_before
         varchar assignment_batch_id
         bigint user_id FK
         bigint assigned_by_admin_id FK
+    }
+
+    EVENTS_REMINDERS {
+        bigint event_id FK
+        integer minutes_before
     }
 
     OBJECTIVES {
@@ -373,6 +402,7 @@ erDiagram
     ADMIN_USERS ||--o{ PERSONAL_USERS : "admin crea 0..N, personal creado por 0..1"
     PERSONAL_USERS |o--o{ EVENTS : "personal 0..N eventos, evento 0..1 personal"
     ADMIN_USERS |o--o{ EVENTS : "admin asigna 0..N, evento 0..1 admin"
+    EVENTS ||--o{ EVENTS_REMINDERS : "evento 0..N recordatorios, recordatorio 1 evento"
     PERSONAL_USERS ||--o{ OBJECTIVES : "personal 0..N objetivos, objetivo 1 personal"
     ADMIN_USERS |o--o{ OBJECTIVES : "admin asigna 0..N, objetivo 0..1 admin"
     OBJECTIVES ||--|o HABITS : "subtipo habit 0..1"

@@ -19,7 +19,7 @@ public class EventRequest {
     private String location;
     private Event.EventCategory category;
     private Boolean isAllDay;
-    private Integer reminderMinutesBefore;
+    private List<Integer> reminderMinutesBeforeList;
     private Long targetUserId;
     private List<Long> targetUserIds;
     private Boolean assignToAllUsers;

@@ -49,8 +49,8 @@ const parseReminderDate = (value) => {
 const RemindersPanel = ({ todayEvents, isLoadingTodayEvents }) => {
   const reminderEvents = useMemo(() => {
     const hasReminder = (event) => (
-      event.reminderMinutesBefore !== null &&
-      event.reminderMinutesBefore !== undefined
+      Array.isArray(event.reminderMinutesBeforeList) &&
+      event.reminderMinutesBeforeList.length > 0
     );
 
     const uniqueByEventId = new Map();

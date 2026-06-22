@@ -67,6 +67,13 @@ const parseCalendarDate = (value) => {
   return parseISO(value);
 };
 
+const normalizeReminderList = (reminders = []) => {
+  const unique = [...new Set((reminders || []).map((value) => Number(value)))];
+  return unique
+    .filter((value) => Number.isInteger(value) && value >= 0)
+    .sort((a, b) => a - b);
+};
+
 const TimeSelector = ({ value, onChange, label, disabled = false, searchPlaceholder = "Search time..." }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -187,8 +194,8 @@ const EventModal = ({
     targetUserIds: [],
     assignmentMode: "single",
   });
-  const [reminderMinutesBefore, setReminderMinutesBefore] = useState(null);
-  const [customReminderMinutes, setCustomReminderMinutes] = useState("");
+  const [reminderMinutesBeforeList, setReminderMinutesBeforeList] = useState([]);
+  const [customReminderHours, setCustomReminderHours] = useState("");
   const [categories, setCategories] = useState([]);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const titleInputRef = useRef(null);
@@ -233,10 +240,12 @@ const EventModal = ({
         targetUserIds: assignedUserIds,
         assignmentMode: inferredAssignmentMode,
       });
-      setReminderMinutesBefore(
-        event.reminderMinutesBefore != null ? Number(event.reminderMinutesBefore) : null,
+      setReminderMinutesBeforeList(
+        Array.isArray(event.reminderMinutesBeforeList)
+          ? normalizeReminderList(event.reminderMinutesBeforeList)
+          : [],
       );
-      setCustomReminderMinutes("");
+      setCustomReminderHours("");
       setShowMoreOptions(true);
     } else if (selectedDate) {
       const startDateTime = new Date(selectedDate);
@@ -259,8 +268,8 @@ const EventModal = ({
         targetUserIds: defaultManagedUserId != null ? [String(defaultManagedUserId)] : [],
         assignmentMode: "single",
       });
-      setReminderMinutesBefore(null);
-      setCustomReminderMinutes("");
+      setReminderMinutesBeforeList([]);
+      setCustomReminderHours("");
       setShowMoreOptions(false);
     }
 
@@ -312,33 +321,35 @@ const EventModal = ({
     });
   };
 
-  const selectReminderMinutes = (value) => {
+  const addReminderMinutes = (value) => {
     if (isAssignedEventReadOnly) {
       return;
     }
 
-    setReminderMinutesBefore((currentValue) =>
-      currentValue === value ? null : value,
+    setReminderMinutesBeforeList((previousReminders) =>
+      normalizeReminderList([...previousReminders, value]),
     );
   };
 
-  const clearReminderMinutes = () => {
+  const removeReminderMinutes = (valueToRemove) => {
     if (isAssignedEventReadOnly) {
       return;
     }
 
-    setReminderMinutesBefore(null);
+    setReminderMinutesBeforeList((previousReminders) =>
+      previousReminders.filter((value) => value !== valueToRemove),
+    );
   };
 
   const handleCustomReminderAdd = () => {
-    const parsed = Number(customReminderMinutes);
+    const parsedHours = Number(customReminderHours);
 
-    if (!Number.isInteger(parsed) || parsed < 0) {
+    if (!Number.isFinite(parsedHours) || parsedHours <= 0) {
       return;
     }
 
-    setReminderMinutesBefore(parsed);
-    setCustomReminderMinutes("");
+    addReminderMinutes(Math.round(parsedHours * 60));
+    setCustomReminderHours("");
   };
 
   const handleSubmit = (e) => {
@@ -360,7 +371,7 @@ const EventModal = ({
       location: formData.location,
       category: formData.category,
       isAllDay: formData.isAllDay,
-      reminderMinutesBefore,
+      reminderMinutesBeforeList,
       targetUserId:
         isAdmin && formData.assignmentMode === "single" && formData.targetUserId
           ? Number(formData.targetUserId)
@@ -599,7 +610,7 @@ const EventModal = ({
                 <label>{t.calendarReminders}</label>
                 <div className="gcal-reminder-presets">
                   {REMINDER_PRESETS.map((minutes) => {
-                    const isSelected = reminderMinutesBefore === minutes;
+                    const isSelected = reminderMinutesBeforeList.includes(minutes);
                     return (
                       <button
                         key={minutes}
@@ -607,7 +618,9 @@ const EventModal = ({
                         disabled={isAssignedEventReadOnly}
                         className={`gcal-reminder-chip ${isSelected ? "active" : ""}`}
                         onClick={() =>
-                          selectReminderMinutes(minutes)
+                          isSelected
+                            ? removeReminderMinutes(minutes)
+                            : addReminderMinutes(minutes)
                         }
                       >
                         {minutes >= 60 ? `${minutes / 60}h` : `${minutes}m`}
@@ -619,10 +632,10 @@ const EventModal = ({
                   <input
                     type="number"
                     min="0"
-                    step="1"
-                    value={customReminderMinutes}
+                    step="0.25"
+                    value={customReminderHours}
                     disabled={isAssignedEventReadOnly}
-                    onChange={(e) => setCustomReminderMinutes(e.target.value)}
+                    onChange={(e) => setCustomReminderHours(e.target.value)}
                     placeholder={t.calendarCustomMinutes}
                   />
                   <button
@@ -634,16 +647,19 @@ const EventModal = ({
                   </button>
                 </div>
                 <div className="gcal-reminder-list">
-                  {reminderMinutesBefore == null ? (
+                  {reminderMinutesBeforeList.length === 0 ? (
                     <span>{t.calendarNoReminders}</span>
                   ) : (
-                    <button
-                      type="button"
-                      disabled={isAssignedEventReadOnly}
-                      onClick={clearReminderMinutes}
-                    >
-                      {reminderMinutesBefore} min ✕
-                    </button>
+                    reminderMinutesBeforeList.map((minutes) => (
+                      <button
+                        key={minutes}
+                        type="button"
+                        disabled={isAssignedEventReadOnly}
+                        onClick={() => removeReminderMinutes(minutes)}
+                      >
+                        {minutes >= 60 ? `${minutes / 60}h` : `${minutes} min`} ✕
+                      </button>
+                    ))
                   )}
                 </div>
               </div>

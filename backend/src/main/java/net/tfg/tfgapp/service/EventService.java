@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.LinkedHashSet;
 
 @Service
 public class EventService {
@@ -78,12 +79,21 @@ public class EventService {
         target.setCategory(details.getCategory() != null ? details.getCategory() : Event.EventCategory.PERSONAL);
         target.setIsAllDay(details.getIsAllDay() != null ? details.getIsAllDay() : false);
 
-        Integer reminderMinutesBefore = details.getReminderMinutesBefore();
-        target.setReminderMinutesBefore(
-                reminderMinutesBefore != null && reminderMinutesBefore >= 0
-                        ? reminderMinutesBefore
-                        : null
-        );
+        target.setReminderMinutesBeforeList(normalizeReminderOffsets(details.getReminderMinutesBeforeList()));
+    }
+
+    private List<Integer> normalizeReminderOffsets(List<Integer> reminderMinutesBeforeList) {
+        LinkedHashSet<Integer> normalized = new LinkedHashSet<>();
+
+        if (reminderMinutesBeforeList != null) {
+            for (Integer value : reminderMinutesBeforeList) {
+                if (value != null && value >= 0) {
+                    normalized.add(value);
+                }
+            }
+        }
+
+        return new ArrayList<>(normalized);
     }
 
     public Optional<Event> getEventById(Long id) {
