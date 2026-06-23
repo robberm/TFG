@@ -42,7 +42,7 @@ public class ObjectiveLog {
     @Column(nullable = true)
     private Double progressValue;
 
-    @Column(name = "aud_tim", nullable = false, updatable = false)
+    @Column(name = "aud_tim", nullable = false, updatable = false, columnDefinition = "datetime(6) default current_timestamp(6)")
     private LocalDateTime audTim;
 
     @JsonIgnore
@@ -52,6 +52,8 @@ public class ObjectiveLog {
 
     @PrePersist
     public void onCreate() {
-        this.audTim = LocalDateTime.now();
+        if (this.audTim == null) {
+            this.audTim = LocalDateTime.now();
+        }
     }
 }

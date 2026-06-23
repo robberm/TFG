@@ -1,3 +1,5 @@
+name: tfgapp
+
 services:
   db:
     image: mysql:latest

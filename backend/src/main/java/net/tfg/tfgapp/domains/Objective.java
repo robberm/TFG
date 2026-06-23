@@ -32,7 +32,7 @@ public abstract class Objective {
     @Column(nullable = false)
     private Boolean active = true;
 
-    @Column(name = "aud_tim", nullable = false, updatable = false)
+    @Column(name = "aud_tim", nullable = false, updatable = false, columnDefinition = "datetime(6) default current_timestamp(6)")
     private LocalDateTime audTim;
 
     @JsonIgnore
@@ -154,7 +154,9 @@ public abstract class Objective {
 
     @PrePersist
     public void onCreate() {
-        this.audTim = LocalDateTime.now();
+        if (this.audTim == null) {
+            this.audTim = LocalDateTime.now();
+        }
 
         if (this.active == null) {
             this.active = true;
