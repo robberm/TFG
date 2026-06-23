@@ -273,3 +273,19 @@
     width: 100%;
   }
 }
+.settingsButton.danger {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
+.settingsButton.danger:hover {
+  background-color: #b91c1c;
+}
+
+.deleteAccountCard {
+  border-color: rgba(220, 38, 38, 0.35);
+}
+
+.deleteAccountHint {
+  margin: 0 0 14px 0;
+}
