@@ -42,7 +42,7 @@ public class EventAssignment {
     @JoinColumn(name = "aud_admin_id")
     private AdminUser audAdmin;
 
-    @Column(name = "aud_tim", nullable = false, updatable = false)
+    @Column(name = "aud_tim", nullable = false, updatable = false, columnDefinition = "datetime(6) default current_timestamp(6)")
     private LocalDateTime audTim;
 
     @PrePersist
