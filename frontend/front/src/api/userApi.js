@@ -76,10 +76,10 @@ export const changeCurrentPassword = async (
   return data;
 };
 
-export const deleteCurrentUser = async () => {
+export const deleteCurrentUser = async (currentPassword) => {
   const data = await apiRequest("/users/me", {
     method: "DELETE",
-    includeJson: false,
+    body: JSON.stringify({ currentPassword }),
   });
   clearCurrentUserProfileCache();
   return data;

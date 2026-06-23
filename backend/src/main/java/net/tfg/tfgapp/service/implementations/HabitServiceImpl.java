@@ -32,7 +32,11 @@ public class HabitServiceImpl extends ObjectiveServiceBase<Habit, HabitRepo> imp
      */
     @Override
     public List<Habit> getByUsername(String username) {
-        return habitRepo.findByUserUsername(username);
+        List<Habit> habits = habitRepo.findByUserUsername(username);
+        for (Habit habit : habits) {
+            selectAssignmentByUsername(habit, username);
+        }
+        return habits;
     }
 
     /**
@@ -40,7 +44,11 @@ public class HabitServiceImpl extends ObjectiveServiceBase<Habit, HabitRepo> imp
      */
     @Override
     public List<Habit> getActiveHabitsByUsername(String username) {
-        return habitRepo.findByUserUsernameAndActiveTrue(username);
+        List<Habit> habits = habitRepo.findByUserUsernameAndActiveTrue(username);
+        for (Habit habit : habits) {
+            selectAssignmentByUsername(habit, username);
+        }
+        return habits;
     }
 
     /**
@@ -175,6 +183,16 @@ public class HabitServiceImpl extends ObjectiveServiceBase<Habit, HabitRepo> imp
         }
 
         return streak;
+    }
+
+    private void selectAssignmentByUsername(Habit habit, String username) {
+        for (ObjectiveAssignment assignment : habit.getAssignments()) {
+            if (assignment.getPersonalUser() != null
+                    && username.equals(assignment.getPersonalUser().getUsername())) {
+                habit.setCurrentAssignment(assignment);
+                return;
+            }
+        }
     }
 
     private ObjectiveAssignment resolveAssignment(Habit habit) {

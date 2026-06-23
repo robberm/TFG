@@ -17,6 +17,7 @@ public interface ObjectiveLogRepo extends JpaRepository<ObjectiveLog, Integer> {
             LEFT JOIN FETCH l.objectiveAssignment a
             LEFT JOIN FETCH a.objective
             WHERE l.objective.id = :objectiveId
+               OR a.objective.id = :objectiveId
             ORDER BY l.logDate ASC
             """)
     List<ObjectiveLog> findByObjectiveIdOrderByLogDateAsc(@Param("objectiveId") Integer objectiveId);

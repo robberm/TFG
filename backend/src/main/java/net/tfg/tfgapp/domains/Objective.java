@@ -2,7 +2,6 @@ package net.tfg.tfgapp.domains;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -60,21 +59,7 @@ public abstract class Objective {
     @JsonIgnore
     private ObjectiveAssignment currentAssignment;
 
-    @JsonIgnore
-    @Column(name = "is_numeric", nullable = false)
-    private Boolean numeric = false;
-
-    @JsonProperty("isNumeric")
-    public boolean isNumeric() {
-        return Boolean.TRUE.equals(numeric);
-    }
-
-    @JsonProperty("isNumeric")
-    public void setNumeric(boolean numeric) {
-        this.numeric = numeric;
-    }
-
-    private ObjectiveAssignment representativeAssignment() {
+    protected ObjectiveAssignment representativeAssignment() {
         if (currentAssignment != null) {
             return currentAssignment;
         }
@@ -173,9 +158,6 @@ public abstract class Objective {
 
         if (this.active == null) {
             this.active = true;
-        }
-        if (this.numeric == null) {
-            this.numeric = false;
         }
     }
 }

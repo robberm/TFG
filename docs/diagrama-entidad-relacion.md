@@ -71,7 +71,6 @@ Entidad base abstracta para objetivos. Usa herencia JPA de tipo `JOINED`.
 - `aud_tim`: obligatorio.
 - `user_id`: clave foránea obligatoria hacia `PERSONAL_USERS.id` para indicar el usuario propietario o destinatario.
 - `aud_admin_id`: clave foránea opcional hacia `ADMIN_USERS.id` para indicar el administrador relacionado a nivel audit.
-- `is_numeric`: obligatorio.
 
 ### HABITS
 
@@ -88,9 +87,23 @@ Subtipo de `OBJECTIVES` que representa metas.
 - `id`: clave primaria y clave foránea hacia `OBJECTIVES.id`.
 - `priority`: obligatorio. Valores según el enum `ObjectivePriority`.
 - `status`: obligatorio. Valores según el enum `GoalStatus`.
-- `is_numeric`: obligatorio. Columna de compatibilidad sincronizada con `OBJECTIVES.is_numeric`.
-- `valor_progreso`: opcional.
-- `valor_objetivo`: opcional.
+- `is_numeric`: obligatorio. Indica si la meta usa progreso numérico.
+
+### OBJECTIVE_ASSIGNMENTS
+
+Entidad que representa la asignación individual de un objetivo a un usuario personal. Aquí vive el estado específico de cada usuario para evitar duplicarlo en la definición común del objetivo.
+
+- `id`: clave primaria.
+- `objective_id`: clave foránea obligatoria hacia `OBJECTIVES.id`.
+- `personal_user_id`: clave foránea obligatoria hacia `PERSONAL_USERS.id`.
+- `aud_admin_id`: clave foránea opcional hacia `ADMIN_USERS.id`.
+- `status`: obligatorio. Se usa principalmente para metas.
+- `active`: obligatorio.
+- `progress_value`: opcional. Progreso individual del usuario para metas numéricas.
+- `target_value`: opcional. Objetivo individual del usuario para metas numéricas.
+- `aud_tim`: obligatorio.
+
+Restricción única: no puede haber dos asignaciones para la misma combinación `objective_id` + `personal_user_id`.
 
 ### OBJECTIVE_LOGS
 
@@ -274,10 +287,10 @@ Usa estas entidades:
 - `EVENTS(id PK, title, description, start_time, end_time, location, category, is_all_day)`
 - `EVENT_ASSIGNMENTS(id PK, event_id FK, personal_user_id FK, aud_admin_id FK, aud_tim)`
 - `EVENTS_REMINDERS(event_id FK, minutes_before)`
-- `OBJECTIVES(id PK, objective_type, titulo, description, active, aud_tim, user_id FK, aud_admin_id FK, is_numeric)`
+- `OBJECTIVES(id PK, objective_type, titulo, description, active, aud_tim, user_id FK, aud_admin_id FK)`
 - `OBJECTIVE_ASSIGNMENTS(id PK, objective_id FK, personal_user_id FK, aud_admin_id FK, status, active, progress_value, target_value, aud_tim)`
 - `HABITS(id PK/FK, current_streak, best_streak)`
-- `GOALS(id PK/FK, priority, status, is_numeric, valor_progreso, valor_objetivo)`
+- `GOALS(id PK/FK, priority, status, is_numeric)`
 - `OBJECTIVE_LOGS(id PK, objective_assignment_id FK, objective_id FK legacy, log_date, completed, progress_value, aud_tim)`
 
 Dibuja estas relaciones. Importante: dibuja herencia `JOINED` para usuarios; `ADMIN_USERS` y `PERSONAL_USERS` heredan de `USERS`.
@@ -360,7 +373,6 @@ erDiagram
         varchar description
         boolean active
         datetime aud_tim
-        boolean is_numeric
     }
 
     HABITS {
@@ -374,8 +386,6 @@ erDiagram
         varchar priority
         varchar status
         boolean is_numeric
-        double valor_progreso
-        double valor_objetivo
     }
 
     OBJECTIVE_LOGS {

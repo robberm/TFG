@@ -32,6 +32,9 @@ const Settings = () => {
   const [usernameError, setUsernameError] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState("");
   const [passwordError, setPasswordError] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteMessage, setDeleteMessage] = useState("");
+  const [deleteError, setDeleteError] = useState(false);
   const [autoStartSupported, setAutoStartSupported] = useState(false);
   const [autoStartEnabled, setAutoStartEnabled] = useState(false);
 
@@ -195,12 +198,15 @@ const Settings = () => {
   };
 
   const handleDeleteAccount = async () => {
-    const confirmed = window.confirm(t.messages.accountDeleteConfirm);
-    if (!confirmed) return;
+    if (!deletePassword) {
+      setDeleteMessage(t.messages.accountDeletePasswordPrompt);
+      setDeleteError(true);
+      return;
+    }
 
     try {
-      const data = await deleteCurrentUser();
-      window.alert(data?.message || t.messages.accountDeleteSuccess);
+      setDeleteMessage("");
+      await deleteCurrentUser(deletePassword);
       localStorage.removeItem("token");
       localStorage.removeItem("username");
       localStorage.removeItem("profileImage");
@@ -208,7 +214,8 @@ const Settings = () => {
       localStorage.removeItem("organizationId");
       window.location.href = "/";
     } catch (error) {
-      window.alert(getApiErrorMessage(error, t.messages.accountDeleteError));
+      setDeleteMessage(getApiErrorMessage(error, t.messages.accountDeleteError));
+      setDeleteError(true);
     }
   };
 
@@ -462,14 +469,40 @@ const Settings = () => {
           )}
         </section>
 
-        <section className="settingsCard">
+        <section className="settingsCard deleteAccountCard">
           <div className="settingsCardHeader">
             <h2>{t.accountDeleteTitle}</h2>
             <p>{t.accountDeleteDesc}</p>
           </div>
-          <button type="button" className="settingsButton secondary" onClick={handleDeleteAccount}>
+
+          <div className="settingsFieldGroup">
+            <label className="settingsFieldLabel" htmlFor="deleteAccountPassword">
+              {t.currentPassword}
+            </label>
+            <input
+              id="deleteAccountPassword"
+              type="password"
+              className="settingsInput"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              placeholder={t.messages.accountDeletePasswordPrompt}
+              autoComplete="current-password"
+            />
+          </div>
+
+          <p className="settingsHint deleteAccountHint">
+            {t.messages.accountDeleteConfirm}
+          </p>
+
+          <button type="button" className="settingsButton danger" onClick={handleDeleteAccount}>
             {t.accountDeleteButton}
           </button>
+
+          {deleteMessage && (
+            <p className={`accountMessage ${deleteError ? "error" : "success"}`}>
+              {deleteMessage}
+            </p>
+          )}
         </section>
       </div>
     </div>
