@@ -2,6 +2,7 @@ package net.tfg.tfgapp.controller;
 
 import net.tfg.tfgapp.DTOs.users.ChangePasswordRequest;
 import net.tfg.tfgapp.DTOs.users.ChangeUsernameRequest;
+import net.tfg.tfgapp.DTOs.users.DeleteAccountRequest;
 import net.tfg.tfgapp.DTOs.users.LoginRequest;
 import net.tfg.tfgapp.DTOs.users.UserProfileResponse;
 import net.tfg.tfgapp.domains.AdminUser;
@@ -174,11 +175,12 @@ public class UserController {
 
     @DeleteMapping("/me")
     public ResponseEntity<Map<String, Object>> deleteCurrentUser(@RequestHeader("Authorization") String authHeader,
-                                               @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage) {
+                                               @RequestHeader(value = "Accept-Language", required = false) String acceptLanguage,
+                                               @RequestBody(required = false) DeleteAccountRequest request) {
         String token = extractAndVerifyToken(authHeader, acceptLanguage);
         String usernameFromToken = tokenService.extractUsername(token);
 
-        accountService.deleteCurrentUser(usernameFromToken);
+        accountService.deleteCurrentUser(usernameFromToken, request);
 
         return ResponseEntity.ok(buildMessageResponse(languageResolver.text(acceptLanguage, "account.deleted")));
     }

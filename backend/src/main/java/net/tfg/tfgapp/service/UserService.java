@@ -7,8 +7,10 @@ import net.tfg.tfgapp.domains.Event;
 import net.tfg.tfgapp.domains.EventAssignment;
 import net.tfg.tfgapp.domains.Objective;
 import net.tfg.tfgapp.domains.ObjectiveAssignment;
+import net.tfg.tfgapp.domains.Organization;
 import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.domains.User;
+import net.tfg.tfgapp.repos.AdminUserRepo;
 import net.tfg.tfgapp.repos.PersonalUserRepo;
 import net.tfg.tfgapp.repos.UserRepo;
 import net.tfg.tfgapp.service.interfaces.IUserService;
@@ -29,13 +31,15 @@ public class UserService implements IUserService {
 
     private final UserRepo uRepo;
     private final PersonalUserRepo personalUserRepo;
+    private final AdminUserRepo adminUserRepo;
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    public UserService(UserRepo uRepo, PersonalUserRepo personalUserRepo) {
+    public UserService(UserRepo uRepo, PersonalUserRepo personalUserRepo, AdminUserRepo adminUserRepo) {
         this.uRepo = uRepo;
         this.personalUserRepo = personalUserRepo;
+        this.adminUserRepo = adminUserRepo;
     }
 
     @Override
@@ -107,10 +111,21 @@ public class UserService implements IUserService {
         if (user instanceof PersonalUser personalUser) {
             PersonalUser managedUser = cleanupPersonalUserDependencies(personalUser);
             if (managedUser != null) {
-                uRepo.delete(managedUser);
+                personalUserRepo.delete(managedUser);
+                personalUserRepo.flush();
                 return;
             }
         }
+
+        if (user instanceof AdminUser adminUser) {
+            AdminUser managedAdmin = cleanupAdminUserDependencies(adminUser);
+            if (managedAdmin != null) {
+                adminUserRepo.delete(managedAdmin);
+                adminUserRepo.flush();
+                return;
+            }
+        }
+
         uRepo.delete(user);
     }
 
@@ -123,11 +138,83 @@ public class UserService implements IUserService {
             return null;
         }
 
+        detachFromOrganizationAndAdmin(managedUser);
         detachEventAssignments(managedUser);
         Set<Integer> removedObjectiveIds = detachObjectiveAssignments(managedUser);
         reassignOrDeleteOwnedObjectives(managedUser, removedObjectiveIds);
         entityManager.flush();
         return managedUser;
+    }
+
+    private AdminUser cleanupAdminUserDependencies(AdminUser adminUser) {
+        AdminUser managedAdmin = entityManager.contains(adminUser)
+                ? adminUser
+                : entityManager.find(AdminUser.class, adminUser.getId());
+
+        if (managedAdmin == null) {
+            return null;
+        }
+
+        detachManagedUsers(managedAdmin);
+        detachAdminAssignments(managedAdmin);
+        removeAdministeredOrganization(managedAdmin);
+        entityManager.flush();
+        return managedAdmin;
+    }
+
+    private void detachFromOrganizationAndAdmin(PersonalUser personalUser) {
+        if (personalUser.getOrganization() != null) {
+            personalUser.getOrganization().getUsers().remove(personalUser);
+            personalUser.setOrganization(null);
+        }
+
+        if (personalUser.getAudAdmin() != null) {
+            personalUser.getAudAdmin().getManagedUsers().remove(personalUser);
+            personalUser.setAudAdmin(null);
+        }
+    }
+
+    private void detachManagedUsers(AdminUser adminUser) {
+        List<PersonalUser> managedUsers = new ArrayList<>(adminUser.getManagedUsers());
+        for (PersonalUser managedUser : managedUsers) {
+            managedUser.setAudAdmin(null);
+            entityManager.merge(managedUser);
+        }
+        adminUser.getManagedUsers().clear();
+    }
+
+    private void detachAdminAssignments(AdminUser adminUser) {
+        entityManager.createQuery("UPDATE EventAssignment a SET a.audAdmin = null WHERE a.audAdmin = :admin")
+                .setParameter("admin", adminUser)
+                .executeUpdate();
+
+        entityManager.createQuery("UPDATE ObjectiveAssignment a SET a.audAdmin = null WHERE a.audAdmin = :admin")
+                .setParameter("admin", adminUser)
+                .executeUpdate();
+
+        entityManager.createQuery("UPDATE Objective o SET o.audAdmin = null WHERE o.audAdmin = :admin")
+                .setParameter("admin", adminUser)
+                .executeUpdate();
+    }
+
+    private void removeAdministeredOrganization(AdminUser adminUser) {
+        if (adminUser.getAdministeredOrganization() == null) {
+            return;
+        }
+
+        Organization organization = adminUser.getAdministeredOrganization();
+        List<PersonalUser> organizationUsers = new ArrayList<>(organization.getUsers());
+        for (PersonalUser organizationUser : organizationUsers) {
+            organizationUser.setOrganization(null);
+            if (organizationUser.getAudAdmin() != null
+                    && organizationUser.getAudAdmin().getId().equals(adminUser.getId())) {
+                organizationUser.setAudAdmin(null);
+            }
+            entityManager.merge(organizationUser);
+        }
+        organization.getUsers().clear();
+        adminUser.setAdministeredOrganization(null);
+        entityManager.remove(entityManager.contains(organization) ? organization : entityManager.merge(organization));
     }
 
     private void detachEventAssignments(PersonalUser personalUser) {
