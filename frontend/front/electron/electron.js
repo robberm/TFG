@@ -18,39 +18,61 @@ let backendProcess = null;
 
 let currentWindowTransparent = false;
 let isRecreatingWindow = false;
-let isQuitting = false;
+/** Mensajes centralizados para no dejar textos de error sueltos por el archivo. */
+const ERROR_MESSAGES = {
+  COMPOSE_NOT_FOUND: "No se ha encontrado compose.yml en:",
+  DOCKER_NOT_READY:
+    "Docker no está disponible tras intentar iniciar Docker Desktop.",
+  DOCKER_SETUP_TITLE: "Error inicializando Docker/MySQL",
+  DOCKER_SETUP_BODY:
+    "No se pudo preparar la base de datos automáticamente. Revisa Docker Desktop y el archivo startup.log en %APPDATA%/GMO.",
+  BACKEND_NOT_FOUND: "No se ha encontrado el backend en:",
+  DATABASE_TIMEOUT: "MySQL no disponible en localhost:",
+  BACKEND_START_FAILED: "Error arrancando el backend:",
+  BACKEND_STOP_FAILED: "Error cerrando el backend:",
+};
 
+/** Textos técnicos de arranque que se guardan en fichero, sin sacar nada por consola. */
+const STARTUP_MESSAGES = {
+  DOCKER_DESKTOP_NOT_FOUND:
+    "Docker Desktop.exe no encontrado en rutas conocidas.",
+  DOCKER_DESKTOP_LAUNCHED: "Docker Desktop lanzado:",
+  DOCKER_READY: "Docker daemon disponible.",
+  DOCKER_CHECKING: "Validando disponibilidad de Docker...",
+  DOCKER_LAUNCHING:
+    "Docker no disponible al inicio. Intentando lanzar Docker Desktop...",
+  DOCKER_LAUNCH_FAILED: "No se pudo lanzar Docker Desktop:",
+  COMPOSE_RUNNING: "Ejecutando docker compose con archivo:",
+  COMPOSE_DONE: "docker compose up -d ejecutado.",
+  DATABASE_READY: "MySQL disponible. Continuando arranque.",
+  BACKEND_TIMEOUT: "Backend no respondió a tiempo; se abrirá la UI igualmente.",
+  BACKEND_READY: "Backend disponible en localhost:",
+  DOCKER_SETUP_FAILED: "Error preparando Docker/MySQL:",
+};
 
-
-/**
- * Utilidad promesa para ejecutar comandos de shell (Docker/Compose).
- */
+// Así los comandos de Docker se pueden usar con await y queda más limpio.
 const execAsync = promisify(exec);
 
-/** Puerto expuesto por MySQL en Docker (host -> container 3310 -> 3306). */
+// Puertos y tiempos de espera del arranque local: Docker/MySQL primero, backend después.
 const MYSQL_PORT = 3310;
-/** Tiempo máximo de espera para que la base de datos acepte conexiones. */
 const DB_TIMEOUT_MS = 90_000;
-/** Intervalo entre sondeos de disponibilidad de MySQL. */
 const DB_POLL_INTERVAL_MS = 1_500;
 const DOCKER_TIMEOUT_MS = 120_000;
 const BACKEND_PORT = 8080;
 const BACKEND_TIMEOUT_MS = 60_000;
 
 /**
- * Escribe logs de arranque en disco para poder depurar instalaciones empaquetadas
- * donde la consola no está visible para el usuario final.
+ * Guarda trazas de arranque en disco. Esto ayuda en instalaciones empaquetadas,
+ * donde no hay terminal, pero evita dejar mensajes sueltos por consola.
  */
 function logStartup(message) {
   const formatted = `[${new Date().toISOString()}] ${message}`;
-  console.log(formatted);
 
   try {
     const logPath = path.join(app.getPath("userData"), "startup.log");
-    fs.appendFileSync(logPath, `${formatted}
-`, "utf8");
+    fs.appendFileSync(logPath, `${formatted}\n`, "utf8");
   } catch (_) {
-    // Si falla escritura del log, no interrumpimos la app.
+    // Si no se puede escribir el log, la app debe seguir arrancando igualmente.
   }
 }
 
@@ -60,8 +82,13 @@ function logStartup(message) {
  * - Producción empaquetada: process.resourcesPath/docker/compose.yml
  */
 function getDockerComposePath() {
-
-  const devPath = path.resolve(__dirname, "..", "resources", "docker", "compose.yml");
+  const devPath = path.resolve(
+    __dirname,
+    "..",
+    "resources",
+    "docker",
+    "compose.yml",
+  );
   const prodPath = path.join(process.resourcesPath, "docker", "compose.yml");
 
   if (isDevMode() && fs.existsSync(devPath)) {
@@ -85,7 +112,6 @@ async function isDockerAvailable() {
   }
 }
 
-
 /**
  * Intenta abrir Docker Desktop en Windows para que el daemon quede disponible.
  * No bloquea indefinidamente: la espera real la gestiona waitForDockerReady().
@@ -96,14 +122,31 @@ async function launchDockerDesktop() {
   }
 
   const candidates = [
-    path.join(process.env["ProgramFiles"] || "", "Docker", "Docker", "Docker Desktop.exe"),
-    path.join(process.env["ProgramW6432"] || "", "Docker", "Docker", "Docker Desktop.exe"),
-    path.join(process.env["LocalAppData"] || "", "Docker", "Docker", "Docker Desktop.exe"),
+    path.join(
+      process.env["ProgramFiles"] || "",
+      "Docker",
+      "Docker",
+      "Docker Desktop.exe",
+    ),
+    path.join(
+      process.env["ProgramW6432"] || "",
+      "Docker",
+      "Docker",
+      "Docker Desktop.exe",
+    ),
+    path.join(
+      process.env["LocalAppData"] || "",
+      "Docker",
+      "Docker",
+      "Docker Desktop.exe",
+    ),
   ].filter(Boolean);
 
-  const dockerDesktopPath = candidates.find((candidate) => fs.existsSync(candidate));
+  const dockerDesktopPath = candidates.find((candidate) =>
+    fs.existsSync(candidate),
+  );
   if (!dockerDesktopPath) {
-    logStartup("Docker Desktop.exe no encontrado en rutas conocidas.");
+    logStartup(STARTUP_MESSAGES.DOCKER_DESKTOP_NOT_FOUND);
     return false;
   }
 
@@ -121,7 +164,9 @@ async function launchDockerDesktop() {
     });
   });
 
-  logStartup(`Docker Desktop lanzado: ${dockerDesktopPath}`);
+  logStartup(
+    `${STARTUP_MESSAGES.DOCKER_DESKTOP_LAUNCHED} ${dockerDesktopPath}`,
+  );
   return true;
 }
 
@@ -131,7 +176,7 @@ async function waitForDockerReady(timeoutMs = DOCKER_TIMEOUT_MS) {
 
   while (Date.now() - startedAt < timeoutMs) {
     if (await isDockerAvailable()) {
-      logStartup("Docker daemon disponible.");
+      logStartup(STARTUP_MESSAGES.DOCKER_READY);
       return true;
     }
 
@@ -146,11 +191,14 @@ async function startDockerCompose() {
   const composePath = getDockerComposePath();
 
   if (!fs.existsSync(composePath)) {
-    throw new Error(`No se ha encontrado compose.yml en: ${composePath}`);
+    throw new Error(`${ERROR_MESSAGES.COMPOSE_NOT_FOUND} ${composePath}`);
   }
 
-  logStartup(`Ejecutando docker compose con archivo: ${composePath}`);
-  await execAsync(`docker compose -f "${composePath}" up -d`, { windowsHide: true, shell: "cmd.exe" });
+  logStartup(`${STARTUP_MESSAGES.COMPOSE_RUNNING} ${composePath}`);
+  await execAsync(`docker compose -f "${composePath}" up -d`, {
+    windowsHide: true,
+    shell: "cmd.exe",
+  });
 }
 
 /** Comprueba conectividad TCP a un puerto del host. */
@@ -188,37 +236,43 @@ async function waitForDatabase(timeoutMs = DB_TIMEOUT_MS) {
     await new Promise((resolve) => setTimeout(resolve, DB_POLL_INTERVAL_MS));
   }
 
-  throw new Error(`MySQL no disponible en localhost:${MYSQL_PORT} tras ${Math.round(timeoutMs / 1000)}s`);
+  throw new Error(
+    `${ERROR_MESSAGES.DATABASE_TIMEOUT}${MYSQL_PORT} tras ${Math.round(timeoutMs / 1000)}s`,
+  );
 }
 
 /** Orquesta validación Docker + levantado compose + espera de base de datos. */
 async function ensureDockerDatabaseReady() {
-  logStartup("Validando disponibilidad de Docker...");
+  logStartup(STARTUP_MESSAGES.DOCKER_CHECKING);
   const dockerAvailable = await isDockerAvailable();
   if (!dockerAvailable) {
-    logStartup("Docker no disponible al inicio. Intentando lanzar Docker Desktop...");
+    logStartup(STARTUP_MESSAGES.DOCKER_LAUNCHING);
 
     try {
       await launchDockerDesktop();
     } catch (error) {
-      logStartup(`No se pudo lanzar Docker Desktop: ${error?.message || String(error)}`);
+      logStartup(
+        `${STARTUP_MESSAGES.DOCKER_LAUNCH_FAILED} ${error?.message || String(error)}`,
+      );
     }
 
     const dockerReady = await waitForDockerReady();
     if (!dockerReady) {
-      throw new Error("Docker no está disponible tras intentar iniciar Docker Desktop.");
+      throw new Error(ERROR_MESSAGES.DOCKER_NOT_READY);
     }
   }
 
   const dbReady = await canConnectToPort(MYSQL_PORT);
-  logStartup(`Estado inicial MySQL localhost:${MYSQL_PORT} => ${dbReady ? "UP" : "DOWN"}`);
+  logStartup(
+    `Estado inicial MySQL localhost:${MYSQL_PORT} => ${dbReady ? "UP" : "DOWN"}`,
+  );
   if (!dbReady) {
     await startDockerCompose();
-    logStartup("docker compose up -d ejecutado.");
+    logStartup(STARTUP_MESSAGES.COMPOSE_DONE);
   }
 
   await waitForDatabase();
-  logStartup("MySQL disponible. Continuando arranque.");
+  logStartup(STARTUP_MESSAGES.DATABASE_READY);
 }
 /** Indica si la app corre en modo desarrollo (no empaquetado). */
 function isDevMode() {
@@ -275,37 +329,27 @@ function startBackend() {
   const jarPath = getBackendJarPath();
 
   if (!fs.existsSync(jarPath)) {
-    console.error(`No se ha encontrado el backend en: ${jarPath}`);
+    logStartup(`${ERROR_MESSAGES.BACKEND_NOT_FOUND} ${jarPath}`);
     return;
   }
 
   const javaPath = isDevMode() ? "java" : getEmbeddedJavaPath();
 
-backendProcess = spawn(javaPath, ["-Xms64m", "-Xmx256m", "-jar", jarPath], {
-  cwd: path.dirname(jarPath),
-  windowsHide: true,
-  detached: false,
-  stdio: "pipe",
-});
-
-  backendProcess.stdout?.on("data", (data) => {
-    console.log(`[backend] ${data.toString()}`);
-  });
-
-  backendProcess.stderr?.on("data", (data) => {
-    console.error(`[backend-error] ${data.toString()}`);
+  backendProcess = spawn(javaPath, ["-Xms64m", "-Xmx256m", "-jar", jarPath], {
+    cwd: path.dirname(jarPath),
+    windowsHide: true,
+    detached: false,
+    stdio: "ignore",
   });
 
   backendProcess.on("error", (error) => {
-    console.error("Error arrancando el backend:", error);
+    logStartup(
+      `${ERROR_MESSAGES.BACKEND_START_FAILED} ${error?.message || String(error)}`,
+    );
     backendProcess = null;
   });
 
-  backendProcess.on("exit", (code, signal) => {
-    if (!isQuitting) {
-      console.log(`Backend finalizado. code=${code}, signal=${signal}`);
-    }
-
+  backendProcess.on("exit", () => {
     backendProcess = null;
   });
 }
@@ -318,7 +362,9 @@ function stopBackend() {
   try {
     backendProcess.kill();
   } catch (error) {
-    console.error("Error cerrando el backend:", error);
+    logStartup(
+      `${ERROR_MESSAGES.BACKEND_STOP_FAILED} ${error?.message || String(error)}`,
+    );
   } finally {
     backendProcess = null;
   }
@@ -341,8 +387,8 @@ function loadRenderer(win, route = "/") {
             const route = ${JSON.stringify(finalRoute)};
             try {
               window.location.hash = route;
-            } catch (e) {
-              console.error(e);
+            } catch (_) {
+              // Si el hash falla, no merece la pena romper la ventana por esto.
             }
           })();
         `,
@@ -711,14 +757,13 @@ function createReminderWindow(reminder) {
   }, 12000);
 }
 
-
 /** Espera hasta que el backend HTTP esté escuchando en localhost:8080. */
 async function waitForBackendReady(timeoutMs = BACKEND_TIMEOUT_MS) {
   const startedAt = Date.now();
 
   while (Date.now() - startedAt < timeoutMs) {
     if (await canConnectToPort(BACKEND_PORT)) {
-      logStartup(`Backend disponible en localhost:${BACKEND_PORT}.`);
+      logStartup(`${STARTUP_MESSAGES.BACKEND_READY}${BACKEND_PORT}.`);
       return true;
     }
 
@@ -736,10 +781,10 @@ app.whenReady().then(async () => {
     await ensureDockerDatabaseReady();
   } catch (error) {
     const details = error?.message || String(error);
-    logStartup(`Error preparando Docker/MySQL: ${details}`);
+    logStartup(`${STARTUP_MESSAGES.DOCKER_SETUP_FAILED} ${details}`);
     dialog.showErrorBox(
-      "Error inicializando Docker/MySQL",
-      `No se pudo preparar la base de datos automáticamente.\n\n${details}\n\nRevisa Docker Desktop y el archivo startup.log en %APPDATA%/GMO.`
+      ERROR_MESSAGES.DOCKER_SETUP_TITLE,
+      `${ERROR_MESSAGES.DOCKER_SETUP_BODY}\n\nDetalle: ${details}`,
     );
   }
 
@@ -747,7 +792,7 @@ app.whenReady().then(async () => {
 
   const backendReady = await waitForBackendReady();
   if (!backendReady) {
-    logStartup("Backend no respondió a tiempo; se abrirá la UI igualmente.");
+    logStartup(STARTUP_MESSAGES.BACKEND_TIMEOUT);
   }
 
   openInitialWindow();
@@ -766,7 +811,6 @@ app.whenReady().then(async () => {
 });
 
 app.on("before-quit", () => {
-  isQuitting = true;
   stopBackend();
 });
 
@@ -787,10 +831,6 @@ app.on("activate", () => {
 
 ipcMain.on("start-block", createBlockWindow);
 
-ipcMain.on("end-block", () => {
-  if (blockWindow) blockWindow.close();
-});
-
 ipcMain.on("window:minimize", () => {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.minimize();
@@ -807,30 +847,9 @@ ipcMain.on("window:toggle-maximize", () => {
   }
 });
 
-
-ipcMain.on("window:maximize", () => {
-  if (!mainWindow || mainWindow.isDestroyed()) return;
-  if (!mainWindow.isMaximized()) {
-    mainWindow.maximize();
-  }
-});
-
-ipcMain.on("window:restore", () => {
-  if (!mainWindow || mainWindow.isDestroyed()) return;
-  if (mainWindow.isMaximized()) {
-    mainWindow.unmaximize();
-  }
-});
-
 ipcMain.on("window:close", () => {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.close();
-  }
-});
-
-ipcMain.on("window:toggle-devtools", () => {
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.toggleDevTools();
   }
 });
 
@@ -847,10 +866,6 @@ ipcMain.on("show-reminder-window", (_event, reminder) => {
 ipcMain.handle("window:is-maximized", () => {
   if (!mainWindow || mainWindow.isDestroyed()) return false;
   return mainWindow.isMaximized();
-});
-
-ipcMain.handle("window:get-transparency-mode", () => {
-  return currentWindowTransparent;
 });
 
 ipcMain.handle("settings:get-auto-start", () => {
