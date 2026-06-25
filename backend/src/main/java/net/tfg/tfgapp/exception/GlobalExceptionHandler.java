@@ -2,7 +2,7 @@ package net.tfg.tfgapp.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import net.tfg.tfgapp.DTOs.errors.ApiErrorResponse;
-import net.tfg.tfgapp.i18n.LanguageResolver;
+import net.tfg.tfgapp.xi18n.LanguageResolver;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;

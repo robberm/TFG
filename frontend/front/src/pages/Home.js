@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "../css/Home.css";
-import PieChart from "../PieChart.jsx";
+import PieChart from "../features/objectives/components/PieChart.jsx";
 import HomeHeader from "../features/home/HomeHeader.jsx";
 import DailyWidget from "../features/home/DailyWidget.jsx";
 import RemindersPanel from "../features/home/RemindersPanel.js";

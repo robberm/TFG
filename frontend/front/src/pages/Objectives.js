@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { useError } from "./components/ErrorContext";
-import "./css/Objectives.css";
+import { useError } from "../components/ErrorContext";
+import "../css/Objectives.css";
 
 import {
   createGoal,
@@ -14,17 +14,17 @@ import {
   updateGoal,
   updateGoalProgress,
   updateHabit,
-} from "./api/objectivesApi";
-import { getCurrentUserProfile } from "./api/userApi";
-import { getManagedUsers } from "./api/adminApi";
+} from "../api/objectivesApi";
+import { getCurrentUserProfile } from "../api/userApi";
+import { getManagedUsers } from "../api/adminApi";
 
-import GoalModal from "./features/objectives/components/GoalModal";
-import HabitModal from "./features/objectives/components/HabitModal";
-import GoalsSection from "./features/objectives/components/GoalsSection";
-import HabitsSection from "./features/objectives/components/HabitsSection";
-import ObjectivesDashboard from "./features/objectives/components/ObjectivesDashboard";
-import { useLanguage } from "./context/languageContext";
-import CustomSelectDropdown from "./components/shared/CustomSelectDropdown";
+import GoalModal from "../features/objectives/components/GoalModal";
+import HabitModal from "../features/objectives/components/HabitModal";
+import GoalsSection from "../features/objectives/components/GoalsSection";
+import HabitsSection from "../features/objectives/components/HabitsSection";
+import ObjectivesDashboard from "../features/objectives/components/ObjectivesDashboard";
+import { useLanguage } from "../context/languageContext";
+import CustomSelectDropdown from "../components/shared/CustomSelectDropdown";
 
 import {
   buildHabitCompletionMap,
@@ -32,7 +32,7 @@ import {
   getEndOfWeek,
   getStartOfWeek,
   isGoalNumeric,
-} from "./features/objectives/utils/objectiveHelpers";
+} from "../features/objectives/utils/objectiveHelpers";
 
 const Objectives = () => {
   const { t } = useLanguage();

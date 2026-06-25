@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useDarkMode } from "./DarkModeContext";
-import "./css/Settings.css";
-import { resolveProfileImageUrl } from "./utils/profileImage";
+import { useDarkMode } from "../DarkModeContext";
+import "../css/Settings.css";
+import { resolveProfileImageUrl } from "../utils/profileImage";
 import {
   changeCurrentPassword,
   changeCurrentUsername,
@@ -9,9 +9,9 @@ import {
   deleteCurrentUser,
   getCurrentUserProfile,
   updateCurrentUserProfileImage,
-} from "./api/userApi";
-import { getApiErrorMessage } from "./api/apiClient";
-import { useLanguage } from "./context/languageContext";
+} from "../api/userApi";
+import { getApiErrorMessage } from "../api/apiClient";
+import { useLanguage } from "../context/languageContext";
 
 const Settings = () => {
   const { darkMode, translucentMode, toggleDarkMode, toggleTranslucentMode } =

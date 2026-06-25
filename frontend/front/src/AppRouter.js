@@ -3,11 +3,11 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 import Home from "./pages/Home";
 import App from "./App";
-import Objectives from "./Objectives";
-import Settings from "./Settings";
+import Objectives from "./pages/Objectives";
+import Settings from "./pages/Settings";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Calendar from "./features/calendar/Calendar";
-import Block from "./Block";
+import Block from "./pages/Block";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminOrganizationSetupPage from "./pages/AdminOrganizationSetupPage";
 

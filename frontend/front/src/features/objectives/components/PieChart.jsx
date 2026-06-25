@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import "./css/PieChart.css";
-import { useError } from "./components/ErrorContext";
-import { getGoals } from "./api/objectivesApi";
-import { buildGoalStatusDistribution } from "./features/objectives/utils/objectiveHelpers";
-import { useLanguage } from "./context/languageContext";
+import "../../../css/PieChart.css";
+import { useError } from "../../../components/ErrorContext";
+import { getGoals } from "../../../api/objectivesApi";
+import { buildGoalStatusDistribution } from "../utils/objectiveHelpers";
+import { useLanguage } from "../../../context/languageContext";
 
 export default function PieChart({ goals: externalGoals = null }) {
   const { t } = useLanguage();

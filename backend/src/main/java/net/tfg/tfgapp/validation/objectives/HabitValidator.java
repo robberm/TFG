@@ -5,7 +5,7 @@ import net.tfg.tfgapp.domains.ObjectiveAssignment;
 import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.exception.ApiException;
-import net.tfg.tfgapp.i18n.LanguageResolver;
+import net.tfg.tfgapp.xi18n.LanguageResolver;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 

@@ -5,7 +5,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import "./css/Block.css";
+import "../css/Block.css";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import {
@@ -16,10 +16,10 @@ import {
   removeBlockedApp as removeBlockedAppApi,
   resetBlockedApps,
   updateFocusSettings,
-} from "./api/blockApi";
-import { getApiErrorMessage } from "./api/apiClient";
-import { useError } from "./components/ErrorContext";
-import { useLanguage } from "./context/languageContext";
+} from "../api/blockApi";
+import { getApiErrorMessage } from "../api/apiClient";
+import { useError } from "../components/ErrorContext";
+import { useLanguage } from "../context/languageContext";
 
 const SearchIcon = () => (
   <svg

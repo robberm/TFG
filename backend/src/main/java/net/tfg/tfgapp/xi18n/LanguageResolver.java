@@ -1,4 +1,4 @@
-package net.tfg.tfgapp.i18n;
+package net.tfg.tfgapp.xi18n;
 
 import org.springframework.stereotype.Component;
 

@@ -1,14 +1,14 @@
 import React, { useState, useRef } from "react";
-import './css/App.css';
+import "../css/App.css";
 import { useNavigate } from "react-router-dom";
-import PasswordInput from "./components/PasswordInput";
+import PasswordInput from "../components/PasswordInput";
 import {
   getApiErrorMessage,
-} from "./api/apiClient";
-import { loginUser, registerActiveSessionUser } from "./api/authApi";
-import { getCurrentUserProfile } from "./api/userApi";
-import { resolveProfileImageUrl } from "./utils/profileImage";
-import { useLanguage } from "./context/languageContext";
+} from "../api/apiClient";
+import { loginUser, registerActiveSessionUser } from "../api/authApi";
+import { getCurrentUserProfile } from "../api/userApi";
+import { resolveProfileImageUrl } from "../utils/profileImage";
+import { useLanguage } from "../context/languageContext";
 
 
 const Login = () => {

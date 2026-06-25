@@ -2,7 +2,7 @@ package net.tfg.tfgapp.controller;
 
 import net.tfg.tfgapp.DTOs.apprestrict.BlockedApplicationRequest;
 import net.tfg.tfgapp.DTOs.apprestrict.InstalledApplicationDTO;
-import net.tfg.tfgapp.i18n.LanguageResolver;
+import net.tfg.tfgapp.xi18n.LanguageResolver;
 import net.tfg.tfgapp.service.AppRestrictionService;
 import net.tfg.tfgapp.service.BlockingService;
 import net.tfg.tfgapp.service.InstalledApplicationService;

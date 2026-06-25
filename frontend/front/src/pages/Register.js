@@ -1,10 +1,10 @@
 import React, { useState, useRef } from "react";
-import "./css/App.css";
+import "../css/App.css";
 import { useNavigate } from "react-router-dom";
-import PasswordInput from "./components/PasswordInput";
-import { getApiErrorMessage } from "./api/apiClient";
-import { registerActiveSessionUser, registerUser } from "./api/authApi";
-import { useLanguage } from "./context/languageContext";
+import PasswordInput from "../components/PasswordInput";
+import { getApiErrorMessage } from "../api/apiClient";
+import { registerActiveSessionUser, registerUser } from "../api/authApi";
+import { useLanguage } from "../context/languageContext";
 
 const Register = () => {
   const { t } = useLanguage();

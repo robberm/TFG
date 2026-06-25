@@ -10,7 +10,7 @@ import net.tfg.tfgapp.domains.Organization;
 import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.domains.User;
 import net.tfg.tfgapp.exception.ApiException;
-import net.tfg.tfgapp.i18n.LanguageResolver;
+import net.tfg.tfgapp.xi18n.LanguageResolver;
 import net.tfg.tfgapp.security.TokenService;
 import net.tfg.tfgapp.service.interfaces.AccountService;
 import net.tfg.tfgapp.service.interfaces.IUserService;

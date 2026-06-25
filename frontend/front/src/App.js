@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./css/App.css";
-import Login from "./Login";
-import Register from "./Register";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import WindowTitleBar from "./components/layout/WindowTitleBar";
 import { useLanguage } from "./context/languageContext";
 import { app_name } from "./constants/textConstants";
