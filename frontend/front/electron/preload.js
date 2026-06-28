@@ -4,22 +4,14 @@ const isAutoStartSupported =
   process.platform === "win32" && !process.defaultApp;
 
 contextBridge.exposeInMainWorld("electronAPI", {
-  onBlockStatus: (callback) => ipcRenderer.on("block-status", callback),
   startBlock: (payload) => ipcRenderer.send("start-block", payload),
-  endBlock: () => ipcRenderer.send("end-block"),
 
   minimizeWindow: () => ipcRenderer.send("window:minimize"),
   toggleMaximizeWindow: () => ipcRenderer.send("window:toggle-maximize"),
-  maximizeWindow: () => ipcRenderer.send("window:maximize"),
-  restoreWindow: () => ipcRenderer.send("window:restore"),
   closeWindow: () => ipcRenderer.send("window:close"),
-  toggleDevTools: () => ipcRenderer.send("window:toggle-devtools"),
 
   setWindowTransparencyMode: ({ transparent, route }) =>
     ipcRenderer.send("window:set-transparency-mode", { transparent, route }),
-
-  getWindowTransparencyMode: () =>
-    ipcRenderer.invoke("window:get-transparency-mode"),
 
   isWindowMaximized: () => ipcRenderer.invoke("window:is-maximized"),
 
