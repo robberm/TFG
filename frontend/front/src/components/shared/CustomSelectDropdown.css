@@ -164,3 +164,17 @@ body.light .gcal-modal .custom-select-value,
 body.light .gcal-modal .custom-select-arrow {
   color: #fff !important;
 }
+
+body.light .editModal .custom-select-trigger,
+body.light .editModal .custom-select-value,
+body.light .editModal .custom-select-arrow,
+body.light .modalForm .custom-select-trigger,
+body.light .modalForm .custom-select-value,
+body.light .modalForm .custom-select-arrow {
+  color: #fff !important;
+}
+
+body.light .editModal .custom-select-trigger,
+body.light .modalForm .custom-select-trigger {
+  padding: 14px 16px;
+}
