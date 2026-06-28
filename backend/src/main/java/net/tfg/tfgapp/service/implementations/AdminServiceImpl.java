@@ -15,6 +15,7 @@ import net.tfg.tfgapp.service.interfaces.IGoalService;
 import net.tfg.tfgapp.validation.PasswordPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -44,6 +45,7 @@ public class AdminServiceImpl implements IAdminService {
      * El usuario hereda la organización del admin.
      */
     @Override
+    @Transactional(timeout = 10)
     public UserSummaryResponse createManagedUser(String adminUsername, AdminCreateUserRequest request) {
         if (adminUsername == null || adminUsername.isBlank()) {
             throw new IllegalArgumentException("Admin inválido.");
@@ -96,6 +98,7 @@ public class AdminServiceImpl implements IAdminService {
      * El admin únicamente puede borrar usuarios que él mismo haya creado.
      */
     @Override
+    @Transactional(timeout = 10)
     public void deleteManagedUser(String adminUsername, Long userId) {
         if (adminUsername == null || adminUsername.isBlank()) {
             throw new IllegalArgumentException("Admin inválido.");
@@ -148,6 +151,7 @@ public class AdminServiceImpl implements IAdminService {
     }
 
     @Override
+    @Transactional(timeout = 10)
     public Organization createOrganizationForAdmin(String adminUsername, AdminCreateOrganizationRequest request) {
         if (adminUsername == null || adminUsername.isBlank()) {
             throw new IllegalArgumentException("Admin inválido.");
