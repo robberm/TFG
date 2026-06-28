@@ -8,7 +8,9 @@ import net.tfg.tfgapp.domains.Goal;
 import net.tfg.tfgapp.domains.Organization;
 import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.domains.User;
+import net.tfg.tfgapp.repos.AdminUserRepo;
 import net.tfg.tfgapp.repos.OrganizationRepo;
+import net.tfg.tfgapp.repos.PersonalUserRepo;
 import net.tfg.tfgapp.service.interfaces.IUserService;
 import net.tfg.tfgapp.service.interfaces.IAdminService;
 import net.tfg.tfgapp.service.interfaces.IGoalService;
@@ -23,17 +25,23 @@ import java.util.List;
 public class AdminServiceImpl implements IAdminService {
 
     private final IUserService userService;
+    private final AdminUserRepo adminUserRepo;
+    private final PersonalUserRepo personalUserRepo;
     private final PasswordEncoder passwordEncoder;
     private final PasswordPolicy passwordPolicy;
     private final OrganizationRepo organizationRepo;
     private final IGoalService goalService;
 
     public AdminServiceImpl(IUserService userService,
+                            AdminUserRepo adminUserRepo,
+                            PersonalUserRepo personalUserRepo,
                             PasswordEncoder passwordEncoder,
                             PasswordPolicy passwordPolicy,
                             OrganizationRepo organizationRepo,
                             IGoalService goalService) {
         this.userService = userService;
+        this.adminUserRepo = adminUserRepo;
+        this.personalUserRepo = personalUserRepo;
         this.passwordEncoder = passwordEncoder;
         this.passwordPolicy = passwordPolicy;
         this.organizationRepo = organizationRepo;
@@ -63,14 +71,8 @@ public class AdminServiceImpl implements IAdminService {
             throw new IllegalArgumentException("La contraseña no puede estar vacía.");
         }
 
-        User admin = userService.getUserByUsername(adminUsername);
-        if (admin == null) {
-            throw new IllegalArgumentException("Admin no encontrado.");
-        }
-
-        if (!(admin instanceof AdminUser adminUser)) {
-            throw new SecurityException("No tienes permisos de administrador.");
-        }
+        AdminUser adminUser = adminUserRepo.findByUsername(adminUsername)
+                .orElseThrow(() -> new IllegalArgumentException("Admin no encontrado."));
 
         Organization organization = adminUser.getAdministeredOrganization();
         if (organization == null) {
@@ -90,8 +92,16 @@ public class AdminServiceImpl implements IAdminService {
         managedUser.setOrganization(organization);
         managedUser.setAudAdmin(adminUser);
 
-        User savedUser = userService.save(managedUser);
-        return UserSummaryResponse.fromUser(savedUser);
+        PersonalUser savedUser = personalUserRepo.saveAndFlush(managedUser);
+
+        UserSummaryResponse response = new UserSummaryResponse();
+        response.setId(savedUser.getId());
+        response.setUsername(savedUser.getUsername());
+        response.setRole(savedUser.getRole().name());
+        response.setProfileImagePath(savedUser.getProfileImagePath());
+        response.setOrganizationId(organization.getId());
+        response.setOrganizationName(organization.getName());
+        return response;
     }
 
     /**
