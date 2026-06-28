@@ -5,6 +5,7 @@ import EventModal from "../calendar/EventModal.jsx";
 import { deleteCalendarEvent, saveCalendarEvent } from "../../api/eventApi.js";
 import "../../css/Home.css";
 import "../../css/Calendar.css";
+import { capitalizeCalendarLabel } from "../../utils/dateLabels";
 
 const HOUR_HEIGHT_PX = 28;
 const MINUTES_PER_HOUR = 60;
@@ -296,7 +297,7 @@ const DailyWidget = ({ events, onEventsChanged }) => {
               <div>
                 <div className="homeDailyWidgetEyebrow">Daily View</div>
                 <div className="homeDailyWidgetDate">
-                  {format(currentDate, "EEEE, d 'de' MMMM", { locale: es })}
+                  {capitalizeCalendarLabel(format(currentDate, "EEEE, d 'de' MMMM", { locale: es }))}
                 </div>
               </div>
             </div>

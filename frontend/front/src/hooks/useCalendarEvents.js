@@ -20,6 +20,7 @@ import { getCurrentUserProfile } from "../api/userApi";
 import { getManagedUsers } from "../api/adminApi";
 import { useLanguage } from "../context/languageContext";
 import { useError } from "../components/ErrorContext";
+import { capitalizeCalendarLabel } from "../utils/dateLabels";
 
 const useCalendarEvents = () => {
   const { language } = useLanguage();
@@ -266,21 +267,21 @@ const useCalendarEvents = () => {
 
   const getHeaderDateText = useCallback(() => {
     if (viewMode === "month") {
-      return format(currentDate, "MMMM yyyy", { locale: calendarLocale });
+      return capitalizeCalendarLabel(format(currentDate, "MMMM yyyy", { locale: calendarLocale }));
     }
 
     if (viewMode === "week") {
       const start = startOfWeek(currentDate, { weekStartsOn: 1 });
       const end = endOfWeek(currentDate, { weekStartsOn: 1 });
 
-      return `${format(start, "MMM d", { locale: calendarLocale })} - ${format(
+      return `${capitalizeCalendarLabel(format(start, "MMM d", { locale: calendarLocale }))} - ${capitalizeCalendarLabel(format(
         end,
         "MMM d, yyyy",
         { locale: calendarLocale },
-      )}`;
+      ))}`;
     }
 
-    return format(currentDate, "EEEE, MMMM d, yyyy", { locale: calendarLocale });
+    return capitalizeCalendarLabel(format(currentDate, "EEEE, MMMM d, yyyy", { locale: calendarLocale }));
   }, [calendarLocale, currentDate, viewMode]);
 
   return {

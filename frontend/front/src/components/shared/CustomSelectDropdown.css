@@ -158,3 +158,9 @@ body.light .custom-select-dropdown {
   background: #fafafa;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
+body.light .gcal-modal .custom-select-trigger,
+body.light .gcal-modal .custom-select-value,
+body.light .gcal-modal .custom-select-arrow {
+  color: #fff !important;
+}

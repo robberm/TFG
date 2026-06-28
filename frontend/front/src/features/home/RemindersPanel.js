@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { format, parseISO } from "date-fns";
 import "../../css/Home.css";
+import { useLanguage } from "../../context/languageContext";
 
 /**
  * Convierte una fecha recibida del backend a Date de forma robusta.
@@ -47,6 +48,7 @@ const parseReminderDate = (value) => {
 };
 
 const RemindersPanel = ({ todayEvents, isLoadingTodayEvents }) => {
+  const { t } = useLanguage();
   const reminderEvents = useMemo(() => {
     const hasReminder = (event) => (
       Array.isArray(event.reminderMinutesBeforeList) &&
@@ -72,13 +74,13 @@ const RemindersPanel = ({ todayEvents, isLoadingTodayEvents }) => {
 
   return (
     <div className="remindersSection">
-      <h2>Reminders</h2>
+      <h2>{t.homeReminders}</h2>
 
       {isLoadingTodayEvents ? (
-        <div className="remindersEmptyState">Cargando eventos...</div>
+        <div className="remindersEmptyState">{t.homeLoadingEvents}</div>
       ) : reminderEvents.length === 0 ? (
         <div className="remindersEmptyState">
-          No tienes eventos con reminder para hoy.
+          {t.homeNoRemindersToday}
         </div>
       ) : (
         <div className="remindersList">
@@ -90,7 +92,7 @@ const RemindersPanel = ({ todayEvents, isLoadingTodayEvents }) => {
               <div key={event.id} className="reminderCard">
                 <div className="reminderCardTime">
                   {event.isAllDay
-                    ? "Todo el día"
+                    ? t.calendarAllDay
                     : `${format(startDate, "HH:mm")} - ${format(endDate, "HH:mm")}`}
                 </div>
 

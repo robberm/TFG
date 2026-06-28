@@ -2,6 +2,7 @@ import React from "react";
 import { format, isSameDay, parseISO } from "date-fns";
 import { enUS, es } from "date-fns/locale";
 import { useLanguage } from "../../context/languageContext";
+import { capitalizeCalendarLabel } from "../../utils/dateLabels";
 
 const HOUR_HEIGHT_PX = 80;
 const MINUTES_PER_HOUR = 60;
@@ -215,9 +216,9 @@ const DailyCalendarView = ({
     <div className="calendar-day">
       <div className="day-view-header">
         <div className="day-view-date">
-          {format(currentDate, "EEEE, d 'de' MMMM 'de' yyyy", {
+          {capitalizeCalendarLabel(format(currentDate, "EEEE, d 'de' MMMM 'de' yyyy", {
             locale: calendarLocale,
-          })}
+          }))}
         </div>
       </div>
 
