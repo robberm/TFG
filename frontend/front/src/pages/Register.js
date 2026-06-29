@@ -92,7 +92,7 @@ const Register = () => {
           value={registerPw}
           onChange={(e) => setRegisterPw(e.target.value)}
           onKeyDown={handleKeyDown}
-          ref={passwordInputRef}
+          inputRef={passwordInputRef}
           autoComplete="new-password"
         />
         <button className="app-button" type="submit">

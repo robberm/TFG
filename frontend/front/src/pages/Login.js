@@ -100,7 +100,7 @@ const Login = () => {
           value={loginPw}
           onChange={(e) => setLoginPw(e.target.value)}
           onKeyDown={handleKeyDown}
-          ref={passwordInputRef}
+          inputRef={passwordInputRef}
           autoComplete="new-password"
         />
         <button className="app-button" type="submit">

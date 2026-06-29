@@ -1,4 +1,4 @@
-import React, { forwardRef, useState } from "react";
+import React, { useState } from "react";
 import "../css/PasswordInput.css";
 
 const EyeIcon = ({ visible }) => (
@@ -25,18 +25,16 @@ const EyeIcon = ({ visible }) => (
   </svg>
 );
 
-const PasswordInput = forwardRef(function PasswordInput(
-  {
-    value,
-    onChange,
-    placeholder = "Password",
-    name = "password",
-    className = "app-input",
-    autoComplete = "current-password",
-    ...inputProps
-  },
-  ref,
-) {
+export default function PasswordInput({
+  value,
+  onChange,
+  placeholder = "Password",
+  name = "password",
+  className = "app-input",
+  autoComplete = "current-password",
+  inputRef,
+  ...inputProps
+}) {
   const [showPassword, setShowPassword] = useState(false);
 
   const toggle = () => setShowPassword((visible) => !visible);
@@ -44,7 +42,7 @@ const PasswordInput = forwardRef(function PasswordInput(
   return (
     <div className="password-wrapper">
       <input
-        ref={ref}
+        ref={inputRef}
         type={showPassword ? "text" : "password"}
         name={name}
         value={value}
@@ -65,6 +63,4 @@ const PasswordInput = forwardRef(function PasswordInput(
       </button>
     </div>
   );
-});
-
-export default PasswordInput;
+}
