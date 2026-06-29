@@ -12,6 +12,7 @@ import {
 } from "../api/userApi";
 import { getApiErrorMessage } from "../api/apiClient";
 import { useLanguage } from "../context/languageContext";
+import CustomSelectDropdown from "../components/shared/CustomSelectDropdown";
 
 const Settings = () => {
   const { darkMode, translucentMode, toggleDarkMode, toggleTranslucentMode } =
@@ -235,14 +236,16 @@ const Settings = () => {
               <span className="settingsLabel">{t.language}</span>
             </div>
 
-            <select
-              className="settingsInput"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-            >
-              <option value="es">{t.spanish}</option>
-              <option value="en">{t.english}</option>
-            </select>
+            <div className="settingsSelectWrap">
+              <CustomSelectDropdown
+                value={language}
+                onChange={setLanguage}
+                options={[
+                  { value: "es", label: t.spanish },
+                  { value: "en", label: t.english },
+                ]}
+              />
+            </div>
           </div>
         </section>
 <section className="settingsCard">

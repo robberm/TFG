@@ -289,3 +289,7 @@
 .deleteAccountHint {
   margin: 0 0 14px 0;
 }
+
+.settingsSelectWrap {
+  width: min(100%, 260px);
+}
