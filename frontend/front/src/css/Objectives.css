@@ -534,17 +534,12 @@
 }
 
 /* Weekly Bars */
-.weeklyBars {
+.weeklyBars,
+.habitBarChart {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   align-items: end;
   gap: 0.75rem;
-  height: 200px;
-  padding-top: 1rem;
-}
-
-.habitBarChart {
-  width: 100%;
   height: 200px;
   padding-top: 1rem;
 }
@@ -557,16 +552,19 @@
   height: 100%;
 }
 
+.habitBarMiniChart {
+  width: 100%;
+  max-width: 40px;
+  flex: 1;
+  min-height: 0;
+}
+
 .weeklyBarTrack {
   fill: var(--bg-page);
 }
 
 .weeklyBarCell {
   transition: opacity 0.2s ease;
-}
-
-.selectedWeeklyBarCell {
-  opacity: 0.88;
 }
 
 .weeklyBarValue {
@@ -1296,13 +1294,14 @@ body.dark .tableRow:hover {
     width: 100%;
   }
 
-  .weeklyBars {
+  .weeklyBars,
+  .habitBarChart {
     gap: 0.5rem;
     height: 160px;
   }
 
-  .habitBarChart {
-    height: 160px;
+  .habitBarMiniChart {
+    max-width: 30px;
   }
 
 
@@ -1425,8 +1424,24 @@ body.dark .tableRow:hover {
   padding: 0;
 }
 
-.weeklyBarAxisTick.selected .weeklyBarLabel,
-.weeklyBarAxisTick.selected .weeklyBarValue {
+.weeklyBarItem:focus {
+  outline: none;
+}
+
+.weeklyBarItem:focus-visible .habitBarMiniChart,
+.weeklyBarItem:not(:disabled):hover .habitBarMiniChart,
+.selectedWeeklyBarItem .habitBarMiniChart {
+  outline: 1px solid color-mix(in srgb, var(--text-main) 18%, transparent);
+  outline-offset: 2px;
+}
+
+.selectedWeeklyBarItem .habitBarMiniChart {
+  opacity: 0.88;
+}
+
+.selectedWeeklyBarItem .weeklyBarLabel,
+.selectedWeeklyBarItem .weeklyBarValue {
+  color: color-mix(in srgb, var(--text-main) 82%, transparent);
   fill: color-mix(in srgb, var(--text-main) 82%, transparent);
   font-weight: 600;
 }
