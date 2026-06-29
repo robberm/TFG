@@ -69,8 +69,9 @@ const HabitBarChart = ({
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={chartData}
-          margin={{ top: 16, right: 0, bottom: 42, left: 0 }}
-          barCategoryGap="36%"
+          margin={{ top: 16, right: 8, bottom: 42, left: 8 }}
+          barSize={40}
+          barCategoryGap="auto"
           onClick={(state) => handleBarClick(state?.activePayload?.[0]?.payload)}
         >
           <defs>
