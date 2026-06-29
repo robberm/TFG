@@ -61,6 +61,7 @@ const HabitBarChart = ({
                     dataKey="chartValue"
                     radius={[10, 10, 10, 10]}
                     background={{ className: "weeklyBarTrack", radius: 10 }}
+                    activeBar={false}
                     isAnimationActive
                     animationDuration={400}
                   >
