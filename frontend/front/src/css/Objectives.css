@@ -534,7 +534,8 @@
 }
 
 /* Weekly Bars */
-.weeklyBars {
+.weeklyBars,
+.habitBarChart {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   align-items: end;
@@ -551,45 +552,21 @@
   height: 100%;
 }
 
-.weeklyBarTrack {
-  position: relative;
+.weeklyBarSvg {
   width: 100%;
   max-width: 40px;
   flex: 1;
-  border-radius: 10px;
-  background: var(--bg-page);
-  overflow: hidden;
-  display: flex;
-  align-items: flex-end;
+  min-height: 0;
+  overflow: visible;
+}
+
+.weeklyBarTrack {
+  fill: var(--bg-page);
 }
 
 .weeklyBarFill {
-  width: 100%;
-  border-radius: 10px;
-  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 4px;
-}
-
-.weeklyBarFill.day0 {
-  background: linear-gradient(180deg, #f093fb 0%, #f5576c 100%);
-}
-.weeklyBarFill.day1 {
-  background: linear-gradient(180deg, #fa709a 0%, #fee140 100%);
-}
-.weeklyBarFill.day2 {
-  background: linear-gradient(180deg, #43e97b 0%, #38f9d7 100%);
-}
-.weeklyBarFill.day3 {
-  background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
-}
-.weeklyBarFill.day4 {
-  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-}
-.weeklyBarFill.day5 {
-  background: linear-gradient(180deg, #f093fb 0%, #f5576c 100%);
-}
-.weeklyBarFill.day6 {
-  background: linear-gradient(180deg, #fa709a 0%, #fee140 100%);
+  transition: y 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .weeklyBarValue {
@@ -1317,12 +1294,13 @@ body.dark .tableRow:hover {
     width: 100%;
   }
 
-  .weeklyBars {
+  .weeklyBars,
+  .habitBarChart {
     gap: 0.5rem;
     height: 160px;
   }
 
-  .weeklyBarTrack {
+  .weeklyBarSvg {
     max-width: 30px;
   }
 
@@ -1445,13 +1423,13 @@ body.dark .tableRow:hover {
   padding: 0;
 }
 
-.weeklyBarItem:not(:disabled):hover .weeklyBarTrack,
-.selectedWeeklyBarItem .weeklyBarTrack {
+.weeklyBarItem:not(:disabled):hover .weeklyBarSvg,
+.selectedWeeklyBarItem .weeklyBarSvg {
   outline: 1px solid color-mix(in srgb, var(--text-main) 18%, transparent);
   outline-offset: 2px;
 }
 
-.selectedWeeklyBarItem .weeklyBarTrack {
+.selectedWeeklyBarItem .weeklyBarSvg {
   opacity: 0.88;
 }
 
