@@ -1,4 +1,13 @@
 import React, { useMemo } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 const BAR_GRADIENTS = [
   ["#f093fb", "#f5576c"],
@@ -9,6 +18,24 @@ const BAR_GRADIENTS = [
   ["#f093fb", "#f5576c"],
   ["#fa709a", "#fee140"],
 ];
+
+const HabitXAxisTick = ({ x, y, payload }) => {
+  const day = payload?.payload;
+  const selectedClass = day?.isSelected ? " selected" : "";
+
+  return (
+    <g transform={`translate(${x},${y})`} className={`weeklyBarAxisTick${selectedClass}`}>
+      <text textAnchor="middle">
+        <tspan className="weeklyBarValue" x="0" dy="0">
+          {day?.completed ?? 0}
+        </tspan>
+        <tspan className="weeklyBarLabel" x="0" dy="18">
+          {day?.label}
+        </tspan>
+      </text>
+    </g>
+  );
+};
 
 const HabitBarChart = ({
   data,
@@ -21,8 +48,9 @@ const HabitBarChart = ({
     () =>
       data.map((day, index) => ({
         ...day,
+        gradientId: `habit-bar-gradient-${day.isoDate}`,
         gradient: BAR_GRADIENTS[index % BAR_GRADIENTS.length],
-        heightPercent:
+        chartValue:
           totalHabits > 0 ? Math.max((day.completed / totalHabits) * 100, 5) : 5,
         isSelected: day.isoDate === selectedDate,
         isFuture: day.isoDate > todayIso,
@@ -30,45 +58,65 @@ const HabitBarChart = ({
     [data, selectedDate, todayIso, totalHabits],
   );
 
-  return (
-    <div className="habitBarChart" role="group" aria-label="Weekly habit completion chart">
-      {chartData.map((day, index) => {
-        const [startColor, endColor] = day.gradient;
-        const gradientId = `habit-bar-gradient-${day.isoDate}`;
+  const handleBarClick = (day) => {
+    if (!day?.isFuture) {
+      onSelectDate(day.isoDate);
+    }
+  };
 
-        return (
-          <button
-            key={day.isoDate}
-            type="button"
-            className={`weeklyBarItem ${day.isSelected ? "selectedWeeklyBarItem" : ""}`}
-            onClick={() => onSelectDate(day.isoDate)}
-            disabled={day.isFuture}
-            aria-pressed={day.isSelected}
-            title={day.isoDate}
-          >
-            <svg className="weeklyBarSvg" viewBox="0 0 40 144" aria-hidden="true" focusable="false">
-              <defs>
-                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+  return (
+    <div className="habitBarChart" aria-label="Weekly habit completion chart">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={chartData}
+          margin={{ top: 16, right: 0, bottom: 42, left: 0 }}
+          barCategoryGap="36%"
+          onClick={(state) => handleBarClick(state?.activePayload?.[0]?.payload)}
+        >
+          <defs>
+            {chartData.map((day) => {
+              const [startColor, endColor] = day.gradient;
+
+              return (
+                <linearGradient key={day.gradientId} id={day.gradientId} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={startColor} />
                   <stop offset="100%" stopColor={endColor} />
                 </linearGradient>
-              </defs>
-              <rect className="weeklyBarTrack" x="0" y="0" width="40" height="144" rx="10" />
-              <rect
-                className="weeklyBarFill"
-                x="0"
-                y={144 - (144 * day.heightPercent) / 100}
-                width="40"
-                height={(144 * day.heightPercent) / 100}
-                rx="10"
-                fill={`url(#${gradientId})`}
+              );
+            })}
+          </defs>
+          <CartesianGrid vertical={false} horizontal={false} />
+          <YAxis hide domain={[0, 100]} />
+          <XAxis
+            dataKey="label"
+            axisLine={false}
+            tickLine={false}
+            interval={0}
+            height={40}
+            tick={<HabitXAxisTick />}
+          />
+          <Bar
+            dataKey="chartValue"
+            radius={[10, 10, 10, 10]}
+            background={{ className: "weeklyBarTrack", radius: 10 }}
+            isAnimationActive
+            animationDuration={400}
+          >
+            {chartData.map((day) => (
+              <Cell
+                key={day.isoDate}
+                className={`weeklyBarCell${day.isSelected ? " selectedWeeklyBarCell" : ""}`}
+                cursor={day.isFuture ? "not-allowed" : "pointer"}
+                fill={`url(#${day.gradientId})`}
+                opacity={day.isFuture ? 0.45 : 1}
+                stroke={day.isSelected ? "var(--text-main)" : "transparent"}
+                strokeOpacity={day.isSelected ? 0.18 : 0}
+                strokeWidth={day.isSelected ? 2 : 0}
               />
-            </svg>
-            <span className="weeklyBarValue">{day.completed}</span>
-            <span className="weeklyBarLabel">{day.label}</span>
-          </button>
-        );
-      })}
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 };

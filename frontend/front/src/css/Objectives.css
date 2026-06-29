@@ -552,31 +552,28 @@
   height: 100%;
 }
 
-.weeklyBarSvg {
-  width: 100%;
-  max-width: 40px;
-  flex: 1;
-  min-height: 0;
-  overflow: visible;
-}
-
 .weeklyBarTrack {
   fill: var(--bg-page);
 }
 
-.weeklyBarFill {
-  transition: y 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+.weeklyBarCell {
+  transition: opacity 0.2s ease;
+}
+
+.selectedWeeklyBarCell {
+  opacity: 0.88;
 }
 
 .weeklyBarValue {
   color: var(--text-main);
+  fill: var(--text-main);
   font-weight: 700;
   font-size: 0.9rem;
 }
 
 .weeklyBarLabel {
   color: var(--text-secondary);
+  fill: var(--text-secondary);
   font-size: 0.75rem;
   font-weight: 500;
   text-transform: uppercase;
@@ -1300,9 +1297,6 @@ body.dark .tableRow:hover {
     height: 160px;
   }
 
-  .weeklyBarSvg {
-    max-width: 30px;
-  }
 
   .donutChartLayout {
     flex-direction: column;
@@ -1423,19 +1417,9 @@ body.dark .tableRow:hover {
   padding: 0;
 }
 
-.weeklyBarItem:not(:disabled):hover .weeklyBarSvg,
-.selectedWeeklyBarItem .weeklyBarSvg {
-  outline: 1px solid color-mix(in srgb, var(--text-main) 18%, transparent);
-  outline-offset: 2px;
-}
-
-.selectedWeeklyBarItem .weeklyBarSvg {
-  opacity: 0.88;
-}
-
-.selectedWeeklyBarItem .weeklyBarLabel,
-.selectedWeeklyBarItem .weeklyBarValue {
-  color: color-mix(in srgb, var(--text-main) 82%, transparent);
+.weeklyBarAxisTick.selected .weeklyBarLabel,
+.weeklyBarAxisTick.selected .weeklyBarValue {
+  fill: color-mix(in srgb, var(--text-main) 82%, transparent);
   font-weight: 600;
 }
 
