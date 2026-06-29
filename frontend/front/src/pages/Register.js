@@ -1,7 +1,6 @@
 import React, { useState, useRef } from "react";
 import "../css/App.css";
 import { useNavigate } from "react-router-dom";
-import PasswordInput from "../components/PasswordInput";
 import { getApiErrorMessage } from "../api/apiClient";
 import { registerActiveSessionUser, registerUser } from "../api/authApi";
 import { useLanguage } from "../context/languageContext";
@@ -84,15 +83,16 @@ const Register = () => {
           onChange={(e) => setRegisterUsername(e.target.value)} // Actualiza el estado
           onKeyDown={handleKeyDown} // Manejo de la tecla Enter
         />
-        <PasswordInput
+        <input
           className="app-input"
           id="password"
+          ref={passwordInputRef}
           name="password"
+          type="password"
           placeholder={t.loginPassword}
           value={registerPw}
           onChange={(e) => setRegisterPw(e.target.value)}
           onKeyDown={handleKeyDown}
-          inputRef={passwordInputRef}
           autoComplete="new-password"
         />
         <button className="app-button" type="submit">

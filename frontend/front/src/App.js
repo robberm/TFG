@@ -134,13 +134,13 @@ function App() {
             className="app-button"
             onClick={() => handleFormSelection("login")}
           >
-            Log-in
+            {t.loginTitle}
           </button>
           <button
             className="app-button"
             onClick={() => handleFormSelection("register")}
           >
-            Register
+            {t.registerTitle}
           </button>
         </div>
       )}
