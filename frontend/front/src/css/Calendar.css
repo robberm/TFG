@@ -1184,3 +1184,32 @@ body.dark .day.disabled {
 .calendar-tag-color-picker button:hover {
   background: var(--bg-hover);
 }
+
+.week-event,
+.day-event {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.week-event-title,
+.day-event-title,
+.day-event-location {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.day-event-location {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.event-location-icon {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+}

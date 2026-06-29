@@ -813,3 +813,20 @@ body.translucent .homeDailyWidgetInner {
   text-align: center;
   opacity: 0.6;
 }
+
+.reminderCardLocation,
+.homeDailyEventCard .day-event-location,
+.homeAllDayEvent .day-event-location {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.reminderCardLocation .event-location-icon,
+.homeDailyEventCard .event-location-icon,
+.homeAllDayEvent .event-location-icon {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+}

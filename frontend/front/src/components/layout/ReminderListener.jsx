@@ -3,6 +3,7 @@ import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import { format, parseISO } from "date-fns";
 import "../../css/ReminderListener.css";
+import LocationIcon from "../shared/LocationIcon";
 
 /**
  * Convierte LocalDateTime del backend a Date sin desfases.
@@ -146,7 +147,7 @@ const ReminderListener = () => {
 
             {notification.location && (
               <div className="reminderToastLocation">
-                📍 {notification.location}
+                <LocationIcon /> {notification.location}
               </div>
             )}
 

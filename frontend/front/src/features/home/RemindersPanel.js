@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { format, parseISO } from "date-fns";
 import "../../css/Home.css";
 import { useLanguage } from "../../context/languageContext";
+import LocationIcon from "../../components/shared/LocationIcon";
 
 /**
  * Convierte una fecha recibida del backend a Date de forma robusta.
@@ -99,7 +100,7 @@ const RemindersPanel = ({ todayEvents, isLoadingTodayEvents }) => {
                 <div className="reminderCardTitle">{event.title}</div>
                 {event.location && (
                   <div className="reminderCardLocation">
-                    📍 {event.location}
+                    <LocationIcon /> {event.location}
                   </div>
                 )}
               </div>

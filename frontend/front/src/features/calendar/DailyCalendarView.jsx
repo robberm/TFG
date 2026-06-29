@@ -1,6 +1,7 @@
 import React from "react";
 import { format, isSameDay, parseISO } from "date-fns";
 import { useLanguage } from "../../context/languageContext";
+import LocationIcon from "../../components/shared/LocationIcon";
 
 const HOUR_HEIGHT_PX = 80;
 const MINUTES_PER_HOUR = 60;
@@ -260,7 +261,7 @@ const DailyCalendarView = ({
                   <div className="day-event-assigned">{t.calendarAssignedTag}</div>
                 )}
                 {event.location && (
-                  <div className="day-event-location">📍 {event.location}</div>
+                  <div className="day-event-location"><LocationIcon /> {event.location}</div>
                 )}
               </div>
             ))}
@@ -351,7 +352,7 @@ const DailyCalendarView = ({
                 )}
                   {event.location && (
                     <div className="day-event-location">
-                      📍 {event.location}
+                      <LocationIcon /> {event.location}
                     </div>
                   )}
                 </div>

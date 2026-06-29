@@ -6,6 +6,7 @@ import { deleteCalendarEvent, saveCalendarEvent } from "../../api/eventApi.js";
 import "../../css/Home.css";
 import "../../css/Calendar.css";
 import { capitalizeCalendarLabel } from "../../utils/dateLabels";
+import LocationIcon from "../../components/shared/LocationIcon.jsx";
 
 const HOUR_HEIGHT_PX = 28;
 const MINUTES_PER_HOUR = 60;
@@ -320,7 +321,7 @@ const DailyWidget = ({ events, onEventsChanged }) => {
 
                       {event.location && (
                         <div className="day-event-location">
-                          📍 {event.location}
+                          <LocationIcon /> {event.location}
                         </div>
                       )}
                     </div>
@@ -372,7 +373,7 @@ const DailyWidget = ({ events, onEventsChanged }) => {
 
                       {event.location && (
                         <div className="day-event-location">
-                          📍 {event.location}
+                          <LocationIcon /> {event.location}
                         </div>
                       )}
                     </div>
