@@ -8,16 +8,13 @@ import net.tfg.tfgapp.domains.Goal;
 import net.tfg.tfgapp.domains.Organization;
 import net.tfg.tfgapp.domains.PersonalUser;
 import net.tfg.tfgapp.domains.User;
-import net.tfg.tfgapp.repos.AdminUserRepo;
 import net.tfg.tfgapp.repos.OrganizationRepo;
-import net.tfg.tfgapp.repos.PersonalUserRepo;
 import net.tfg.tfgapp.service.interfaces.IUserService;
 import net.tfg.tfgapp.service.interfaces.IAdminService;
 import net.tfg.tfgapp.service.interfaces.IGoalService;
 import net.tfg.tfgapp.validation.PasswordPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -25,23 +22,17 @@ import java.util.List;
 public class AdminServiceImpl implements IAdminService {
 
     private final IUserService userService;
-    private final AdminUserRepo adminUserRepo;
-    private final PersonalUserRepo personalUserRepo;
     private final PasswordEncoder passwordEncoder;
     private final PasswordPolicy passwordPolicy;
     private final OrganizationRepo organizationRepo;
     private final IGoalService goalService;
 
     public AdminServiceImpl(IUserService userService,
-                            AdminUserRepo adminUserRepo,
-                            PersonalUserRepo personalUserRepo,
                             PasswordEncoder passwordEncoder,
                             PasswordPolicy passwordPolicy,
                             OrganizationRepo organizationRepo,
                             IGoalService goalService) {
         this.userService = userService;
-        this.adminUserRepo = adminUserRepo;
-        this.personalUserRepo = personalUserRepo;
         this.passwordEncoder = passwordEncoder;
         this.passwordPolicy = passwordPolicy;
         this.organizationRepo = organizationRepo;
@@ -53,7 +44,6 @@ public class AdminServiceImpl implements IAdminService {
      * El usuario hereda la organización del admin.
      */
     @Override
-    @Transactional(timeout = 10)
     public UserSummaryResponse createManagedUser(String adminUsername, AdminCreateUserRequest request) {
         if (adminUsername == null || adminUsername.isBlank()) {
             throw new IllegalArgumentException("Admin inválido.");
@@ -71,8 +61,14 @@ public class AdminServiceImpl implements IAdminService {
             throw new IllegalArgumentException("La contraseña no puede estar vacía.");
         }
 
-        AdminUser adminUser = adminUserRepo.findByUsername(adminUsername)
-                .orElseThrow(() -> new IllegalArgumentException("Admin no encontrado."));
+        User admin = userService.getUserByUsername(adminUsername);
+        if (admin == null) {
+            throw new IllegalArgumentException("Admin no encontrado.");
+        }
+
+        if (!(admin instanceof AdminUser adminUser)) {
+            throw new SecurityException("No tienes permisos de administrador.");
+        }
 
         Organization organization = adminUser.getAdministeredOrganization();
         if (organization == null) {
@@ -92,23 +88,14 @@ public class AdminServiceImpl implements IAdminService {
         managedUser.setOrganization(organization);
         managedUser.setAudAdmin(adminUser);
 
-        PersonalUser savedUser = personalUserRepo.saveAndFlush(managedUser);
-
-        UserSummaryResponse response = new UserSummaryResponse();
-        response.setId(savedUser.getId());
-        response.setUsername(savedUser.getUsername());
-        response.setRole(savedUser.getRole().name());
-        response.setProfileImagePath(savedUser.getProfileImagePath());
-        response.setOrganizationId(organization.getId());
-        response.setOrganizationName(organization.getName());
-        return response;
+        User savedUser = userService.save(managedUser);
+        return UserSummaryResponse.fromUser(savedUser);
     }
 
     /**
      * El admin únicamente puede borrar usuarios que él mismo haya creado.
      */
     @Override
-    @Transactional(timeout = 10)
     public void deleteManagedUser(String adminUsername, Long userId) {
         if (adminUsername == null || adminUsername.isBlank()) {
             throw new IllegalArgumentException("Admin inválido.");
@@ -161,7 +148,6 @@ public class AdminServiceImpl implements IAdminService {
     }
 
     @Override
-    @Transactional(timeout = 10)
     public Organization createOrganizationForAdmin(String adminUsername, AdminCreateOrganizationRequest request) {
         if (adminUsername == null || adminUsername.isBlank()) {
             throw new IllegalArgumentException("Admin inválido.");

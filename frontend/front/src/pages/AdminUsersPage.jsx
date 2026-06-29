@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "../css/AdminUsers.css";
 import {
   createManagedUser,
@@ -29,7 +29,6 @@ function AdminUsersPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [form, setForm] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const isSubmittingRef = useRef(false);
 
   const sortedUsers = useMemo(
     () => [...users].sort((a, b) => a.username.localeCompare(b.username)),
@@ -56,28 +55,20 @@ function AdminUsersPage() {
 
   const handleCreateUser = async (event) => {
     event.preventDefault();
-
-    if (isSubmittingRef.current) {
-      return;
-    }
-
-    const username = form.username.trim();
-    const password = form.password;
     setErrorMessage("");
     setSuccessMessage("");
 
-    if (!username || !password.trim()) {
+    if (!form.username.trim() || !form.password.trim()) {
       setErrorMessage(t.adminUsersRequired);
       return;
     }
 
-    isSubmittingRef.current = true;
     setIsSubmitting(true);
 
     try {
       const created = await createManagedUser({
-        username,
-        password,
+        username: form.username.trim(),
+        password: form.password,
       });
 
       setUsers((current) => [...current, created]);
@@ -86,7 +77,6 @@ function AdminUsersPage() {
     } catch (error) {
       setErrorMessage(error.message || t.adminCreateError);
     } finally {
-      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -128,7 +118,6 @@ function AdminUsersPage() {
             <input
               type="text"
               value={form.username}
-              disabled={isSubmitting}
               onChange={(event) =>
                 setForm((current) => ({
                   ...current,
@@ -144,7 +133,6 @@ function AdminUsersPage() {
             <input
               type="password"
               value={form.password}
-              disabled={isSubmitting}
               onChange={(event) =>
                 setForm((current) => ({
                   ...current,
