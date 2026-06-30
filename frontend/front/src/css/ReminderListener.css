@@ -58,3 +58,15 @@
   opacity: 0.88;
   margin-top: 6px;
 }
+
+.reminderToastLocation {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.reminderToastLocation .event-location-icon {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+}

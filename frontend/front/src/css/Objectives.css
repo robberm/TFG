@@ -534,7 +534,8 @@
 }
 
 /* Weekly Bars */
-.weeklyBars {
+.weeklyBars,
+.habitBarChart {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   align-items: end;
@@ -544,62 +545,69 @@
 }
 
 .weeklyBarItem {
+  border: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
   height: 100%;
+  cursor: pointer;
 }
 
-.weeklyBarTrack {
-  position: relative;
+.weeklyBarItem:focus {
+  outline: none;
+}
+
+.weeklyBarItem:focus-visible {
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px var(--link-active-bg);
+}
+
+.weeklyBarItem:disabled {
+  cursor: not-allowed;
+}
+
+.habitBarMiniChart {
   width: 100%;
   max-width: 40px;
   flex: 1;
-  border-radius: 10px;
-  background: var(--bg-page);
-  overflow: hidden;
-  display: flex;
-  align-items: flex-end;
+  min-height: 0;
 }
 
-.weeklyBarFill {
-  width: 100%;
-  border-radius: 10px;
-  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 4px;
+.habitBarMiniChart .recharts-wrapper {
+  pointer-events: none;
 }
 
-.weeklyBarFill.day0 {
-  background: linear-gradient(180deg, #f093fb 0%, #f5576c 100%);
+.habitBarMiniChart .recharts-wrapper:focus,
+.habitBarMiniChart .recharts-wrapper:focus-visible,
+.habitBarMiniChart .recharts-surface:focus,
+.habitBarMiniChart .recharts-surface:focus-visible {
+  outline: none !important;
 }
-.weeklyBarFill.day1 {
-  background: linear-gradient(180deg, #fa709a 0%, #fee140 100%);
+
+.weeklyBarTrack {
+  fill: var(--bg-page);
 }
-.weeklyBarFill.day2 {
-  background: linear-gradient(180deg, #43e97b 0%, #38f9d7 100%);
-}
-.weeklyBarFill.day3 {
-  background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
-}
-.weeklyBarFill.day4 {
-  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-}
-.weeklyBarFill.day5 {
-  background: linear-gradient(180deg, #f093fb 0%, #f5576c 100%);
-}
-.weeklyBarFill.day6 {
-  background: linear-gradient(180deg, #fa709a 0%, #fee140 100%);
+
+.weeklyBarCell {
+  transition: opacity 0.2s ease;
 }
 
 .weeklyBarValue {
   color: var(--text-main);
+  fill: var(--text-main);
   font-weight: 700;
   font-size: 0.9rem;
 }
 
 .weeklyBarLabel {
   color: var(--text-secondary);
+  fill: var(--text-secondary);
   font-size: 0.75rem;
   font-weight: 500;
   text-transform: uppercase;
@@ -1317,14 +1325,16 @@ body.dark .tableRow:hover {
     width: 100%;
   }
 
-  .weeklyBars {
+  .weeklyBars,
+  .habitBarChart {
     gap: 0.5rem;
     height: 160px;
   }
 
-  .weeklyBarTrack {
+  .habitBarMiniChart {
     max-width: 30px;
   }
+
 
   .donutChartLayout {
     flex-direction: column;
@@ -1445,19 +1455,25 @@ body.dark .tableRow:hover {
   padding: 0;
 }
 
-.weeklyBarItem:not(:disabled):hover .weeklyBarTrack,
-.selectedWeeklyBarItem .weeklyBarTrack {
+.weeklyBarItem:focus {
+  outline: none;
+}
+
+.weeklyBarItem:focus-visible .habitBarMiniChart,
+.weeklyBarItem:not(:disabled):hover .habitBarMiniChart,
+.selectedWeeklyBarItem .habitBarMiniChart {
   outline: 1px solid color-mix(in srgb, var(--text-main) 18%, transparent);
   outline-offset: 2px;
 }
 
-.selectedWeeklyBarItem .weeklyBarTrack {
+.selectedWeeklyBarItem .habitBarMiniChart {
   opacity: 0.88;
 }
 
 .selectedWeeklyBarItem .weeklyBarLabel,
 .selectedWeeklyBarItem .weeklyBarValue {
   color: color-mix(in srgb, var(--text-main) 82%, transparent);
+  fill: color-mix(in srgb, var(--text-main) 82%, transparent);
   font-weight: 600;
 }
 

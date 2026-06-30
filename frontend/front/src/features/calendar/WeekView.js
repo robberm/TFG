@@ -112,15 +112,19 @@ const buildEventLayoutMap = (dayEvents) => {
     .sort((a, b) => a.startMinutes - b.startMinutes || a.endMinutes - b.endMinutes);
 
   const positioned = [];
-  let cluster = [];
-  let clusterEnd = -1;
+  // Aqui guardo los eventos que se pisan entre si para calcular el layout juntos.
+  let overlappingEvents = [];
+  // Aqui guardo el minuto final del bloque actual de eventos solapados.
+  let overlappingEventsEnd = -1;
 
-  const flushCluster = () => {
-    if (cluster.length === 0) return;
+  const applyLayout = () => {
+    if (overlappingEvents.length === 0) return;
 
-    const totalColumns = Math.max(...cluster.map((item) => item.column)) + 1;
+    // Calculo cuantas columnas necesita el grupo antes de pintarlo.
+    const totalColumns = Math.max(...overlappingEvents.map((item) => item.column)) + 1;
 
-    cluster.forEach((item) => {
+    overlappingEvents.forEach((item) => {
+      // Cada evento ocupa una columna distinta dentro del mismo tramo horario.
       const baseStyle = getTimedEventStyle(item.event);
       const widthPct = 100 / totalColumns;
       const leftPct = item.column * widthPct;
@@ -135,14 +139,14 @@ const buildEventLayoutMap = (dayEvents) => {
       });
     });
 
-    cluster = [];
-    clusterEnd = -1;
+    overlappingEvents = [];
+    overlappingEventsEnd = -1;
   };
 
   sorted.forEach((item) => {
-    if (cluster.length === 0 || item.startMinutes < clusterEnd) {
+    if (overlappingEvents.length === 0 || item.startMinutes < overlappingEventsEnd) {
       const usedColumns = new Set(
-        cluster
+        overlappingEvents
           .filter((current) => current.endMinutes > item.startMinutes)
           .map((current) => current.column),
       );
@@ -152,18 +156,18 @@ const buildEventLayoutMap = (dayEvents) => {
         column += 1;
       }
 
-      cluster = cluster.filter((current) => current.endMinutes > item.startMinutes);
-      cluster.push({ ...item, column });
-      clusterEnd = Math.max(clusterEnd, item.endMinutes);
+      overlappingEvents = overlappingEvents.filter((current) => current.endMinutes > item.startMinutes);
+      overlappingEvents.push({ ...item, column });
+      overlappingEventsEnd = Math.max(overlappingEventsEnd, item.endMinutes);
       return;
     }
 
-    flushCluster();
-    cluster.push({ ...item, column: 0 });
-    clusterEnd = item.endMinutes;
+    applyLayout();
+    overlappingEvents.push({ ...item, column: 0 });
+    overlappingEventsEnd = item.endMinutes;
   });
 
-  flushCluster();
+  applyLayout();
 
   return new Map(positioned.map((item) => [item.id, item.style]));
 };

@@ -1,10 +1,13 @@
 import React, { useMemo, useState } from "react";
 import { format, isSameDay, parseISO } from "date-fns";
-import { es } from "date-fns/locale";
+import { enUS, es } from "date-fns/locale";
 import EventModal from "../calendar/EventModal.jsx";
 import { deleteCalendarEvent, saveCalendarEvent } from "../../api/eventApi.js";
 import "../../css/Home.css";
 import "../../css/Calendar.css";
+import { capitalizeCalendarLabel } from "../../utils/dateLabels";
+import LocationIcon from "../../components/shared/LocationIcon.jsx";
+import { useLanguage } from "../../context/languageContext";
 
 const HOUR_HEIGHT_PX = 28;
 const MINUTES_PER_HOUR = 60;
@@ -193,6 +196,8 @@ const buildEventLayoutMap = (dayEvents) => {
 };
 
 const DailyWidget = ({ events, onEventsChanged }) => {
+  const { language, t } = useLanguage();
+  const calendarLocale = language === "es" ? es : enUS;
   const [currentDate] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -284,9 +289,9 @@ const DailyWidget = ({ events, onEventsChanged }) => {
             </div>
 
             <div className="homeDailyPreviewMeta">
-              <div className="homeDailyPreviewTitle">Calendar</div>
+              <div className="homeDailyPreviewTitle">{t.homeDailyCalendar}</div>
               <div className="homeDailyPreviewSubtitle">
-                {events.length} evento{events.length !== 1 ? "s" : ""} hoy
+                {events.length} {events.length === 1 ? t.homeEventSingular : t.homeEventPlural} {t.commonToday.toLowerCase()}
               </div>
             </div>
           </div>
@@ -294,9 +299,9 @@ const DailyWidget = ({ events, onEventsChanged }) => {
           <div className="homeDailyWidgetExpandedContent">
             <div className="homeDailyExpandedHeader">
               <div>
-                <div className="homeDailyWidgetEyebrow">Daily View</div>
+                <div className="homeDailyWidgetEyebrow">{t.homeDailyView}</div>
                 <div className="homeDailyWidgetDate">
-                  {format(currentDate, "EEEE, d 'de' MMMM", { locale: es })}
+                  {capitalizeCalendarLabel(format(currentDate, "EEEE, d 'de' MMMM", { locale: calendarLocale }))}
                 </div>
               </div>
             </div>
@@ -319,7 +324,7 @@ const DailyWidget = ({ events, onEventsChanged }) => {
 
                       {event.location && (
                         <div className="day-event-location">
-                          📍 {event.location}
+                          <LocationIcon /> {event.location}
                         </div>
                       )}
                     </div>
@@ -371,7 +376,7 @@ const DailyWidget = ({ events, onEventsChanged }) => {
 
                       {event.location && (
                         <div className="day-event-location">
-                          📍 {event.location}
+                          <LocationIcon /> {event.location}
                         </div>
                       )}
                     </div>

@@ -61,7 +61,7 @@ const AdminAssignmentSelector = ({
         />
       )}
 
-      {mode === "all" && <div className="admin-assignment-all-confirm">✓ {t.commonAllOrganization} — se asignará a todos los usuarios subordinados.</div>}
+      {mode === "all" && <div className="admin-assignment-all-confirm">✓ {t.commonAllOrganization}</div>}
 
       {mode === "multiple" && (
         <div className="admin-assignment-multi">

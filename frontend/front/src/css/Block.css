@@ -218,7 +218,7 @@
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 0.25rem 0.5rem;
-  height: 44px; /* fixed height ensures columns align vertically */
+  height: 60px; /* fixed height ensures columns align vertically */
 }
 
 .duration-picker-column {
@@ -236,7 +236,7 @@
   align-items: center;
   justify-content: center;
   width: 28px;
-  height: 18px;
+  height: 20px;
   background: transparent;
   border: none;
   border-radius: 4px;

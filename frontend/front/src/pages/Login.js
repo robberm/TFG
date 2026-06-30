@@ -1,7 +1,6 @@
 import React, { useState, useRef } from "react";
 import "../css/App.css";
 import { useNavigate } from "react-router-dom";
-import PasswordInput from "../components/PasswordInput";
 import {
   getApiErrorMessage,
 } from "../api/apiClient";
@@ -92,16 +91,17 @@ const Login = () => {
           onChange={(e) => setLoginUsername(e.target.value)} // Actualiza el estado
           onKeyDown={handleKeyDown} // Manejo de la tecla Enter
         />
-        <PasswordInput
+        <input
           className="app-input"
           id="password"
+          ref={passwordInputRef}
           name="password"
+          type="password"
           placeholder={t.loginPassword}
           value={loginPw}
           onChange={(e) => setLoginPw(e.target.value)}
           onKeyDown={handleKeyDown}
-          ref={passwordInputRef}
-          autoComplete="new-password"
+          autoComplete="current-password"
         />
         <button className="app-button" type="submit">
           {t.loginTitle}

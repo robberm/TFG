@@ -5,6 +5,7 @@ import "../../css/EventModal.css";
 import { fetchEventCategories } from "../../api/eventApi";
 import { useLanguage } from "../../context/languageContext";
 import AdminAssignmentSelector from "../../components/AdminAssignmentSelector";
+import { capitalizeCalendarLabel } from "../../utils/dateLabels";
 
 // Genera opciones de tiempo en incrementos de 15 minutos
 const generateTimeOptions = () => {
@@ -426,7 +427,7 @@ const EventModal = ({
   const formatDisplayDate = () => {
     if (!formData.date) return "";
     const date = new Date(`${formData.date}T00:00:00`);
-    return format(date, "EEEE, d 'de' MMMM", { locale: calendarLocale });
+    return capitalizeCalendarLabel(format(date, "EEEE, d 'de' MMMM", { locale: calendarLocale }));
   };
 
   return (

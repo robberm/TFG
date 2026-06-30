@@ -6,6 +6,7 @@ import {
   getStartOfWeek,
 } from "../utils/objectiveHelpers";
 import { useLanguage } from "../../../context/languageContext";
+import HabitBarChart from "./HabitBarChart";
 
 const ObjectivesDashboard = ({
   goals,
@@ -285,35 +286,13 @@ const ObjectivesDashboard = ({
             </button>
           </div>
 
-          <div className="weeklyBars">
-            {metrics.weeklyStats.map((day, index) => {
-              const heightPercent =
-                habits.length > 0 ? (day.completed / habits.length) * 100 : 0;
-              const isSelectedDay = day.isoDate === selectedHabitDate;
-              const isFutureDay = day.isoDate > todayIso;
-
-              return (
-                <button
-                  key={day.isoDate}
-                  type="button"
-                  className={`weeklyBarItem ${isSelectedDay ? "selectedWeeklyBarItem" : ""}`}
-                  onClick={() => onSelectHabitDate(day.isoDate)}
-                  disabled={isFutureDay}
-                  aria-pressed={isSelectedDay}
-                  title={day.isoDate}
-                >
-                  <div className="weeklyBarTrack">
-                    <div
-                      className={`weeklyBarFill day${index}`}
-                      style={{ height: `${Math.max(heightPercent, 5)}%` }}
-                    ></div>
-                  </div>
-                  <span className="weeklyBarValue">{day.completed}</span>
-                  <span className="weeklyBarLabel">{day.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          <HabitBarChart
+            data={metrics.weeklyStats}
+            totalHabits={habits.length}
+            selectedDate={selectedHabitDate}
+            todayIso={todayIso}
+            onSelectDate={onSelectHabitDate}
+          />
         </article>
       </div>
     </section>
