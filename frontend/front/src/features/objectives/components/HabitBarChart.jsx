@@ -48,6 +48,7 @@ const HabitBarChart = ({
             title={day.isoDate}
           >
             <div className="habitBarMiniChart" aria-hidden="true">
+              {/* Aqui monto la grafica de Recharts para cada dia y la hago responsive. */}
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={[day]} margin={{ top: 0, right: 0, bottom: 0, left: 0 }} barSize={40}>
                   <defs>
@@ -56,6 +57,7 @@ const HabitBarChart = ({
                       <stop offset="100%" stopColor={endColor} />
                     </linearGradient>
                   </defs>
+                  {/* YAxis pertenece rechart, define la escala vertical de la grafica (0 - 100) */}
                   <YAxis hide domain={[0, 100]} />
                   <Bar
                     dataKey="chartValue"
@@ -65,6 +67,7 @@ const HabitBarChart = ({
                     isAnimationActive
                     animationDuration={400}
                   >
+                    {/* Esta celda aplicamos estilo de degradado dinamico y baja opacidad if: dia > diaactual. */}
                     <Cell
                       className="weeklyBarCell"
                       fill={`url(#${day.gradientId})`}

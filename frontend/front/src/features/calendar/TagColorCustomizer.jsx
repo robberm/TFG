@@ -5,6 +5,7 @@ import { useLanguage } from "../../context/languageContext";
 const STORAGE_KEY = "calendar.tag-colors.v1";
 const COLLAPSED_KEY = "calendar.tag-colors.collapsed";
 
+// Object.freeze hace el array inmutable (no añadir ni quitar elementos)
 const TAG_COLOR_CONFIG = Object.freeze([
   { key: "FOCUS", cssVar: "--event-focus-color", defaultColor: "#7c3aed" },
   { key: "MANDATORY", cssVar: "--event-mandatory-color", defaultColor: "#e74c3c" },
@@ -15,10 +16,7 @@ const TAG_COLOR_CONFIG = Object.freeze([
 ]);
 
 /**
- * Valida si un string representa un color hexadecimal de 3 o 6 dígitos.
- *
- * @param {string} value valor candidato a color
- * @returns {boolean} true si es un hex válido
+ * Regex Validator de color hexadecimal. 
  */
 const isValidHexColor = (value) =>
   /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(String(value || "").trim());
@@ -46,10 +44,7 @@ const getThemeBaseColors = () => {
 };
 
 /**
- * Aplica una colección de colores sobre las variables CSS del documento.
- *
- * @param {Record<string, string>} colors mapa cssVar -> color
- * @returns {void}
+ * Aplica los colores sobre las variables CSS del elemento que los carga.
  */
 const applyColorsToRoot = (colors) => {
   if (typeof window === "undefined") return;
@@ -118,7 +113,7 @@ const TagColorCustomizer = () => {
       return false;
     }
   });
-  const [activeCssVar, setActiveCssVar] = useState(null);
+  const [activeCss, setActiveCss] = useState(null);
 
   useEffect(() => {
     const stored = readStoredColors();
@@ -159,7 +154,7 @@ const TagColorCustomizer = () => {
     const fresh = getThemeBaseColors();
     setColors(fresh);
     applyColorsToRoot(fresh);
-    setActiveCssVar(null);
+    setActiveCss(null);
 
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(STORAGE_KEY);
@@ -178,7 +173,7 @@ const TagColorCustomizer = () => {
     }
   };
 
-  const activeTag = TAG_COLOR_CONFIG.find((item) => item.cssVar === activeCssVar) || null;
+  const activeTag = TAG_COLOR_CONFIG.find((item) => item.cssVar === activeCss) || null;
   const specialText =
     activeTag?.key === "FOCUS"
       ? t.calendarTagFocusDescription
@@ -209,8 +204,8 @@ const TagColorCustomizer = () => {
                 type="button"
                 className={`calendar-tag-color-item ${
                   item.key === "FOCUS" || item.key === "MANDATORY" ? "special" : ""
-                } ${activeCssVar === item.cssVar ? "active" : ""}`}
-                onClick={() => setActiveCssVar(activeCssVar === item.cssVar ? null : item.cssVar)}
+                } ${activeCss === item.cssVar ? "active" : ""}`}
+                onClick={() => setActiveCss(activeCss === item.cssVar ? null : item.cssVar)}
                 title={`Editar color ${item.key}`}
               >
                 <span>{item.key}</span>
@@ -222,19 +217,19 @@ const TagColorCustomizer = () => {
             ))}
           </div>
 
-          <div className={`calendar-tag-color-pickerWrap ${activeCssVar ? "open" : ""}`}>
-            {activeCssVar && (
+          <div className={`calendar-tag-color-pickerWrap ${activeCss ? "open" : ""}`}>
+            {activeCss && (
               <>
                 <div className="calendar-tag-color-picker">
                   <HexColorPicker
-                    color={colors[activeCssVar] || "#ffffff"}
-                    onChange={(next) => handleChangeColor(activeCssVar, next)}
+                    color={colors[activeCss] || "#ffffff"}
+                    onChange={(next) => handleChangeColor(activeCss, next)}
                   />
                   <div className="calendar-tag-color-hexRow">
                     <input
                       type="text"
-                      value={colors[activeCssVar] || ""}
-                      onChange={(e) => handleChangeColor(activeCssVar, e.target.value)}
+                      value={colors[activeCss] || ""}
+                      onChange={(e) => handleChangeColor(activeCss, e.target.value)}
                     />
                   </div>
                 </div>

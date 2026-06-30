@@ -545,11 +545,31 @@
 }
 
 .weeklyBarItem {
+  border: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
   height: 100%;
+  cursor: pointer;
+}
+
+.weeklyBarItem:focus {
+  outline: none;
+}
+
+.weeklyBarItem:focus-visible {
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px var(--link-active-bg);
+}
+
+.weeklyBarItem:disabled {
+  cursor: not-allowed;
 }
 
 .habitBarMiniChart {
@@ -557,6 +577,17 @@
   max-width: 40px;
   flex: 1;
   min-height: 0;
+}
+
+.habitBarMiniChart .recharts-wrapper {
+  pointer-events: none;
+}
+
+.habitBarMiniChart .recharts-wrapper:focus,
+.habitBarMiniChart .recharts-wrapper:focus-visible,
+.habitBarMiniChart .recharts-surface:focus,
+.habitBarMiniChart .recharts-surface:focus-visible {
+  outline: none !important;
 }
 
 .weeklyBarTrack {
